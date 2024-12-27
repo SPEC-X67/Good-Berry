@@ -6,13 +6,15 @@ import { logoutUser } from "@/store/auth-slice";
 function AdminHeader({ setOpen }) {
   const dispatch = useDispatch();
 
-
   function handleLogout() {
     dispatch(logoutUser());
   }
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-background border-b">
+    <header
+      className=" top-0 left-0 right-0 flex items-center justify-between px-4 py-3 border-b fixed"
+      style={{ top: 0, left: 0, right: 0, backgroundColor: "#ffffff", zIndex: 999, }}
+    >
       <Button onClick={() => setOpen(true)} className="lg:hidden sm:block">
         <AlignJustify />
         <span className="sr-only">Toggle Menu</span>

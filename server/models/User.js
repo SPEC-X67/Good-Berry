@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true
+        required: true,
     },
     email: {
         type: String,
@@ -18,6 +18,14 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "user"
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    isBlocked: {
+        type: Boolean,
+        default: false
     }
 });
 

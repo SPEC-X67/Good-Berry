@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 function CheckAuth({ isAuthenticated, user, children }) {
   const location = useLocation();
   const isAdmin = user?.role === "admin";
-  
+
   // Redirect unauthenticated users from protected shop routes
   const isProtectedShopRoute = location.pathname.includes("/shop/");
   if (!isAuthenticated && isProtectedShopRoute) {

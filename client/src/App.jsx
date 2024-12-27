@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/listing";
 import { Skeleton } from "@/components/ui/skeleton"
+import CustomersPage from "./pages/admin/Customers/customers";
 
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
           }
         >
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />

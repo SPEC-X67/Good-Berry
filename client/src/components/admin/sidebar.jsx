@@ -1,4 +1,15 @@
-import { LayoutDashboard, ShoppingBasket, Package, Users, Star, Settings, Tag, Ticket, Image, ChartNoAxesCombined, } from 'lucide-react';
+import {
+  LayoutDashboard,
+  ShoppingBasket,
+  Package,
+  Users,
+  Star,
+  Settings,
+  Tag,
+  Ticket,
+  Image,
+  ChartNoAxesCombined,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 
@@ -56,7 +67,7 @@ const adminSidebarMenuItems = [
     label: "Banner",
     path: "/admin/banner",
     icon: <Image />,
-  }
+  },
 ];
 
 const MenuItems = ({ setOpen }) => {
@@ -78,7 +89,7 @@ const MenuItems = ({ setOpen }) => {
       ))}
     </nav>
   );
-}
+};
 
 function AdminSideBar({ open, setOpen }) {
   const navigate = useNavigate();
@@ -98,7 +109,15 @@ function AdminSideBar({ open, setOpen }) {
           </div>
         </SheetContent>
       </Sheet>
-      <aside className="hidden w-64 flex-col border-r bg-background p-6 lg:flex">
+      <aside
+        className="admin-sidebar hidden w-64 flex-col border-r bg-background p-6 lg:flex fixed"
+        style={{
+          top: 0,
+          left: 0,
+          backgroundColor: "#ffffff", // or any other color you prefer
+          zIndex: 1000, // or a higher value if needed
+        }}
+      >
         <div
           onClick={() => navigate("/admin/dashboard")}
           className="flex cursor-pointer items-center gap-2"
@@ -113,4 +132,3 @@ function AdminSideBar({ open, setOpen }) {
 }
 
 export default AdminSideBar;
-

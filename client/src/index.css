@@ -64,3 +64,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media (min-width: 1024px) {
+  .admin-layout {
+    margin-left: 250px;
+  }
+}
+.admin-sidebar {
+  height: 100vh;
+}
+
+.admin-layout {
+  margin-top: 60px;
+}

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
-import { Plus, MoreHorizontal, Search, Filter } from 'lucide-react'
+import {MoreHorizontal, Search, Filter } from 'lucide-react'
 
 const productsData = [
   {
@@ -89,7 +89,6 @@ export default function ProductsPage() {
                 <Filter size={20} />
               </Button>
               <Button>
-                <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
             </div>
@@ -155,7 +154,6 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Categories</h2>
             <Button>
-              <Plus className="mr-2 h-4 w-4" />
               New Category
             </Button>
           </div>

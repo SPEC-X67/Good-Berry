@@ -29,27 +29,39 @@ const updateUser = async (req, res) => {
   }
 };
 
+// Add Category
 const addCategory = async (req, res) => {
   try {
 
     const { name, status } = req.body;
-    const existingCategory = await Category.findOne({ name });
+
+    const existingCategory = await Category.findOne({ name: { $regex: `^${name}$`, $options: 'i' } });
 
     console.log(existingCategory);
     if (existingCategory) {
-      return res.status(400).json({ message: 'Category already exists' });
+      return res.json({success: false, message: 'Category already exists' });
     }
     const category = await Category.create({ name, status });
-    res.status(201).json({ message: 'Category created successfully', category });
+    res.json({ success: true, message: 'Category created successfully', category });
     
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create category', error: error.message });
+    res.json({success: false, message: 'Failed to create category', error: error.message });
   }
 };
 
+// Get all categories
+const getAllCategories = async (req, res) => {
+  try {
+    const categories = await Category.find();
+    res.status(200).json(categories);
+  } catch (error) { 
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+};
 
 module.exports = {
   getAllUsers,
   updateUser,
-  addCategory
+  addCategory,
+  getAllCategories
 };

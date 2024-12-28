@@ -1,6 +1,5 @@
 import {
   LayoutDashboard,
-  ShoppingBasket,
   Package,
   Users,
   Star,
@@ -9,6 +8,8 @@ import {
   Ticket,
   Image,
   ChartNoAxesCombined,
+  Tags,
+  BaggageClaim,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
@@ -24,7 +25,13 @@ const adminSidebarMenuItems = [
     id: "products",
     label: "Products",
     path: "/admin/products",
-    icon: <ShoppingBasket />,
+    icon: <BaggageClaim />
+  },
+  {
+    id: "categorys",
+    label: "Categorys",
+    path: "/admin/categorys",
+    icon: <Tags />,
   },
   {
     id: "orders",

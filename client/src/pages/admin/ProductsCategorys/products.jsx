@@ -8,16 +8,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import {MoreHorizontal, Search, Filter } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
-import {MoreHorizontal, Search, Filter } from 'lucide-react'
-import AddCategoryModal from './AddCategoryModal'
 
 const productsData = [
   {
@@ -40,17 +38,10 @@ const productsData = [
   },
   // Add more product data here...
 ];
-
-const categories = [
-  { id: 1, name: "Ice Cream", status: "Active" },
-  { id: 2, name: "Juice", status: "Inactive" },
-  // Add more category data here...
-];
-
 export default function ProductsPage() {
+
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredProducts, setFilteredProducts] = useState(productsData)
-  const [filteredCategories, setFilteredCategories] = useState(categories)
 
   const handleSearch = (event) => {
     const term = event.target.value.toLowerCase()
@@ -62,11 +53,6 @@ export default function ProductsPage() {
       product.category.toLowerCase().includes(term)
     )
     setFilteredProducts(filteredProds)
-
-    const filteredCats = categories.filter(category =>
-      category.name.toLowerCase().includes(term)
-    )
-    setFilteredCategories(filteredCats)
   }
 
   return (
@@ -140,51 +126,6 @@ export default function ProductsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Categories</h2>
-            <AddCategoryModal />
-          </div>
-        </div>
-        <div className="border rounded-lg mx-4 mb-4" style={{ height: '300px', overflowY: 'auto' }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>S.No</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>List/Unlist</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories.map((category, index) => (
-                <TableRow key={category.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{category.name}</TableCell>
-                  <TableCell>
-                    <Switch checked={category.status === "Active"} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Remove</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

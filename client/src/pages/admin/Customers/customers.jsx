@@ -30,8 +30,6 @@ export default function CustomersPage() {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  console.log(users);
-
   // Update customers when users data changes
   useEffect(() => {
     if (users && Array.isArray(users)) {
@@ -61,7 +59,7 @@ export default function CustomersPage() {
 
   const handleBlockUnblock = (userId, currentStatus) => {
     const isBlocked = !currentStatus; // Toggle block/unblock status
-    dispatch(updateUserStatus({ id: userId, isBlocked }));
+      dispatch(updateUserStatus({ id: userId, isBlocked }));
 };
 
   if (isLoading) {
@@ -90,7 +88,7 @@ export default function CustomersPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow >
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -102,7 +100,7 @@ export default function CustomersPage() {
               </TableHeader>
               <TableBody>
                 {customers.map((customer) => (
-                  <TableRow key={customer.id}>
+                  <TableRow  key={customer.id}>
                     <TableCell className="font-medium">{customer.username}</TableCell>
                     <TableCell>{customer.email}</TableCell>
                     <TableCell>{customer.phone}</TableCell>

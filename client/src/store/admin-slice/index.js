@@ -2,18 +2,21 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
-  users: [], // Ensure users is initialized as an empty array
+  users: [], 
   loading: false,
   error: null,
+  categories :[],
 };
+
+const api = "http://localhost:5000/api/admin";
 
 // Thunk to Fetch Users
 export const fetchUsers = createAsyncThunk("admin/fetchUsers", async (_, thunkAPI) => {
   try {
-    const response = await fetch("http://localhost:5000/api/admin/users"); // Adjust API endpoint
+    const response = await fetch(`${api}/users`); 
     if (!response.ok) throw new Error("Failed to fetch users");
     const data = await response.json();
-    return data; // Ensure this returns an array of users
+    return data; 
   } catch (error) {
     return thunkAPI.rejectWithValue(error.message);
   }
@@ -25,14 +28,61 @@ export const updateUserStatus = createAsyncThunk(
   async ({ id, isBlocked }, thunkAPI) => {
     try {
       await axios.patch(
-        `http://localhost:5000/api/admin/users/${id}/block`,
-        { isBlocked }, // Send the new status to the backend
+        `${api}/users/${id}/block`,
+        { isBlocked }, 
         { withCredentials: true }
       );
-      return { id, isBlocked }; // Return the user ID and new status
+      return { id, isBlocked };
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || "Failed to update status");
     }
+  }
+);
+
+export const getAllCategories = createAsyncThunk(
+  "admin/getAllCategories",
+  async (_, thunkAPI) => {
+    try {
+      const response = await fetch(`${api}/categories`); 
+      if (!response.ok) throw new Error("Failed to fetch categories");
+      const data = await response.json();
+      return data; 
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+
+export const updateCategory = createAsyncThunk(
+  "admin/updateCategory",
+  async ({ id, name, status }, thunkAPI) => {
+    try {
+      await axios.patch(
+        `${api}/categories/${id}`,
+        { name, status }, 
+        { withCredentials: true }
+      );
+      return { id, name, status };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || "Failed to update category");
+    }
+  }
+)
+
+export const addCategory = createAsyncThunk(
+  "admin/addCategory",
+
+  async (newCategory) => {
+      const response = await axios.post(
+          `${api}/categories`,
+          newCategory,
+          {
+              withCredentials: true,
+          }
+      );
+
+      return response.data;
   }
 );
 
@@ -52,19 +102,39 @@ const adminSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload; // Assuming the payload contains an array of users
+        state.users = action.payload;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(updateUserStatus.pending, (state) => {
+
+      .addCase(getAllCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateUserStatus.fulfilled, (state, action) => {
+      .addCase(getAllCategories.fulfilled, (state, action) => {
         state.loading = false;
+        state.categories = action.payload;
+      })
+      .addCase(getAllCategories.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
+      .addCase(addCategory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addCategory.fulfilled, (state, action) => {
+        state.categories.push(action.payload.category)
+      })
+      .addCase(addCategory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(updateUserStatus.fulfilled, (state, action) => {
         // Update the user's block/unblock status in the store
         const { id, isBlocked } = action.payload;
         const user = state.users.find((user) => user._id === id);
@@ -72,11 +142,14 @@ const adminSlice = createSlice({
           user.isBlocked = isBlocked; // Update the user's status
         }
       })
-      .addCase(updateUserStatus.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+      .addCase(updateCategory.fulfilled, (state, action) => {
+        const { id, name, status } = action.payload;
+        const categoryIndex = state.categories.findIndex((cat) => cat.id === id);
+        if (categoryIndex !== -1) {
+          state.categories[categoryIndex] = { ...state.categories[categoryIndex], name, status };
+        }
       });
-  },
+  },  
 });
 
 export const { setUsers } = adminSlice.actions;

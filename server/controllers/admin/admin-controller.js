@@ -1,4 +1,5 @@
 const User = require('../../models/User');
+const {Category }= require('../../models/ProductsCategorys');
 
 // Fetch all users
 const getAllUsers = async (req, res) => {
@@ -12,39 +13,43 @@ const getAllUsers = async (req, res) => {
 
 // Update a user
 const updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { name, email, role } = req.body;
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { name, email, role },
-      { new: true }
-    );
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
+    const { isBlocked } = req.body; // Expecting `isBlocked` value from the frontend
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndUpdate(userId, { isBlocked }, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json(updatedUser);
+
+    res.status(200).json({ message: `User ${isBlocked ? 'blocked' : 'unblocked'} successfully`, user });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update user' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Delete a user
-const deleteUser = async (req, res) => {
-  const { id } = req.params;
+const addCategory = async (req, res) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(id);
-    if (!deletedUser) {
-      return res.status(404).json({ error: 'User not found' });
+
+    const { name, status } = req.body;
+    const existingCategory = await Category.findOne({ name });
+
+    console.log(existingCategory);
+    if (existingCategory) {
+      return res.status(400).json({ message: 'Category already exists' });
     }
-    res.status(200).json({ message: 'User deleted successfully' });
+    const category = await Category.create({ name, status });
+    res.status(201).json({ message: 'Category created successfully', category });
+    
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete user' });
+    res.status(500).json({ message: 'Failed to create category', error: error.message });
   }
 };
+
 
 module.exports = {
   getAllUsers,
   updateUser,
-  deleteUser,
+  addCategory
 };

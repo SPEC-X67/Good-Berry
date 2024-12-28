@@ -17,6 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import {MoreHorizontal, Search, Filter } from 'lucide-react'
+import AddCategoryModal from './AddCategoryModal'
 
 const productsData = [
   {
@@ -153,9 +154,7 @@ export default function ProductsPage() {
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Categories</h2>
-            <Button>
-              New Category
-            </Button>
+            <AddCategoryModal />
           </div>
         </div>
         <div className="border rounded-lg mx-4 mb-4" style={{ height: '300px', overflowY: 'auto' }}>

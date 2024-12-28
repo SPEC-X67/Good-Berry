@@ -59,6 +59,12 @@ const login = async (req, res) => {
                 message: "User doesn't exists! Please register first",
             });
 
+        if (checkUser.isBlocked)
+            return res.json({
+                success: false,
+                message: "Account has been Suspended! Please contact admin",
+            });
+
         const checkPasswordMatch = await bcrypt.compare(
             password,
             checkUser.password

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -6,55 +6,66 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Search, MoreHorizontal } from 'lucide-react'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchUsers } from '@/store/admin-slice'
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Search, MoreHorizontal } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers, updateUserStatus } from '@/store/admin-slice';
 
 export default function CustomersPage() {
-
   const dispatch = useDispatch();
-  const {users} = useSelector(state => state.admin)
-  console.log(users)
-  
-  useEffect(() => {
-    dispatch(fetchUsers())
-  }, [dispatch])
-
+  const { users, isLoading } = useSelector(state => state.admin);  // Destructure isLoading to manage loading state
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState([]);
 
+  // Fetch users on component mount
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  console.log(users);
+
+  // Update customers when users data changes
+  useEffect(() => {
+    if (users && Array.isArray(users)) {
+      // Ensure each user has orders and status fields, set default values
+      const usersWithFields = users.map(customer => ({
+        ...customer,
+        phone: customer.phone || "not Added",
+        orders: customer.orders || 0,  // Default orders to 0
+        status: customer.isBlocked ? 'Blocked' : 'Active',  // Set status based on isBlocked
+      }));
+      setCustomers(usersWithFields);
+    }
+  }, [users]);
+
   const handleSearch = (event) => {
-    const term = event.target.value.toLowerCase()
-    setSearchTerm(term)
-    
-    const filtered = users.filter(customer => 
-      customer.username.toLowerCase().includes(term) || 
-      customer.email.toLowerCase().includes(term) 
-    )
-    setCustomers(filtered)
-  }
+    const term = event.target.value.toLowerCase();
+    setSearchTerm(term);
 
-  const handleStatusChange = (customerId) => {
-    setCustomers(customers.map(customer => {
-      if (customer.id === customerId) {
-        const newStatus = customer.isBlock === true ? 'BLock' : 'Unblock'
-        return { ...customer, status: newStatus }
-      }
-      return customer
-    }))
-  }
+    if (users && Array.isArray(users)) {
+      const filtered = users.filter(customer =>
+        customer.username.toLowerCase().includes(term) ||
+        customer.email.toLowerCase().includes(term)
+      );
+      setCustomers(filtered);
+    }
+  };
 
-  const handleDelete = (customerId) => {
-    setCustomers(customers.filter(customer => customer.id !== customerId))
+  const handleBlockUnblock = (userId, currentStatus) => {
+    const isBlocked = !currentStatus; // Toggle block/unblock status
+    dispatch(updateUserStatus({ id: userId, isBlocked }));
+};
+
+  if (isLoading) {
+    return <div>Loading...</div>;  // Display loading message when fetching data
   }
 
   return (
@@ -75,7 +86,7 @@ export default function CustomersPage() {
             </div>
           </div>
         </div>
-        <div className="border rounded-lg mx-2 md:mx-4 mb-4" style={{ height: '600px', overflowY: 'auto' }}>
+        <div className="border rounded-lg rounded-b-none mx-2 md:mx-4 mb-4" style={{ height: '480px', overflowY: 'auto' }}>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -92,17 +103,13 @@ export default function CustomersPage() {
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell className="font-medium">{customer.username}</TableCell>
                     <TableCell>{customer.email}</TableCell>
                     <TableCell>{customer.phone}</TableCell>
-                    <TableCell>{new Date(customer.joinDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(customer.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>{customer.orders}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        customer.status === 'Active' 
-                          ? 'bg-green-50 text-green-700' 
-                          : 'bg-red-50 text-red-700'
-                      }`}>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${customer.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                         {customer.status}
                       </span>
                     </TableCell>
@@ -115,16 +122,15 @@ export default function CustomersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            onClick={() => handleStatusChange(customer.id)}
-                            className={customer.status === 'Active' ? 'text-red-600' : 'text-green-600'}
-                          >
-                            {customer.status === 'Active' ? 'Block' : 'Unblock'}
+                             onClick={() => handleBlockUnblock(customer._id, customer.isBlocked)}
+                             className={customer.isBlocked ? 'text-green-500' : 'text-red-500'}
+                         >
+                             {customer.isBlocked ? 'Unblock' : 'Block'}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => handleDelete(customer.id)}
-                            className="text-red-600"
+                            className="text-blue-600"
                           >
-                            Delete
+                            View Details
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -137,6 +143,5 @@ export default function CustomersPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

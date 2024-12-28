@@ -3,16 +3,15 @@ const router = express.Router();
 const {
     getAllUsers,
     updateUser,
-    deleteUser,
+    addCategory
   } = require('../../controllers/admin/admin-controller');
 
 // GET: Fetch all users
 router.get('/users', getAllUsers);
 
-// PUT: Update an existing user
-router.put('/users/:id', updateUser);
+// PATCH: Update a user
+router.patch('/users/:id/block', updateUser);
 
-// DELETE: Remove a user
-router.delete('/users/:id', deleteUser);
+router.post('/categories', addCategory);
 
 module.exports = router;

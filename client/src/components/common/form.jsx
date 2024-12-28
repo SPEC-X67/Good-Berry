@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-
 function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText }) {
   function renderInputByComponentType(controlItem) {
     const value = formData[controlItem.name] || "";

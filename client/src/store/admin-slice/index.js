@@ -85,6 +85,19 @@ export const addCategory = createAsyncThunk(
   }
 );
 
+export const deleteCategory = createAsyncThunk(
+  "admin/deleteCategory",
+  async (id) => {
+      const response = await axios.delete(
+          `${api}/categories/${id}`,
+          {
+              withCredentials: true,
+          }
+      );
+      return response.data;
+  }
+)
+
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -127,16 +140,19 @@ const adminSlice = createSlice({
       })
       .addCase(addCategory.fulfilled, (state, action) => {
         if (action.payload && action.payload.success) {
-          // Add the new category to the state
           state.categories.push(action.payload.category);
         } else {
           console.error("Failed to add category:", action.payload?.message || "Unknown error");
         }
       })
-      
       .addCase(addCategory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.categories = state.categories.filter((cat) => cat._id !== action.payload.categoryId);
       })
 
       .addCase(updateUserStatus.fulfilled, (state, action) => {

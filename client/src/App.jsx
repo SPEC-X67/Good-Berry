@@ -20,6 +20,7 @@ import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/listing";
 import { Skeleton } from "@/components/ui/skeleton"
 import CustomersPage from "./pages/admin/Customers/customers";
+import AddProduct from "./pages/admin/ProductsCategorys/AddProduct";
 
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="products/add" element={<AddProduct />} />
           <Route path="categorys" element={<AdminCategorys/>} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />

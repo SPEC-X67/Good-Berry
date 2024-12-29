@@ -2,16 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const authRouter = require('./routes/auth/auth-routes');
 const adminRouter = require('./routes/admin/admin-routes');
+const connectCloudinary = require('./config/cloudnary');
 
+dotenv.config();
 // Database connection
-mongoose.connect(
-    'mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/'
-)
+mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.gwyoo.mongodb.net/`)
 .then(() => console.log('Database connected successfully'))
 .catch((err) => console.log(err));
 
+connectCloudinary();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

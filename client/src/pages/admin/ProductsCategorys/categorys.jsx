@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getAllCategories } from "@/store/admin-slice";
+import { deleteCategory, getAllCategories } from "@/store/admin-slice";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditCategoryModal from "./EditCategoryModal";
 import AddCategoryModal from "./AddCategoryModal";
+import { toast } from "@/hooks/use-toast";
 
 function Categorys() {
   const { categories } = useSelector((state) => state.admin);
@@ -35,6 +36,19 @@ function Categorys() {
   const handleEditClick = (category) => {
     setSelectedCategory(category);
     setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    const data = await dispatch(deleteCategory(id));
+    console.log(data.payload);
+    if (data.payload.success) {
+      toast({ title: data.payload.message });
+    } else {
+      toast({
+        title: data.payload.message || "Failed to delete category",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -82,7 +96,10 @@ function Categorys() {
                       >
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => handleDelete(category._id)}
+                      >
                         Remove
                       </DropdownMenuItem>
                     </DropdownMenuContent>

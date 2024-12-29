@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { useNavigate } from 'react-router-dom'
 
 const productsData = [
   {
@@ -40,6 +41,7 @@ const productsData = [
 ];
 export default function ProductsPage() {
 
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredProducts, setFilteredProducts] = useState(productsData)
 
@@ -75,7 +77,7 @@ export default function ProductsPage() {
               <Button variant="outline" size="icon">
                 <Filter size={20} />
               </Button>
-              <Button>
+              <Button onClick={() => navigate("/admin/products/add")}>
                 Add Product
               </Button>
             </div>

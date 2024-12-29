@@ -1,8 +1,7 @@
-import AddCategoryModal from "./AddCategoryModal";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllCategories } from "@/store/admin-slice";
 import { Switch } from "@/components/ui/switch";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import {
@@ -19,14 +18,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import EditCategoryModal from "./EditCategoryModal";
+import AddCategoryModal from "./AddCategoryModal";
 
 function Categorys() {
   const { categories } = useSelector((state) => state.admin);
   const dispatch = useDispatch();
 
+  const [selectedCategory, setSelectedCategory] = useState(null); // Track the category for editing
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Control edit modal visibility
+
   useEffect(() => {
     dispatch(getAllCategories());
-  },[dispatch]);
+  }, [dispatch]);
+
+  const handleEditClick = (category) => {
+    setSelectedCategory(category);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
@@ -65,7 +74,14 @@ function Categorys() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleEditClick(category);
+                        }}
+                      >
+                        Edit
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
                         Remove
                       </DropdownMenuItem>
@@ -77,6 +93,14 @@ function Categorys() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Render the EditCategoryModal dynamically */}
+      {isEditModalOpen && (
+        <EditCategoryModal
+          category={selectedCategory}
+          onClose={() => setIsEditModalOpen(false)} // Close the modal
+        />
+      )}
     </div>
   );
 }

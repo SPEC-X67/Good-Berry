@@ -20,6 +20,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useDispatch } from "react-redux";
 import { addCategory } from "@/store/admin-slice";
 
+/*************  ✨ Codeium Command ⭐  *************/
+/**
+ * A dialog component for adding a new category to the list of categories.
+ * 
+ * This component is a wrapper around the `Dialog` component from the `@/components/ui/dialog` module.
+ * It provides a form for adding a new category and handles the logic for adding the category to the
+ * store and updating the list of categories.
+ * 
+ * @returns A JSX element representing the dialog component.
+ */
+/******  4d3e3acd-5b8c-4faf-888d-b0a68b2a435d  *******/
 const AddCategoryModal = () => {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false); // Control dialog open/close

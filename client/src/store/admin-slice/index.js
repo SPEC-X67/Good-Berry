@@ -58,12 +58,12 @@ export const updateCategory = createAsyncThunk(
   "admin/updateCategory",
   async ({ id, name, status }, thunkAPI) => {
     try {
-      await axios.patch(
+      const response = await axios.put(
         `${api}/categories/${id}`,
         { name, status }, 
         { withCredentials: true }
       );
-      return { id, name, status };
+      return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || "Failed to update category");
     }
@@ -81,7 +81,6 @@ export const addCategory = createAsyncThunk(
               withCredentials: true,
           }
       );
-
       return response.data;
   }
 );
@@ -127,8 +126,14 @@ const adminSlice = createSlice({
         state.error = null;
       })
       .addCase(addCategory.fulfilled, (state, action) => {
-        state.categories.push(action.payload.category)
+        if (action.payload && action.payload.success) {
+          // Add the new category to the state
+          state.categories.push(action.payload.category);
+        } else {
+          console.error("Failed to add category:", action.payload?.message || "Unknown error");
+        }
       })
+      
       .addCase(addCategory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -143,13 +148,13 @@ const adminSlice = createSlice({
         }
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
-        const { id, name, status } = action.payload;
-        const categoryIndex = state.categories.findIndex((cat) => cat.id === id);
-        if (categoryIndex !== -1) {
-          state.categories[categoryIndex] = { ...state.categories[categoryIndex], name, status };
+        const updatedCategory = action.payload.category;
+        const index = state.categories.findIndex((cat) => cat._id === updatedCategory._id);
+        if (index !== -1) {
+          state.categories[index] = updatedCategory;
         }
       });
-  },  
+  },
 });
 
 export const { setUsers } = adminSlice.actions;

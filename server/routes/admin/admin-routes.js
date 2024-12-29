@@ -4,7 +4,9 @@ const {
     getAllUsers,
     updateUser,
     addCategory,
-    getAllCategories
+    getAllCategories,
+    updateCategory,
+    deleteCategory
   } = require('../../controllers/admin/admin-controller');
 
 //Coustomer
@@ -14,5 +16,7 @@ router.patch('/users/:id/block', updateUser);
 // Category
 router.post('/categories', addCategory);
 router.get('/categories', getAllCategories);
+router.put('/categories/:id', updateCategory);
+router.delete('/categories/:id', deleteCategory);
 
 module.exports = router;

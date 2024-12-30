@@ -82,7 +82,7 @@ const login = async (req, res) => {
                 email: checkUser.email,
                 username: checkUser.username,
             },
-            "CLIENT_SECRET_KEY",
+            process.env.JWT_SECRET_KEY,
             { expiresIn: "60m" }
         );
 
@@ -114,10 +114,16 @@ const authMiddleware = async (req, res, next) => {
             message: "Please login first",
         });
     try {
-        const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
         req.user = decoded;
         next();
     } catch (e) {
+        if (e.message === "jwt expired") {
+            return res.json({
+                success: false,
+                message: "Please login first",
+            });
+        }
         console.log(e);
         res.status(500).json({
             success: false,

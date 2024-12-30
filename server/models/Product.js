@@ -17,7 +17,7 @@ const productSchema = new mongoose.Schema({
       type: String,
       required: true,
    },
-   packSize: {
+   packSizes: {
       type: Array,
       required: true,
    },
@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema({
    stock : {
       type: Number,
       default: 0
+   },
+   sku: {
+     type: String,
+     required: true 
    },
    isDeleted : {
       type: Boolean,

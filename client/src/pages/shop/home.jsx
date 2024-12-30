@@ -1,6 +1,10 @@
 function ShoppingHome() {
     return (
-        <div>ShoppingHome</div>
+        <div>
+            ShoppingHome
+            <br />
+            <a href="/admin/dashboard">Admin</a>
+            </div>
     )
 }
 

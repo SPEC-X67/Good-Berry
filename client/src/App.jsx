@@ -5,7 +5,7 @@ import AuthRegister from "./pages/auth/register";
 import AdminLayout from "./components/admin/layout";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminProducts from "./pages/admin/ProductsCategorys/products";
-import AdminCategorys from "./pages/admin/ProductsCategorys/categorys"
+import AdminCategorys from "./pages/admin/ProductsCategorys/categorys";
 import AdminOrders from "./pages/admin/orders";
 import AdminFeatures from "./pages/admin/features";
 import ShopLayout from "./components/shop/layout";
@@ -18,20 +18,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/listing";
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton";
 import CustomersPage from "./pages/admin/Customers/customers";
 import AddProduct from "./pages/admin/ProductsCategorys/AddProduct";
 
-
 function App() {
-  const { isAuthenticated, user, isLoading } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, isLoading } = useSelector(
+    (state) => state.auth
+  );
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
-  if (isLoading) return <Skeleton className="w-[100px] h-[20px] rounded-full" />  ;
+  if (isLoading)
+    return <Skeleton className="w-[100px] h-[20px] rounded-full" />;
   console.log(isLoading, user);
 
   return (
@@ -40,7 +42,8 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<ShopLayout />}>
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
-          <Route path="shop" element={<ShoppingListing />} /> {/* Product Listing */}
+          <Route path="shop" element={<ShoppingListing />} />{" "}
+          {/* Product Listing */}
         </Route>
 
         {/* Protected Shop Routes */}
@@ -63,7 +66,7 @@ function App() {
             <CheckAuth isAuthenticated={isAuthenticated} user={user}>
               <AuthLayout />
             </CheckAuth>
-          } 
+          }
         >
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
@@ -80,9 +83,12 @@ function App() {
         >
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customers" element={<CustomersPage />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="products/add" element={<AddProduct />} />
-          <Route path="categorys" element={<AdminCategorys/>} />
+          <Route path="products">
+            <Route index element={<AdminProducts />} />
+            <Route path="add" element={<AddProduct />} />
+          </Route>
+
+          <Route path="categorys" element={<AdminCategorys />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />
         </Route>

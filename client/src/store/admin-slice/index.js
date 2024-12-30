@@ -6,6 +6,7 @@ const initialState = {
   loading: false,
   error: null,
   categories :[],
+  products: [],
 };
 
 const api = "http://localhost:5000/api/admin";
@@ -98,6 +99,22 @@ export const deleteCategory = createAsyncThunk(
   }
 )
 
+export const addProduct = createAsyncThunk(
+  "admin/addProduct",
+  async (newProduct) => {
+      const response = await axios.post(
+          `${api}/products`,
+          newProduct,
+          {
+              headers: { 'Content-Type': 'multipart/form-data' },
+              withCredentials: true,
+          }      
+      );
+      return response.data;
+  }
+);
+
+
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -169,7 +186,15 @@ const adminSlice = createSlice({
         if (index !== -1) {
           state.categories[index] = updatedCategory;
         }
-      });
+      })
+
+      .addCase(addProduct.fulfilled, (state, action) => {
+        if (action.payload && action.payload.success) {
+          state.products.push(action.payload.product);
+        } else {
+          console.error("Failed to add product:", action.payload?.message || "Unknown error");
+        }
+      })
   },
 });
 

@@ -187,14 +187,19 @@ const updateProduct = async (req, res) => {
 };
 
 // Delete a product (soft delete)
-const removeProduct = async (req, res) => { 
+const removeProduct = async (req, res) => {
     try {
         const productId = req.params.id;
-        await Product.findByIdAndUpdate(productId, {isDeleted: true});
-        res.json({success: true, message: 'Product deleted successfully'});
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        await Product.findByIdAndUpdate(productId, { isDeleted: true });
+        res.status(200).json({ success: true, message: "Product deleted successfully", productId });
     } catch (error) {
-        console.log(error);
-        res.json({success: false, message: error.message})
+        console.error("Error deleting product:", error);
+        res.status(500).json({ success: false, message: "Failed to delete product", error: error.message });
     }
 }
 

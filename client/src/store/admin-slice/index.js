@@ -150,6 +150,19 @@ export const uploadToCloudinary = createAsyncThunk(
   }
 );
 
+export const deleteProduct = createAsyncThunk(
+  "admin/deleteProduct",
+  async (id) => {
+    const response = await axios.patch(
+      `${api}/products/${id}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  }
+)
+
 
 const adminSlice = createSlice({
   name: "admin",
@@ -191,16 +204,18 @@ const adminSlice = createSlice({
           state.categories[index] = updatedCategory;
         }
       })
-
       .addCase(addProduct.fulfilled, (state, action) => {
         if (action.payload && action.payload.success) {
           state.products.push(action.payload.product);
         }
       })
-
       .addCase(getAllProducts.fulfilled, (state, action) => {
         state.products = action.payload.products;
       })
+      .addCase(deleteProduct.fulfilled, (state, action) => {
+        state.products = state.products.filter((product) => product._id !== action.payload.productId);
+      })
+
   },
 });
 

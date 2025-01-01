@@ -18,13 +18,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllProducts } from '@/store/admin-slice';
+import { deleteProduct, getAllProducts } from '@/store/admin-slice';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProductsPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { products } = useSelector((state) => state.admin);
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
 
   // Fetch all products on component mount
   useEffect(() => {
@@ -70,6 +72,21 @@ export default function ProductsPage() {
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value.toLowerCase());
+  };
+
+  const handleDelete = async(id) => {
+    const data = await dispatch(deleteProduct(id));
+
+    if (data.payload.success) {
+       toast({
+          title: data.payload.message,
+        });
+    } else {
+      toast({
+        title: data.payload.message || "Failed to delete product",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -150,7 +167,7 @@ export default function ProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(product.id)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

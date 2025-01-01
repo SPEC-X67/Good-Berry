@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Signika:wght@300..700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 79.07 60% 42.16%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -69,6 +70,25 @@
   .admin-layout {
     margin-left: 250px;
   }
+  .hero h1 {
+    padding-top: 50px;
+    padding-right: 150px;
+    padding-bottom: 10px;
+    font-family: 'Signika', sans-serif;
+    font-size: 63px;
+    line-height: 1.11;
+  }
+
+  .hero p {
+    padding-right: 150px;
+    font-size: 15px;
+    font-family: 'Signika', sans-serif;
+  }
+
+  .hero .b-block {
+    justify-content: end;
+    padding-right: 150px;
+  } 
 }
 .admin-sidebar {
   height: 100vh;
@@ -76,4 +96,8 @@
 
 .admin-layout {
   margin-top: 60px;
+}
+
+.text-sm {
+  font-size: 0.92rem;
 }

@@ -9,7 +9,7 @@ import AdminCategorys from "./pages/admin/ProductsCategorys/categorys";
 import AdminOrders from "./pages/admin/orders";
 import AdminFeatures from "./pages/admin/features";
 import ShopLayout from "./components/shop/layout";
-import ShoppingHome from "./pages/shop/Home";
+import ShoppingHome from "./pages/shop/Home/home";
 import ShoppingCheckout from "./pages/shop/checkout";
 import ShoppingAccount from "./pages/shop/account";
 import NotFound from "./pages/404";

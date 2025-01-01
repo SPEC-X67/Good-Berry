@@ -1,16 +1,11 @@
-import { useState } from "react";
-import { X, Plus, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -18,321 +13,521 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useDispatch, useSelector } from "react-redux";
-import { addProduct, getAllCategories } from "@/store/admin-slice";
+import {
+  addProduct,
+  getAllCategories,
+  uploadToCloudinary,
+} from "@/store/admin-slice";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
-export default function AddProduct() {
-  const dispatch = useDispatch();
- useEffect(() => {
-     dispatch(getAllCategories());
-   }, [dispatch]);
-
+export default function ProductForm() {
   const { categories } = useSelector((state) => state.admin);
-  const nCategories = categories.map((category) => category.name);
+  const dispatch = useDispatch();
 
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [flavors, setFlavors] = useState(["Choco", "Vanilla", "Strawberry"]);
-  const [packSizes, setPackSizes] = useState(["300ml", "500ml", "850ml"]);
-  const [newItemType, setNewItemType] = useState("flavor");
-  const [newItemValue, setNewItemValue] = useState("");
+  useEffect(() => {
+    dispatch(getAllCategories());
+  }, [dispatch, categories]);
+
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [variants, setVariants] = useState([]);
+  const [packSizes, setPackSizes] = useState(["300ml", "500ml", "850ml"]);
+  const [newPackSize, setNewPackSize] = useState("");
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleImageUpload = (e) => {
-    setSelectedImages(Array.from(e.target.files));
-};
+  const availableCategories = categories.filter(
+    (category) => category.status === "Active"
+  );
 
-  const removeImage = (index) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  const handleAddVariant = () => {
+    setVariants((prev) => [
+      ...prev,
+      {
+        title: "",
+        salePrice: "",
+        price: "",
+        description: "",
+        images: [],
+        availableQuantity: "",
+        selectedPackSizes: [],
+      },
+    ]);
   };
 
-  const addNewItem = () => {
-    if (!newItemValue) return;
-    switch (newItemType) {
-      case "flavor":
-        setFlavors((prev) => [...prev, newItemValue]);
-        break;
-      case "packSize":
-        setPackSizes((prev) => [...prev, newItemValue]);
-        break;
+  const handleUpdateVariant = (index, field, value) => {
+    setVariants((prev) => {
+      const updatedVariants = [...prev];
+      updatedVariants[index][field] = value;
+      return updatedVariants;
+    });
+  };
+
+  const handleRemoveVariant = (index) => {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTogglePackSize = (variantIndex, size) => {
+    setVariants((prev) => {
+      const updatedVariants = [...prev];
+      const currentSizes =
+        updatedVariants[variantIndex].selectedPackSizes || [];
+      updatedVariants[variantIndex].selectedPackSizes = currentSizes.includes(
+        size
+      )
+        ? currentSizes.filter((s) => s !== size)
+        : [...currentSizes, size];
+      return updatedVariants;
+    });
+  };
+
+  const handleAddPackSize = () => {
+    if (newPackSize && !packSizes.includes(newPackSize)) {
+      setPackSizes((prev) => [...prev, newPackSize]);
+      setNewPackSize("");
     }
-    setNewItemValue("");
   };
 
-  const removeItem = (item, itemType) => {
-    switch (itemType) {
-      case "flavor":
-        setFlavors((prev) => prev.filter((flavor) => flavor !== item));
-        break;
-      case "packSize":
-        setPackSizes((prev) => prev.filter((size) => size !== item));
-        break;
+  const handleImageUpload = async (e, variantIndex) => {
+    const files = e.target.files;
+
+    if (
+      variants[variantIndex].images &&
+      variants[variantIndex].images.length >= 4
+    ) {
+      toast({
+        title: "You can only upload maximum 4 images",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (files) {
+      try {
+        const uploadPromises = Array.from(files).map(async (file) => {
+          const previewUrl = URL.createObjectURL(file);
+
+          setVariants((prev) => {
+            const updatedVariants = [...prev];
+            updatedVariants[variantIndex].images = [
+              ...(updatedVariants[variantIndex].images || []),
+              { preview: previewUrl, uploading: true },
+            ].slice(0, 4);
+            return updatedVariants;
+          });
+
+          // Upload to Cloudinary
+          const data = await dispatch(uploadToCloudinary(file));
+
+          if (!data.payload || !data.payload.url) {
+            toast({
+              title: "Failed to upload image. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const cloudinaryUrl = data.payload.url;
+
+          // Update the variant with the Cloudinary URL
+          setVariants((prev) => {
+            const updatedVariants = [...prev];
+            const currentImages = updatedVariants[variantIndex].images;
+            const imageIndex = currentImages.findIndex(
+              (img) => img.preview === previewUrl
+            );
+
+            if (imageIndex !== -1) {
+              currentImages[imageIndex] = {
+                preview: cloudinaryUrl,
+                uploading: false,
+                cloudinaryUrl,
+              };
+            }
+
+            return updatedVariants;
+          });
+
+          return cloudinaryUrl;
+        });
+
+        await Promise.all(uploadPromises);
+      } catch (error) {
+        console.error("Error handling image upload:", error);
+      }
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleRemoveImage = (variantIndex, imgIndex) => {
+    setVariants((prev) => {
+      const updatedVariants = [...prev];
+      updatedVariants[variantIndex].images = updatedVariants[
+        variantIndex
+      ].images.filter((_, i) => i !== imgIndex);
+      return updatedVariants;
+    });
+  };
+
+  const checkValidation = (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("name", document.getElementById("title").value);
-    formData.append("sku", document.getElementById("sku").value);
-    formData.append("price", document.getElementById("price").value);
-    formData.append("stock", document.getElementById("quantity").value);
-    formData.append("category", selectedCategory);
-    formData.append("description", document.getElementById("description").value);
-    formData.append("packSizes", JSON.stringify(packSizes)); // Array to JSON
-    formData.append("flavors", JSON.stringify(flavors)); // Array to JSON
-    
-    selectedImages.forEach(file => {
-      formData.append('images', file); // Ensure the key matches the server-side
-  });
-    console.log(selectedImages)
-    try {
-        const result = await dispatch(addProduct(formData)).unwrap();
-        if (result.success) {
-            alert('Product added successfully');
-        } else {
-            alert(result.message);
-        }
-    } catch (error) {
-        console.error('Error submitting product:', error);
-    }
-};
+    for (let i = 0; i < variants.length; i++) {
+      const variant = variants[i];
+      if (
+        !variant.title ||
+        !variant.salePrice ||
+        !variant.price ||
+        !variant.description ||
+        !variant.availableQuantity ||
+        variant.selectedPackSizes.length === 0 ||
+        variant.images.length === 0
+      ) {
+        toast({
+          title:
+            "Please fill in all the required fields for variant " + (i + 1),
+          variant: "destructive",
+        });
+        return;
+      }
 
-  
+      if (
+        variant.price < 0 ||
+        variant.salePrice < 0 ||
+        variant.availableQuantity < 0
+      ) {
+        toast({
+          title:
+            "Price, sale price, and available quantity should be greater than 0",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const price = parseFloat(variant.price);
+      const salePrice = parseFloat(variant.salePrice);
+
+      if (salePrice > price) {
+        toast({
+          title: "Sale price should be less than the price",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    handleSubmit();
+
+    return;
+  };
+
+  const handleSubmit = async () => {
+    const formData = {
+      name,
+      description,
+      isFeatured,
+      category: selectedCategory,
+      variants: variants.map((variant) => ({
+        ...variant,
+        images: variant.images
+          .filter((img) => !img.uploading) // Filter out any images still uploading
+          .map((img) => img.cloudinaryUrl), // Get just the Cloudinary URLs
+      })),
+    };
+
+    const data = await dispatch(addProduct(formData));
+
+    console.log(data.payload.message);
+
+    try {
+      if (data.payload.success) {
+        toast({
+          title: data.payload.message,
+        });
+        navigate(-1);
+      } else {
+        toast({
+          title: data.payload.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="mx-auto max-w-6xl bg-white rounded-lg shadow-md">
-        <div className="p-6 sm:rounded-lg">
-          <h1 className="text-xl font-semibold mb-6">Add Product</h1>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center">
+      <div className="w-full max-w-[1200px] bg-white rounded-lg shadow-sm">
+        <div className="p-4 sm:p-6">
+          <h1 className="text-2xl font-semibold mb-6">Add Product</h1>
 
           <div className="grid gap-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" className="mt-1" />
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1"
+                />
               </div>
               <div>
-                <Label htmlFor="sku">SKU</Label>
-                <Input id="sku" className="mt-1" />
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger id="category" className="w-full mt-1">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((category) => (
+                      <SelectItem key={category._id} value={category._id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Regular Price</Label>
-                <Input id="price" type="number" className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="quantity">Available quantity</Label>
-                <Input id="quantity" type="number" className="mt-1" />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div>
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" className="mt-1" rows={4} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="Featured"
+                checked={isFeatured}
+                onCheckedChange={setIsFeatured}
+              />
+              <Label htmlFor="Featured">Featured Product</Label>
             </div>
 
             <div>
-              <Label>Images</Label>
-              <div className="mt-1">
-                <div className="flex items-center gap-4">
-                  <Label
-                    htmlFor="images"
-                    className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 mt-2 outline-1 outline-dashed outline-offset-4 outline-gray-300 rounded-md p-2"
-                  >
-                    <Upload className="w-5 h-5" />
-                    Choose product images
-                  </Label>
-                  <Input
-                    id="images"
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                  />
-                </div>
-                <div className="flex gap-4 mt-4">
-                  {selectedImages.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image}
-                        alt={`Preview ${index + 1}`}
-                        className="w-16 h-16 object-cover border rounded"
-                      />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-white rounded-full shadow p-0.5"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-medium">
+                  Variants (Flavors)
+                </Label>
+                <Button variant="outline" size="sm" onClick={handleAddVariant}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Variant
+                </Button>
               </div>
-            </div>
+              <Accordion type="single" collapsible className="w-full">
+                {variants.map((variant, index) => (
+                  <AccordionItem value={`item-${index}`} key={index}>
+                    <AccordionTrigger>
+                      {variant.title || `Variant ${index + 1}`}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-4 mx-1">
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`variant-title-${index}`}>
+                              Title
+                            </Label>
+                            <Input
+                              id={`variant-title-${index}`}
+                              value={variant.title}
+                              onChange={(e) =>
+                                handleUpdateVariant(
+                                  index,
+                                  "title",
+                                  e.target.value
+                                )
+                              }
+                              className="mt-1"
+                            />
+                          </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label>Flavors</Label>
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 16v-4M12 8h.01"
-                    />
-                  </svg>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setNewItemType("flavor")}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Flavor
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        Add New{" "}
-                        {newItemType.charAt(0).toUpperCase() +
-                          newItemType.slice(1)}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={newItemValue}
-                        onChange={(e) => setNewItemValue(e.target.value)}
-                        placeholder={`Enter new ${newItemType}`}
-                      />
-                      <Button onClick={addNewItem}>Add</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {flavors.map((flavor) => (
-                  <span
-                    key={flavor}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100"
-                  >
-                    {flavor}
-                    <button
-                      onClick={() => removeItem(flavor, "flavor")}
-                      aria-label={`Remove ${flavor} flavor`}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </span>
+                          <div>
+                            <Label htmlFor={`variant-price-${index}`}>
+                              Price
+                            </Label>
+                            <Input
+                              id={`variant-price-${index}`}
+                              type="number"
+                              value={variant.price}
+                              onChange={(e) =>
+                                handleUpdateVariant(
+                                  index,
+                                  "price",
+                                  e.target.value
+                                )
+                              }
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`variant-salePrice-${index}`}>
+                              Sale Price
+                            </Label>
+                            <Input
+                              id={`variant-salePrice-${index}`}
+                              type="number"
+                              value={variant.salePrice}
+                              onChange={(e) =>
+                                handleUpdateVariant(
+                                  index,
+                                  "salePrice",
+                                  e.target.value
+                                )
+                              }
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`variant-quantity-${index}`}>
+                              Available Quantity
+                            </Label>
+                            <Input
+                              id={`variant-quantity-${index}`}
+                              type="number"
+                              value={variant.availableQuantity}
+                              onChange={(e) =>
+                                handleUpdateVariant(
+                                  index,
+                                  "availableQuantity",
+                                  e.target.value
+                                )
+                              }
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor={`variant-description-${index}`}>
+                            Description
+                          </Label>
+                          <Textarea
+                            id={`variant-description-${index}`}
+                            value={variant.description}
+                            onChange={(e) =>
+                              handleUpdateVariant(
+                                index,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="mt-1"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label>Pack Sizes</Label>
+                          <div className="grid sm:grid-cols-4 gap-4 mt-2">
+                            {packSizes.map((size) => (
+                              <div
+                                key={size}
+                                className="flex items-center space-x-2"
+                              >
+                                <Checkbox
+                                  id={`pack-size-${index}-${size}`}
+                                  checked={variant.selectedPackSizes?.includes(
+                                    size
+                                  )}
+                                  onCheckedChange={() =>
+                                    handleTogglePackSize(index, size)
+                                  }
+                                />
+                                <Label htmlFor={`pack-size-${index}-${size}`}>
+                                  {size}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 flex items-center space-x-2">
+                            <Input
+                              placeholder="Add pack size"
+                              value={newPackSize}
+                              onChange={(e) => setNewPackSize(e.target.value)}
+                              className="mt-1"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleAddPackSize}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Images (Max: 3)</Label>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleImageUpload(e, index)}
+                            className="mt-1"
+                          />
+                          <div className="flex space-x-2 mt-2">
+                            {variant.images?.map((img, i) => (
+                              <div key={i} className="relative w-20 h-20">
+                                <img
+                                  src={img.preview}
+                                  alt="Preview"
+                                  className={`object-cover w-full h-full rounded ${
+                                    img.uploading ? "opacity-50" : ""
+                                  }`}
+                                />
+                                {img.uploading && (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+                                  </div>
+                                )}
+                                <Button
+                                  variant="destructive"
+                                  size="xs"
+                                  className="absolute top-1 right-1"
+                                  onClick={() => handleRemoveImage(index, i)}
+                                  disabled={img.uploading}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="mt-4"
+                          onClick={() => handleRemoveVariant(index)}
+                        >
+                          Remove Variant
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label>Pack Sizes</Label>
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 16v-4M12 8h.01"
-                    />
-                  </svg>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setNewItemType("packSize")}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Size
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        Add New{" "}
-                        {newItemType.charAt(0).toUpperCase() +
-                          newItemType.slice(1)}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={newItemValue}
-                        onChange={(e) => setNewItemValue(e.target.value)}
-                        placeholder={`Enter new ${newItemType}`}
-                      />
-                      <Button onClick={addNewItem}>Add</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {packSizes.map((size) => (
-                  <span
-                    key={size}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100"
-                  >
-                    {size}
-                    <button
-                      onClick={() => removeItem(size, "packSize")}
-                      aria-label={`Remove ${size} pack size`}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Button className="bg-black text-white hover:bg-gray-800" onClick={(e) => handleSubmit(e)}>
-                Save Product
-              </Button>
-            </div>
+            <Button className="mt-4" onClick={(e) => checkValidation(e)}>
+              Add Product
+            </Button>
           </div>
         </div>
       </div>

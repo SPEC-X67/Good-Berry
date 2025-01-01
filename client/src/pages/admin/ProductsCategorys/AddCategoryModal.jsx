@@ -41,7 +41,6 @@ const AddCategoryModal = () => {
     try {
       const data = await dispatch(addCategory(newCategory)).unwrap();
 
-      console.log("Hello", data)
       if (data.success) {
         toast({ title: data.message });
         setCategoryName("");

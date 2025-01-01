@@ -5,8 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRouter = require('./routes/auth/auth-routes');
 const adminRouter = require('./routes/admin/admin-routes');
-const adminAuth = require('./middleware/adminAuth');
-const cloudinary = require('cloudinary').v2;
+const commonRouter = require('./routes/common/common-routes');
+const adminAuth = require('./middleware/admin-auth');
 const connectCloudinary = require('./config/cloudnary');
 dotenv.config();
 
@@ -39,7 +39,8 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use('/api/auth', authRouter);
-app.use('/api/admin',adminRouter)
+app.use('/api/admin',adminRouter);
+app.use('/api', commonRouter);
 
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

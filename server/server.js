@@ -8,6 +8,9 @@ const adminRouter = require('./routes/admin/admin-routes');
 const commonRouter = require('./routes/common/common-routes');
 const adminAuth = require('./middleware/admin-auth');
 const connectCloudinary = require('./config/cloudnary');
+const passport = require('./config/passport');
+const session = require('express-session');
+
 dotenv.config();
 
 // Database connection
@@ -35,8 +38,17 @@ app.use(
     })
 );
 
+app.use(session({
+    secret: 'your-session-secret',
+    resave: false,
+    saveUninitialized: false
+  }));
+  
 app.use(cookieParser());
 app.use(express.json());
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/api/auth', authRouter);
 app.use('/api/admin',adminRouter);

@@ -38,3 +38,13 @@ export const loginFormControls = [
         type: 'password',
     }
 ]
+
+export const forgetFormControls = [
+    {
+        name: 'email',
+        label: 'Email',
+        placeholder: 'Enter your email',
+        componentType   : 'input',
+        type: 'email',
+    }
+]

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import { useState } from "react";
 
 const adminSidebarMenuItems = [
   {
@@ -25,7 +26,7 @@ const adminSidebarMenuItems = [
     id: "products",
     label: "Products",
     path: "/admin/products",
-    icon: <BaggageClaim />
+    icon: <BaggageClaim />,
   },
   {
     id: "categorys",
@@ -78,17 +79,21 @@ const adminSidebarMenuItems = [
 ];
 
 const MenuItems = ({ setOpen }) => {
+  const [activeItem, setActiveItem] = useState("dashboard");
   const navigate = useNavigate();
   return (
-    <nav className="mt-8 flex-col flex gap-1">
+    <nav className="mt-8 pt-1 flex-col flex gap-1">
       {adminSidebarMenuItems.map((menuItem) => (
         <div
           key={menuItem.id}
           onClick={() => {
+            setActiveItem(menuItem.id);
             navigate(menuItem.path);
             setOpen ? setOpen(false) : null;
           }}
-          className="flex cursor-pointer text-sm items-center gap-3 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={`flex cursor-pointer text-sm items-center gap-3 rounded-md px-3 py-2 hover:bg-gray-100 hover:text-gray-800 ${
+            activeItem === menuItem.id ? "bg-gray-100 text-gray-800 font-medium" : ""
+          }`}
         >
           {menuItem.icon}
           <span>{menuItem.label}</span>

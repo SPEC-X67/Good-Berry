@@ -132,6 +132,43 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+const googleAuth = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.redirect('http://localhost:5173/auth/login?error=auth_failed');
+        }
+
+        if (req.user.isBlocked) {
+            return res.redirect('http://localhost:5173/auth/login?error=blocked_user');
+        }
+
+        const token = jwt.sign(
+            {
+                id: req.user._id,
+                role: req.user.role,
+                email: req.user.email,
+                username: req.user.name
+            },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: '7d' }
+        );
+
+        // Set cookie and redirect in one response
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        return res.redirect('http://localhost:5173?login=success');
+
+    } catch (error) {
+        console.error('Google auth error:', error);
+        return res.redirect('http://localhost:5173/auth/login?error=internal_error');
+    }
+};
+
 const logout = async (req, res) => {
     res.clearCookie("token");
     res.json({
@@ -145,4 +182,5 @@ module.exports = {
     login,
     authMiddleware,
     logout,
+    googleAuth
 };

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -9,7 +10,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText }) {
+function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText, formType }) {
   function renderInputByComponentType(controlItem) {
     const value = formData[controlItem.name] || "";
 
@@ -92,7 +93,12 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText 
           </div>
         ))}
       </div>
-      <Button type="submit" className="mt-2 w-full">
+      {formType === "login" && (
+        <Link to="/auth/login/forgot-password">
+        <p className="text-sm text-primary text-end mt-3">Forgot password?</p>
+        </Link>
+      )}
+      <Button type="submit" className="mt-4 w-full">
         {buttonText || "Submit"}
       </Button>
     </form>

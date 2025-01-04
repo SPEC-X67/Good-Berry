@@ -101,3 +101,33 @@
 .text-sm {
   font-size: 0.92rem;
 }
+
+.font-signika {
+  font-family: 'Signika', sans-serif;
+}
+
+.blendjuice {
+  margin-left: 80px;
+}
+
+.shop-header {
+  margin-top: 70px;
+}
+
+.home-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.verify-otp{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.account {
+  background-color: aqua;
+  justify-content: center;
+  align-items: center;
+}

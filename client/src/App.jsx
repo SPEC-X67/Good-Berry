@@ -10,17 +10,20 @@ import AdminOrders from "./pages/admin/orders";
 import AdminFeatures from "./pages/admin/features";
 import ShopLayout from "./components/shop/layout";
 import ShoppingHome from "./pages/shop/Home/home";
-import ShoppingCheckout from "./pages/shop/checkout";
-import ShoppingAccount from "./pages/shop/account";
+import ShoppingCheckout from "./pages/checkout";
 import NotFound from "./pages/404";
 import CheckAuth from "./components/common/check-auth";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { checkAuth } from "./store/auth-slice";
-import ShoppingListing from "./pages/shop/listing";
+import ShoppingListing from "./pages/shop/Listing/products";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomersPage from "./pages/admin/Customers/customers";
 import AddProduct from "./pages/admin/ProductsCategorys/AddProduct";
+import ProductPage from "./pages/shop/Product/product-page";
+import ForgetPassword from "./pages/auth/forget-password";
+import VeryOtp from "./components/shop/verify-otp";
+import Account from "./pages/account/account";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -42,8 +45,8 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<ShopLayout />}>
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
-          <Route path="shop" element={<ShoppingListing />} />{" "}
-          {/* Product Listing */}
+          <Route path="shop" element={<ShoppingListing />} />
+          <Route path="shop/product" element={< ProductPage />} />
         </Route>
 
         {/* Protected Shop Routes */}
@@ -55,8 +58,18 @@ function App() {
             </CheckAuth>
           }
         >
-          <Route path="account" element={<ShoppingAccount />} />
           <Route path="checkout" element={<ShoppingCheckout />} />
+        </Route>
+
+        <Route
+          path="/account"
+          element={
+            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+              <ShopLayout />
+            </CheckAuth>
+          }
+        >
+          <Route index element={<Account />} />
         </Route>
 
         {/* Auth Routes */}
@@ -70,6 +83,8 @@ function App() {
         >
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
+          <Route path="register/verify-otp" element={<VeryOtp />} />
+          <Route path="login/forgot-password" element={<ForgetPassword />} />
         </Route>
 
         {/* Admin Routes */}

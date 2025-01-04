@@ -1,68 +1,96 @@
-// import Link from "next/link"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
-import { Link } from "react-router-dom"
+import { logodark } from "@/assets/images";
+import { Image } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
-    <footer className="bg-[#FFF0F5] text-gray-700 py-12">
+    <footer className="bg-white pt-16 pb-4 lg:px-12">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-bold text-lg mb-4">INFORMATION</h3>
-            <ul className="space-y-2">
-              <li><Link href="/about" className="hover:text-pink-500">About Us</Link></li>
-              <li><Link href="/delivery" className="hover:text-pink-500">Delivery Information</Link></li>
-              <li><Link href="/privacy" className="hover:text-pink-500">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-pink-500">Terms & Conditions</Link></li>
-              <li><Link href="/contact" className="hover:text-pink-500">Contact Us</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">ACCOUNT</h3>
-            <ul className="space-y-2">
-              <li><Link href="/account" className="hover:text-pink-500">My Account</Link></li>
-              <li><Link href="/orders" className="hover:text-pink-500">Order History</Link></li>
-              <li><Link href="/wishlist" className="hover:text-pink-500">Wish List</Link></li>
-              <li><Link href="/newsletter" className="hover:text-pink-500">Newsletter</Link></li>
-              <li><Link href="/returns" className="hover:text-pink-500">Returns</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">STORE INFORMATION</h3>
-            <p>Good Berry,</p>
-            <p>United States</p>
-            <p className="mt-2">Call us: (123) 456-7890</p>
-            <p>Email: info@goodberry.com</p>
-            <div className="flex space-x-4 mt-4">
-              <Link href="#" className="text-gray-600 hover:text-pink-500">
-                <Facebook size={20} />
-              </Link>
-              <Link href="#" className="text-gray-600 hover:text-pink-500">
-                <Twitter size={20} />
-              </Link>
-              <Link href="#" className="text-gray-600 hover:text-pink-500">
-                <Instagram size={20} />
-              </Link>
-              <Link href="#" className="text-gray-600 hover:text-pink-500">
-                <Youtube size={20} />
-              </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {/* Company Info */}
+          <div className="space-y-4">
+            <Link href="/" className="inline-block">
+              <img className="h-8" src={logodark} alt="Logo" />
+            </Link>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Condimentum adipiscing vel neque dis nam parturient orci at
+              scelerisque neque dis nam parturient. Ipsum sdilo tde molrt
+              person ole epar dis na virgsias
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-sm text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>451 Wall Street, UK, London</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span>Phone: (064) 332-1233</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>Email: support@goodberry.com</span>
+              </div>
             </div>
           </div>
+
+          {/* Our Stores */}
           <div>
-            <h3 className="font-bold text-lg mb-4">NEWSLETTER</h3>
-            <p className="mb-4">Subscribe to our newsletter and get 10% off your first purchase</p>
-            <form className="flex flex-col space-y-2">
-              <Input type="email" placeholder="Your email address" className="bg-white" />
-              <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white">
-                SUBSCRIBE
-              </Button>
-            </form>
+            <h3 className="text-lg font-semibold mb-4">OUR STORES</h3>
+            <ul className="space-y-2">
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">India</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">New York</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Edinburgh</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Los Angeles</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Chicago</Link></li>
+            </ul>
+          </div>
+
+          {/* Useful Links */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">USEFUL LINKS</h3>
+            <ul className="space-y-2">
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Privacy Policy</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Returns</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Terms & Conditions</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Contact Us</Link></li>
+            </ul>
+          </div>
+
+          {/* About */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">ABOUT</h3>
+            <ul className="space-y-2">
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Instagram profile</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Facebook profile</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">LinkedIn profile</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Contact Us</Link></li>
+              <li><Link href="#" className="text-gray-600 hover:text-gray-900 text-sm">Latest News</Link></li>
+            </ul>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-          <p>&copy; 2023 Good Berry. All Rights Reserved.</p>
+
+        {/* Bottom Section */}
+        <div className="pt-4  border-t border-gray-200">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-600">
+              WILDSPRING © 2024 CREATED BY SPECZ1N
+            </p>
+            <div className="flex items-center gap-2">
+              <Image src="/placeholder.svg?height=30&width=40" alt="Visa" width={40} height={30} className="h-[30px] w-auto" />
+              <Image src="/placeholder.svg?height=30&width=40" alt="Mastercard" width={40} height={30} className="h-[30px] w-auto" />
+              <Image src="/placeholder.svg?height=30&width=40" alt="PayPal" width={40} height={30} className="h-[30px] w-auto" />
+              <Image src="/placeholder.svg?height=30&width=40" alt="American Express" width={40} height={30} className="h-[30px] w-auto" />
+              <Image src="/placeholder.svg?height=30&width=40" alt="Bank Card" width={40} height={30} className="h-[30px] w-auto" />
+              <Image src="/placeholder.svg?height=30&width=40" alt="Credit Card" width={40} height={30} className="h-[30px] w-auto" />
+            </div>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,63 +1,162 @@
 import CommonForm from "@/components/common/form";
+import { Button } from "@/components/ui/button";
 import { loginFormControls } from "@/config";
 import { useToast } from "@/hooks/use-toast";
-import { loginUser } from "@/store/auth-slice";
-import { useState } from "react";
+import { checkAuth, loginUser } from "@/store/auth-slice"; // Make sure to import setUser
+import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Link} from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import { MdAdminPanelSettings } from "react-icons/md";
+import { FaUserAstronaut } from "react-icons/fa";
 
 const initialState = {
   email: "",
   password: "",
 };
 
+const admin = {
+  email: "admin@gmail.com",
+  password: "1",
+};
+
+const user = {
+  email: "test@gmail.com",
+  password: "1",
+};
+
 function AuthLogin() {
-    const [formData, setFormData] = useState(initialState);
-    const dispatch = useDispatch();
-    const { toast } = useToast();
-  
-    function onSubmit(event) {
-      event.preventDefault();
-  
-      dispatch(loginUser(formData)).then((data) => {
-        if (data?.payload?.success) {
-          toast({
-            title: data?.payload?.message,
-          });
-        } else {
-          toast({
-            title: data?.payload?.message || "Something went wrong",
-            variant: "destructive",
-          });
-        }
-      });
+  const [formData, setFormData] = useState(initialState);
+  const dispatch = useDispatch();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const loginSuccess = searchParams.get('login');
+    const error = searchParams.get('error');
+    
+    if (loginSuccess === 'success') {
+        dispatch(checkAuth()).then((data) => {
+            if (data.payload.success) {
+              navigate('/');
+                toast({
+                    title: "Successfully logged in with Google!"
+                });
+            } else {
+                toast({
+                    title: "Failed to verify login",
+                    variant: "destructive"
+                });
+            }
+        });
+    } else if (error) {
+        toast({
+            title: error === 'blocked_user' 
+                ? "Account has been Suspended! Please contact admin" 
+                : error === 'auth_failed' ? "Authentication failed" : "Something went wrong",
+            variant: "destructive"
+        });
     }
-  
-    return (
-      <div className="mx-auto w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Sign in to your account
-          </h1>
-          <p className="mt-2">
-            Dont have an account
-            <Link
-              className="font-medium ml-2 text-primary hover:underline"
-              to="/auth/register"
-            >
-              Register
-            </Link>
-          </p>
-        </div>
-        <CommonForm
-          formControls={loginFormControls}
-          buttonText={"Sign In"}
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={onSubmit}
-        />
-      </div>
-    );
+}, [searchParams, dispatch, toast, navigate]);
+
+  const handleGoogleSignIn = () => {
+    window.location.href = 'http://localhost:5000/api/auth/google';
+  };
+
+  function onSubmit(event) {
+    event.preventDefault();
+
+    dispatch(loginUser(formData)).then((data) => {
+      if (data?.payload?.success) {
+        toast({
+          title: data?.payload?.message,
+        });
+        navigate('/'); // Add navigation after successful login
+      } else {
+        toast({
+          title: data?.payload?.message || "Something went wrong",
+          variant: "destructive",
+        });
+      }
+    });
   }
+
+  return (
+    <div
+      className="mx-auto w-full max-w-md space-y-6"
+      style={{ maxWidth: "310px" }}
+    >
+      <div className="text-center">
+        <Button 
+          className="w-full mb-4 bg-transparent hover:bg-transparent text-black outline outline-1 outline-gray-200" 
+          onClick={handleGoogleSignIn}
+        >
+          <FcGoogle
+            className="mr-2"
+            style={{ width: "20px", height: "20px" }}
+          />
+          <p className="text-sm font-medium">Continue with Google</p>
+        </Button>
+      </div>
+      <div
+        className="flex items-center justify-center"
+        style={{ marginTop: "13px" }}
+      >
+        <div className="w-full border-t border-gray-300"></div>
+        <div className="mx-3 text-gray-500" style={{ fontSize: "12px" }}>
+          OR
+        </div>
+        <div className="w-full border-t border-gray-300"></div>
+      </div>
+      <CommonForm
+        formControls={loginFormControls}
+        buttonText={"Sign In"}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={onSubmit}
+        formType="login"
+      />
+      <p className="text-md text-center text-gray-900">
+        Don&apos;t have an account
+        <Link
+          className="font-medium ml-2 text-primary hover:underline"
+          to="/auth/register"
+        >
+          Register
+        </Link>
+      </p>
+
+      <div className="flex space-x-2">
+        <Button
+          variant="outline"
+          className="w-1/2"
+          onClick={() =>
+            dispatch(loginUser(user)).then((data) => {
+              toast({ title: data?.payload?.message });
+              if (data?.payload?.success) navigate('/');
+            })
+          }
+        >
+          <FaUserAstronaut style={{ width: "15px", height: "15px" }} /> Demo
+          User
+        </Button>
+        <Button
+          variant="outline"
+          className="w-1/2"
+          onClick={() =>
+            dispatch(loginUser(admin)).then((data) => {
+              toast({ title: data?.payload?.message });
+              if (data?.payload?.success) navigate('/');
+            })
+          }
+        >
+          <MdAdminPanelSettings style={{ width: "20px", height: "20px" }} />
+          Demo Admin
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default AuthLogin;

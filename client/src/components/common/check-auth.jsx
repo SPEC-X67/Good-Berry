@@ -15,6 +15,11 @@ function CheckAuth({ isAuthenticated, user, children }) {
     return <Navigate to="/" />;
   }
 
+  const isAccountPage = location.pathname.startsWith("/account");
+  if (!isAuthenticated && isAccountPage) {
+    return <Navigate to="/auth/login" />;
+  }
+
   const isAdminPage = location.pathname.startsWith("/admin");
   if (!isAuthenticated && isAdminPage) {
     return <Navigate to="/auth/login" />;

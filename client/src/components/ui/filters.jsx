@@ -1,0 +1,222 @@
+import { IceCream, Coffee, BarcodeIcon as Jar, Droplet, Apple, Check, SlidersHorizontal } from 'lucide-react'
+import * as Slider from '@radix-ui/react-slider'
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+
+// Filter Data
+const categories = [
+  { id: 'ice-cream', name: 'Ice Cream', count: 14, icon: <IceCream className="w-5 h-5 text-[#8CC63F]" /> },
+  { id: 'fruit-juice', name: 'Fruit Juice', count: 35, icon: <Droplet className="w-5 h-5 text-[#8CC63F]" /> },
+  { id: 'fruit-jam', name: 'Fruit Jam', count: 25, icon: <Jar className="w-5 h-5 text-[#8CC63F]" /> },
+  { id: 'fruit-tea', name: 'Fruit Tea', count: 18, icon: <Coffee className="w-5 h-5 text-[#8CC63F]" /> },
+  { id: 'snacks', name: 'Snacks', count: 28, icon: <Apple className="w-5 h-5 text-[#8CC63F]" /> },
+]
+
+const flavors = [
+  { id: 'strawberry', name: 'Strawberry', count: 14, color: '#FF4D4D' },
+  { id: 'chocolate', name: 'Chocolate', count: 35, color: '#8B4513' },
+  { id: 'vanilla', name: 'Vanilla', count: 25, color: '#F3E5AB' },
+  { id: 'mango', name: 'Mango', count: 18, color: '#FFD700' },
+  { id: 'mokup', name: 'Mokup', count: 28, color: '#90EE90' },
+]
+
+const statuses = [
+  { id: 'on-sale', label: 'On sale' },
+  { id: 'in-stock', label: 'In stock' },
+]
+
+// Filter Components
+export function PriceFilter({ value, onValueChange, onFilter }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">FILTER BY PRICE</h3>
+      <Slider.Root
+        className="relative flex w-full touch-none select-none items-center"
+        value={value}
+        max={8200}
+        step={1}
+        onValueChange={onValueChange}
+      >
+        <Slider.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-gray-200">
+          <Slider.Range className="absolute h-full bg-[#8CC63F]" />
+        </Slider.Track>
+        <Slider.Thumb className="block h-4 w-4 rounded-full border border-[#8CC63F] bg-white ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+        <Slider.Thumb className="block h-4 w-4 rounded-full border border-[#8CC63F] bg-white ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+      </Slider.Root>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600">
+          Price: ${value[0]} — ${value[1]}
+        </span>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-sm px-6 hover:bg-[#8CC63F] hover:text-white"
+          onClick={onFilter}
+        >
+          FILTER
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function CategoryFilter({ selectedCategories, onCategoryChange }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">FILTER BY CATEGORY</h3>
+      <div className="space-y-3">
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            className="flex w-full items-center justify-between group"
+            onClick={() => onCategoryChange(category.id)}
+          >
+            <div className="flex items-center gap-2">
+              {category.icon}
+              <span className="text-gray-600 group-hover:text-gray-900">{category.name}</span>
+            </div>
+            <span className={`text-sm ${
+              selectedCategories.includes(category.id) 
+                ? 'bg-[#8CC63F] text-white' 
+                : 'bg-gray-100 text-gray-600'
+            } px-2 py-0.5 rounded-full`}>
+              {category.count}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function FlavorFilter({ selectedFlavors, onFlavorChange }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">FILTER BY FLAVOR</h3>
+      <div className="space-y-3">
+        {flavors.map((flavor) => (
+          <button
+            key={flavor.id}
+            className="flex w-full items-center justify-between group"
+            onClick={() => onFlavorChange(flavor.id)}
+          >
+            <div className="flex items-center gap-2">
+              <div 
+                className="h-5 w-5 rounded-full" 
+                style={{ backgroundColor: flavor.color }}
+              />
+              <span className="text-gray-600 group-hover:text-gray-900">{flavor.name}</span>
+            </div>
+            <span className={`text-sm ${
+              selectedFlavors.includes(flavor.id) 
+                ? 'bg-[#8CC63F] text-white' 
+                : 'bg-gray-100 text-gray-600'
+            } px-2 py-0.5 rounded-full`}>
+              {flavor.count}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function StatusFilter({ selectedStatuses, onStatusChange }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">PRODUCT STATUS</h3>
+      <div className="space-y-3">
+        {statuses.map((status) => (
+          <div key={status.id} className="flex items-center space-x-2">
+            <Checkbox
+              id={status.id}
+              checked={selectedStatuses.includes(status.id)}
+              onCheckedChange={() => onStatusChange(status.id)}
+              className="border-gray-300 text-[#8CC63F] focus:ring-[#8CC63F]"
+            />
+            <Label
+              htmlFor={status.id}
+              className="text-sm font-normal leading-none text-gray-600"
+            >
+              {status.label}
+            </Label>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function MobileFilters({ 
+  priceRange, 
+  setPriceRange,
+  selectedCategories,
+  setSelectedCategories,
+  selectedFlavors,
+  setSelectedFlavors,
+  selectedStatuses,
+  setSelectedStatuses,
+  handlePriceFilter,
+}) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="lg:hidden">
+          <SlidersHorizontal className="h-4 w-4" />
+          <span className="sr-only">Filters</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Filters</SheetTitle>
+        </SheetHeader>
+        <div className="mt-8 space-y-8">
+          <PriceFilter
+            value={priceRange}
+            onValueChange={setPriceRange}
+            onFilter={handlePriceFilter}
+          />
+          <CategoryFilter
+            selectedCategories={selectedCategories}
+            onCategoryChange={(categoryId) => {
+              setSelectedCategories(prev =>
+                prev.includes(categoryId)
+                  ? prev.filter(id => id !== categoryId)
+                  : [...prev, categoryId]
+              )
+            }}
+          />
+          <FlavorFilter
+            selectedFlavors={selectedFlavors}
+            onFlavorChange={(flavorId) => {
+              setSelectedFlavors(prev =>
+                prev.includes(flavorId)
+                  ? prev.filter(id => id !== flavorId)
+                  : [...prev, flavorId]
+              )
+            }}
+          />
+          <StatusFilter
+            selectedStatuses={selectedStatuses}
+            onStatusChange={(statusId) => {
+              setSelectedStatuses(prev =>
+                prev.includes(statusId)
+                  ? prev.filter(id => id !== statusId)
+                  : [...prev, statusId]
+              )
+            }}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+

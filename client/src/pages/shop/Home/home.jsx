@@ -1,47 +1,60 @@
 import { Button } from "@/components/ui/button";
 import heroProduct from "../../../assets/hero/organic-slide-1-img-535x487.png";
-import { ProductCategorySelector } from "./ProductCategorySelector";
+import { ProductCategorySelector } from "./product-category-selector";
 import { Image } from "lucide-react";
 import { useState } from "react";
+import { blendjuice, categoryTitle } from "@/assets/images";
+import { ProductSlider } from "./product-slider";
+import { FeaturedProductCard } from "./featured-product-card";
 
+const featuredProducts = [
+  { name: 'Rutrum eget congue', category: 'Organic', price: '269.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Sed ligula magna', category: 'Organic', price: '399.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Blandit esuris aliquet', category: 'Organic', price: '169.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Porttitor accumsan tincidunt', category: 'Organic', price: '19.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Tortor vivamus suscipit', category: 'Organic', price: '379.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Blandit aliquet mauris', category: 'Organic', price: '267.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Suscipit eget tortor', category: 'Organic', price: '203.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+  { name: 'Curabitur arcu accumsan', category: 'Organic', price: '487.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+]
 
 const products = {
   'ice-cream': [
-    { name: "Strawberry Ice Cream", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Chocolate Ice Cream", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Vanilla Ice Cream", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Mint Chip Ice Cream", price: "6.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Mango Sorbet", price: "6.99", imageUrl: "/placeholder.svg?height=200&width=150" },
+    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
   ],
   'fruit-tea': [
-    { name: "Peach Fruit Tea", price: "3.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Berry Blast Tea", price: "3.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Lemon Ginger Tea", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Apple Cinnamon Tea", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Tropical Fruit Tea", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
+    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
   ],
-  'jam': [
-    { name: "Strawberry Jam", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Raspberry Jam", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Blueberry Jam", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Apricot Jam", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Mixed Berry Jam", price: "6.99", imageUrl: "/placeholder.svg?height=200&width=150" },
+  'fruit-jam': [
+    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
   ],
   'juice': [
-    { name: "Orange Juice", price: "3.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Apple Juice", price: "3.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Grape Juice", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Pineapple Juice", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Pomegranate Juice", price: "5.99", imageUrl: "/placeholder.svg?height=200&width=150" },
+    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
   ],
   'snacks': [
-    { name: "Fruit and Nut Mix", price: "6.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Dried Mango Slices", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Banana Chips", price: "3.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Apple Rings", price: "4.99", imageUrl: "/placeholder.svg?height=200&width=150" },
-    { name: "Berry Medley", price: "7.99", imageUrl: "/placeholder.svg?height=200&width=150" },
+    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
+    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
   ],
-}
+};
 
 
 function ShoppingHome() {
@@ -84,22 +97,54 @@ function ShoppingHome() {
           </div>
         </section>
 
+         {/* Featured Products Section */}
+      <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center mb-8">
+            <h2 className="text-5xl font-signika font-bold mb-4">Featured Products</h2>
+            <div className="flex justify-center mb-2">
+              <img
+                src={categoryTitle}
+                alt="Decorative leaf"
+                width={159}
+                height={35}
+                className="mx-auto"
+              />
+            </div>
+            <p className="text-gray-600 text-sm">
+              There are many variations of passages of lorem ipsum available
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {featuredProducts.map((product, i) => (
+              <FeaturedProductCard
+                key={i}
+                name={product.name}
+                category={product.category}
+                price={product.price}
+                imageUrl={product.imageUrl}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
         
       {/* Blend Fruits Premium Section */}
       <section className="px-4 py-16 sm:px-6 lg:px-8 bg-white">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-8xl">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             <div className="relative">
-              <Image
-                src="/placeholder.svg?height=500&width=600"
+              <img
+                src={blendjuice}
                 alt="Fresh fruits"
-                width={600}
-                height={500}
-                className="rounded-lg"
+                width={692}
+                height={526}
+                className="blendjuice rounded-lg"
               />
             </div>
-            <div>
-              <h2 className="text-3xl font-bold mb-4">Blend fruits premium drink</h2>
+            <div className="blendjuice ">
+              <h2 className="text-5xl font-bold mb-4">Blend fruits premium drink</h2>
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <h3 className="font-semibold mb-2">FRUITS</h3>
@@ -132,28 +177,24 @@ function ShoppingHome() {
       </section>
 
         {/* Our Products Section */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="mx-auto max-w-7xl">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Products</h2>
+      <section className="px-4 py-5 bg-[url('/src/assets//images/Categorys/fullwidth-row-prod-bg-opt.jpg')] bg-cover bg-center bg-no-repeat sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-8">
+            <h2 className="text-5xl font-bold mb-4 mt-10 font-signika">Our Products</h2>
+            <div className="flex justify-center mb-2">
+             <img src={categoryTitle} className="w-50"/>
+            </div>
+            <p className="text-gray-600 text-sm">
+              There are many variations of passages of lorem ipsum available
+            </p>
+          </div>
+
           <ProductCategorySelector
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
           />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {products[activeCategory].map((product, i) => (
-              <div key={i} className="flex flex-col items-center">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.name}
-                  width={150}
-                  height={200}
-                  className="mb-4"
-                />
-                <p className="text-sm text-gray-600 mb-2">{product.name}</p>
-                <p className="font-semibold">${product.price}</p>
-              </div>
-            ))}
-          </div>
+
+          <ProductSlider products={products[activeCategory]} />
         </div>
       </section>
         </div>

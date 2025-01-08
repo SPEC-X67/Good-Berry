@@ -1,64 +1,29 @@
 import { Button } from "@/components/ui/button";
 import heroProduct from "../../../assets/hero/organic-slide-1-img-535x487.png";
 import { ProductCategorySelector } from "./product-category-selector";
-import { Image } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { blendjuice, categoryTitle } from "@/assets/images";
 import { ProductSlider } from "./product-slider";
 import { FeaturedProductCard } from "./featured-product-card";
-
-const featuredProducts = [
-  { name: 'Rutrum eget congue', category: 'Organic', price: '269.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Sed ligula magna', category: 'Organic', price: '399.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Blandit esuris aliquet', category: 'Organic', price: '169.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Porttitor accumsan tincidunt', category: 'Organic', price: '19.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Tortor vivamus suscipit', category: 'Organic', price: '379.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Blandit aliquet mauris', category: 'Organic', price: '267.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Suscipit eget tortor', category: 'Organic', price: '203.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  { name: 'Curabitur arcu accumsan', category: 'Organic', price: '487.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-]
-
-const products = {
-  'ice-cream': [
-    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Ice Cream', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  ],
-  'fruit-tea': [
-    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Tea', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  ],
-  'fruit-jam': [
-    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Fruit Jam', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  ],
-  'juice': [
-    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Juice', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  ],
-  'snacks': [
-    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-    { name: 'Erat curabitur arcu', category: 'Snacks', price: '69.00', imageUrl: '/placeholder.svg?height=300&width=300' },
-  ],
-};
+import { useDispatch, useSelector } from "react-redux";
+import { featuredProducts, getProducts } from "@/store/shop-slice";
 
 
 function ShoppingHome() {
+  const page = 1;
+  const limit = 10;
+  
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(featuredProducts());
+    dispatch(getProducts({ page, limit }));
+  }, [dispatch]);
+
+  const { featuredProds, products } = useSelector((state) => state.shop);
   const [activeCategory, setActiveCategory] = useState('ice-cream')
+
+  console.log(products);
+
     return (
         <div className="flex min-h-screen flex-col">
   
@@ -98,7 +63,7 @@ function ShoppingHome() {
         </section>
 
          {/* Featured Products Section */}
-      <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
+      <section className="featured-products bg-white px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-8">
             <h2 className="text-5xl font-signika font-bold mb-4">Featured Products</h2>
@@ -115,14 +80,16 @@ function ShoppingHome() {
               There are many variations of passages of lorem ipsum available
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {featuredProducts.map((product, i) => (
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4" style={{ maxWidth: "1100px" }}>
+            {featuredProds.map((product, i) => (
               <FeaturedProductCard
                 key={i}
-                name={product.name}
-                category={product.category}
-                price={product.price}
-                imageUrl={product.imageUrl}
+                id={product._id}
+                title={product.name}
+                name={product.firstVariant.title}
+                category={product.categoryName}
+                price={product.firstVariant.price}
+                imageUrl={product.firstVariant.images}
               />
             ))}
           </div>
@@ -194,7 +161,7 @@ function ShoppingHome() {
             onCategoryChange={setActiveCategory}
           />
 
-          <ProductSlider products={products[activeCategory]} />
+          <ProductSlider products={products} />
         </div>
       </section>
         </div>

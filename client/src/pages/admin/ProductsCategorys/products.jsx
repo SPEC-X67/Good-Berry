@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteProduct, getAllProducts } from '@/store/admin-slice';
+import { getAllProducts, unlistProduct } from '@/store/admin-slice';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ProductsPage() {
@@ -33,13 +33,15 @@ export default function ProductsPage() {
     dispatch(getAllProducts());
   }, [dispatch]);
 
+  console.log(products)
+
   // Calculate filtered fields using useMemo
   const filteredFields = useMemo(() => {
     if (!products || !Array.isArray(products)) return [];
+
     
     return products
       .filter((product) => product.category.status == 'Active')
-      .filter((product) => !product.isDeleted)
       .map((product) => {
         const totalStock = Array.isArray(product.variants)
           ? product.variants.reduce((acc, variant) => acc + (Number(variant.availableQuantity) || 0), 0)
@@ -53,6 +55,7 @@ export default function ProductsPage() {
           variants: Array.isArray(product.variants) ? product.variants.length : 0,
           stock: totalStock,
           category: product.category.name || '',
+          status: product.unListed ? 'Unlisted' : 'Listed',
         };
       });
   }, [products]);
@@ -74,8 +77,8 @@ export default function ProductsPage() {
     setSearchTerm(event.target.value.toLowerCase());
   };
 
-  const handleDelete = async(id) => {
-    const data = await dispatch(deleteProduct(id));
+  const handleUnlist = async(id) => {
+    const data = await dispatch(unlistProduct(id));
 
     if (data.payload.success) {
        toast({
@@ -131,6 +134,7 @@ export default function ProductsPage() {
                 <TableHead>Variants</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Categories</TableHead>
+                <TableHead>List/Unlist</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -150,7 +154,7 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell className="px-5">{product.salePrice}</TableCell>
                   <TableCell className="px-5">{product.variants}</TableCell>
-                  <TableCell className="px-2">
+                  <TableCell className="px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                       product.stock < 1 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
                     }`}>
@@ -158,6 +162,13 @@ export default function ProductsPage() {
                     </span>
                   </TableCell>
                   <TableCell className="px-5">{product.category}</TableCell>
+                  <TableCell className="pl-4">
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      product.status === 'Unlisted' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                    }`}>
+                      {product.status}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -166,9 +177,9 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(product.id)}>
-                          Delete
+                        <DropdownMenuItem onClick={() => navigate(`/admin/products/edit/${product.id}`)} >Edit</DropdownMenuItem>
+                        <DropdownMenuItem className={`${product.status === 'Unlisted' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`} onClick={() => handleUnlist(product.id)}>
+                          {product.status === 'Unlisted' ? 'List' : 'Unlist'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

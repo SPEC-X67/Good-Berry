@@ -89,6 +89,10 @@
     justify-content: end;
     padding-right: 150px;
   } 
+
+  .product-page {
+    max-width: 1350px;
+  }
 }
 .admin-sidebar {
   height: 100vh;
@@ -131,3 +135,37 @@
   justify-content: center;
   align-items: center;
 }
+
+.featured-products {
+  display: flex;
+}
+
+#imageZoom {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#imageZoom img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 0 0;
+}
+
+#imageZoom::after {
+  display: var(--display);
+  content: '';
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  background-image: var(--url);
+  background-size: 175%;
+  background-position: var(--zoom-x) var(--zoom-y);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: background-position 0.2s ease, background-size 3  ease; 
+
+}
+

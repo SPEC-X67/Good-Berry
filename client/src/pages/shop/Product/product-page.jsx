@@ -1,5 +1,332 @@
-function ProductPage() {
-    return <div className="shop-header">ProductPage</div>
-}
+import { Copy, Heart, Maximize, Share2, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Link, useParams } from "react-router-dom";
+import ProductDetails from "./product-details";
+import RelatedProducts from "./related-products";
+import { useDispatch, useSelector } from "react-redux";
+import { getSingleProduct } from "@/store/shop-slice";
+import ZoomImage from "@/components/ui/zoom-image";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default ProductPage
+export default function ProductPage() {
+
+  const { id } = useParams();
+  const dispatch = useDispatch();
+
+
+  useEffect(() => {
+    dispatch(getSingleProduct(id));
+  }, [dispatch, id] );
+
+  const { product, pflavors, recomentedProds } = useSelector((state) => state.shop);
+  const flavors = pflavors || {}; 
+  
+  // Get available flavor keys
+  const flavorKeys = Object.keys(flavors);
+  
+  const [selectedFlavor, setSelectedFlavor] = useState(flavorKeys[0] || '');
+  
+  const [selectedImage, setSelectedImage] = useState(
+    flavorKeys.length > 0 ? flavors[selectedFlavor]?.images?.[0] : ''
+  );
+  
+  const [quantity, setQuantity] = useState(1);
+  const [packageSize, setPackageSize] = useState(
+    flavorKeys.length > 0 && flavors[selectedFlavor] && flavors[selectedFlavor].packageSizes
+      ? flavors[selectedFlavor].packageSizes[0]
+      : ''
+  );
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  // Only get flavor if it exists
+  const flavor = flavorKeys.length > 0 ? flavors[selectedFlavor] : null;
+
+  useEffect(() => {
+    if (flavorKeys.length > 0 && !selectedFlavor) {
+      setSelectedFlavor(flavorKeys[0]);
+      setSelectedImage(flavors[flavorKeys[0]].images[0]);
+      setPackageSize(flavors[flavorKeys[0]].packageSizes[0]);
+    }
+  }, [pflavors]);
+
+  const handleFlavorChange = (value) => {
+    setSelectedFlavor(value);
+    setSelectedImage(flavors[value].images[0]);
+    setPackageSize(flavors[value].packageSizes[0]);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        description: "Link copied to clipboard!",
+      });
+      setShareDialogOpen(false);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        description: "Failed to copy link. Please try again." + err,
+      });
+    }
+  };
+
+  if (!flavor) {
+    return (
+      <div className="flex flex-row space-x-3 flex justify-center items-center p-10 mt-10">
+        <div className="flex flex-row gap-4">
+      <Skeleton className="h-[450px] w-[450px] rounded-xl" />
+        <div className="flex flex-row gap-4">
+        <Skeleton className="h-[90px] w-[100px]" />
+        <Skeleton className="h-[90px] w-[100px]" />
+        <Skeleton className="h-[90px] w-[100px]" />
+        </div>
+        </div>
+        <div className="flex flex-row gap-4">
+        <Skeleton className="h-4 w-[200px]" />
+        </div>
+    
+    </div>
+      ) 
+  }
+
+  return (
+    <div className="container product-page mx-auto px-4 py-6 lg:py-8">
+      {/* Breadcrumb */}
+      <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-foreground font-semibold">
+          Home
+        </Link>
+        <span>/</span>
+        <Link to="/shop" className="hover:text-foreground font-semibold">
+          Shop
+        </Link>
+        <span>/</span>
+        <span className="text-foreground font-semibold">{product.name}</span>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2 md:grid-cols-2">
+        {/* Product Images */}
+        <div className="flex flex-col gap-4 lg:flex-row">
+          {/* Main Image */}
+          <div className="relative flex-1 order-1 lg:order-2" style={{maxHeight: "350px"}}>
+            <div
+              className="relative aspect-square overflow-hidden rounded-lg border bg-white"
+              style={{ maxWidth: "500px" }}
+            >
+               <ZoomImage src={selectedImage} className="object-contain p-4 w-full h-full"/>
+              <div
+                className="absolute top-0 right-0 flex items-center justify-center mt-5 mr-5 rounded-full bg-[#83ac2b]"
+                style={{ width: "50px", height: "50px" }}
+              >
+                <span className="text-base text-white">
+                  -{Math.round(((flavor.originalPrice - flavor.price) / flavor.originalPrice) * 100)}%
+                </span>
+              </div>
+              <button
+                className="absolute bottom-4 right-4 rounded-lg bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-colors hover:bg-white"
+                onClick={() => {
+                  console.log("View in full screen")
+                }}
+              >
+                <Maximize className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Thumbnails */}
+          <div className="flex lg:flex-col gap-5 order-2 lg:order-1">
+            {flavor.images.map((image, i) => (
+              <button
+                key={i}
+                className={cn(
+                  "relative h-20 w-20 flex-shrink-0 rounded-lg border bg-white",
+                  selectedImage === image && "ring-2 ring-primary"
+                )}
+                onClick={() => setSelectedImage(image)}
+              >
+                <img
+                  src={image}
+                  alt={`${flavor.title} thumbnail ${i + 1}`}
+                  className="object-cover rounded-md"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Info */}
+        <div className="space-y-6">
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-medium">{product.name}</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                  {flavor.title.toUpperCase()} STYLE FLAVER
+                  </p>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-medium text-[#8CC63F]">
+              ₹{flavor.price.toFixed(2)}
+            </span>
+            <span className="text-sm text-muted-foreground line-through">
+              ₹{flavor.originalPrice.toFixed(2)}
+            </span>
+            <span className="ml-4 text-sm text-[#8CC63F] border border-[#8CC63F] px-3 py-1 rounded-full">{flavor.stock < 0 ? "OUT STOCK" : "IN STOCK" }</span>
+          </div>
+
+          <p className="text-sm text-muted-foreground">{flavor.description}</p>
+
+          <div className="space-y-4">
+            <div>
+              <Select
+                value={selectedFlavor}
+                onValueChange={(value) => handleFlavorChange(value)}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {flavorKeys.map((flavorKey) => (
+                    <SelectItem key={flavorKey} value={flavorKey}>
+                      {flavors[flavorKey].title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium">Package size :</div>
+              <div className="flex gap-4">
+                {flavor.packageSizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setPackageSize(size)}
+                    className={cn(
+                      "rounded-md border px-4 py-2 text-sm transition-colors",
+                      packageSize === size
+                        ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center rounded-md border">
+                <button
+                  className="px-3 py-2 hover:bg-muted"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                  -
+                </button>
+                <span className="w-12 text-center">{quantity}</span>
+                <button
+                  className="px-3 py-2 hover:bg-muted"
+                  onClick={() => setQuantity(quantity + 1)}
+                >
+                  +
+                </button>
+              </div>
+              <Button className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]">
+                ADD TO CART
+              </Button>
+            </div>
+
+            <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <Heart className="h-4 w-4" />
+              Add to wishlist
+            </button>
+
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={cn(
+                      "h-4 w-4",
+                      i < 4
+                        ? "fill-[#8CC63F] text-[#8CC63F]"
+                        : "fill-muted text-muted-foreground"
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">
+                (1K+ customer review)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Category:</span>
+              <Link
+                href="/category/ice-cream"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Ice Cream
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="">
+          <DialogHeader>
+            <DialogTitle>Share product</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <p className="text-sm text-muted-foreground">
+                Copy the link below to share this product
+              </p>
+              <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                <span className="text-sm text-muted-foreground line-clamp-1">
+                  {window.location.href}
+                </span>
+              </div>
+            </div>
+          </div>
+            <Button type="button" size="icon" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4" />
+            </Button>
+        </DialogContent>
+      </Dialog>
+
+      <ProductDetails
+        description={product.description}
+      />
+      <RelatedProducts products={recomentedProds} id={product._id}/>
+    </div>
+  );
+}

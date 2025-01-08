@@ -55,11 +55,11 @@ export const getAllCategories = createAsyncThunk(
 
 export const updateCategory = createAsyncThunk(
   "admin/updateCategory",
-  async ({ id, name, status }, thunkAPI) => {
+  async ({ id, name, status, image }, thunkAPI) => {
     try {
       const response = await axios.put(
         `${api}/categories/${id}`,
-        { name, status },
+        { name, status, image },
         { withCredentials: true }
       );
       return response.data;
@@ -111,17 +111,39 @@ export const addProduct = createAsyncThunk(
   }
 );
 
+export const editProduct = createAsyncThunk(
+  'admin/editProduct',
+  async (formData) => {
+      const response = await axios.put(`${api}/products/${formData.id}`, 
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
+      return response.data;
+    }
+);
+
 export const getAllProducts = createAsyncThunk(
   "admin/getAllProducts",
   async (_, thunkAPI) => {
     try {
       const response = await fetch(`${api}/products`);
+      console.log(response)
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
       return data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }
+  }
+);
+
+export const getProductDetails = createAsyncThunk(
+  "admin/getProductDetails",
+  async (id) => {
+    const response = await axios.get(`${api}/products/${id}`);
+    return response.data;
   }
 );
 
@@ -150,8 +172,8 @@ export const uploadToCloudinary = createAsyncThunk(
   }
 );
 
-export const deleteProduct = createAsyncThunk(
-  "admin/deleteProduct",
+export const unlistProduct = createAsyncThunk(
+  "admin/unlistProduct",
   async (id) => {
     const response = await axios.patch(
       `${api}/products/${id}`,
@@ -212,9 +234,19 @@ const adminSlice = createSlice({
       .addCase(getAllProducts.fulfilled, (state, action) => {
         state.products = action.payload.products;
       })
-      .addCase(deleteProduct.fulfilled, (state, action) => {
-        state.products = state.products.filter((product) => product._id !== action.payload.productId);
+      .addCase(unlistProduct.fulfilled, (state, action) => {
+        const { productId }= action.payload;
+        state.products = state.products.map(product =>
+          product._id === productId ? { ...product, unListed: !product.unListed } : product
+        );
       })
+      .addCase(editProduct.fulfilled, (state, action) => {
+        const { productId }= action.payload;
+        state.products = state.products.map(product =>
+          product._id === productId ? { ...product, ...action.payload.product } : product
+        );
+      })
+      
 
   },
 });

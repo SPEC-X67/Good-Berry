@@ -2,6 +2,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, Image } from "lucide-react";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function ProductSlider({ products }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -23,23 +24,24 @@ export function ProductSlider({ products }) {
       <div ref={emblaRef}>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
           {products?.map((product, i) => (
+            <Link to={`shop/product/${product._id}`} key={i}>
             <div
-              key={i}
-              className="flex flex-col items-center group cursor-pointer hover:scale-105 rounded-lg hover:shadow-lg transition-all duration-300 ease-in-out"
+              className="flex flex-col items-center group cursor-pointer hover:scale-105 rounded-lg hover:shadow-lg transition-all duration-300 ease-in-out hover:bg-[#ffffff]"
             >
               <div className="relative mb-4 w-full aspect-square">
-                <Image
-                  src="/placeholder.svg?height=30&width=100"
+                <img
+                  src={product.firstVariant.images}
                   alt="Decorative leaf"
                   className="mx-auto h-full object-cover w-full"
                 />
               </div>
               <h3 className="text-sm font-medium mb-1">{product.name}</h3>
-              <p className="text-xs text-gray-500 mb-1">{product.category}</p>
+              <p className="text-xs text-gray-500 mb-1">{product.categoryName}</p>
               <p className="text-sm font-medium text-[#8CC63F] mb-3">
-                ${product.price}
+                ${product.firstVariant.salePrice}
               </p>
             </div>
+            </Link>
           ))}
         </div>
       </div>

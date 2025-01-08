@@ -5,7 +5,7 @@ const productSchema = new mongoose.Schema({
   description: { type: String, required: true },
   isFeatured: { type: Boolean, default: false },
   category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
-  isDeleted: { type: Boolean, default: false },
+  unListed: { type: Boolean, default: false },
 },
 { timestamps: true });
 

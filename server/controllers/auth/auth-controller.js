@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+const { SendVerificationCode, SendWelcomeMessage } = require("../../middleware/email");
 
 //register
 const register = async (req, res) => {
@@ -24,13 +25,22 @@ const register = async (req, res) => {
         const newUser = new User({
             username,
             email,
-            password: hashPassword,
+            password: hashPassword
         });
 
         await newUser.save();
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        req.session.otp = otp;
+        req.session.email = email;
+        req.session.otpExpiresAt = Date.now() + 300000;
+        console.log(otp)
+
+        SendVerificationCode(email, otp);
+
         res.status(200).json({
             success: true,
-            message: "Registration successful",
+            message: "Please check your email to verify your account",
         });
     } catch (e) {
         console.log(e);
@@ -65,6 +75,23 @@ const login = async (req, res) => {
                 message: "Account has been Suspended! Please contact admin",
             });
 
+        if (!checkUser.isVerified) {
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            console.log(otp)
+
+            SendVerificationCode(checkUser.email, otp);
+            req.session.otp = otp;
+            req.session.email = checkUser.email;
+            req.session.otpExpiresAt = Date.now() + 300000;
+
+            return res.json({
+                success: false,
+                isVerify: true,
+                message: "Please verify your account first",
+            });
+        }
+
         const checkPasswordMatch = await bcrypt.compare(
             password,
             checkUser.password
@@ -82,7 +109,7 @@ const login = async (req, res) => {
                 email: checkUser.email,
                 username: checkUser.username,
             },
-            process.env.JWT_SECRET_KEY,
+            "This the thing i love",
             { expiresIn: "60m" }
         );
 
@@ -114,7 +141,7 @@ const authMiddleware = async (req, res, next) => {
             message: "Please login first",
         });
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, "This the thing i love");
         req.user = decoded;
         next();
     } catch (e) {
@@ -149,16 +176,15 @@ const googleAuth = async (req, res) => {
                 email: req.user.email,
                 username: req.user.name
             },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: '7d' }
+            "This the thing i love",
+            { expiresIn: '60m' }
         );
 
-        // Set cookie and redirect in one response
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: 60 * 60 * 1000,
         });
 
         return res.redirect('http://localhost:5173?login=success');
@@ -169,6 +195,59 @@ const googleAuth = async (req, res) => {
     }
 };
 
+const verify = async (req, res) => {
+    const { otp } = req.body;
+
+    const sessionOtp = req.session.otp;
+    const sessionEmail = req.session.email;
+    const otpExpiresAt = req.session.otpExpiresAt;
+
+    if (!sessionOtp || !sessionEmail) {
+        return res.json({ message: 'Something went wrong' });
+    }
+
+
+    if (Date.now() > otpExpiresAt) {
+        return res.json({ message: 'OTP expired try again' });
+    }
+
+    if (sessionOtp !== otp) {
+        return res.json({ message: 'Invalid OTP' });
+    }
+
+    const user = await User.findOne({ email: sessionEmail });
+    user.isVerified = true;
+    await user.save();
+
+    req.session.otp = null;
+    req.session.email = null;
+    req.session.otpExpiresAt = null;
+
+    const token = jwt.sign(
+        {
+            id: user._id,
+            role: user.role,
+            email: user.email,
+            username: user.username
+        },
+        "This the thing i love",
+        { expiresIn: '60m' }
+    );
+
+    // Set cookie and redirect in one response
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000,
+    });
+
+    SendWelcomeMessage(user.email);
+
+
+    res.status(200).json({ success: true, message: 'Logged in successfully', user });
+};
+
 const logout = async (req, res) => {
     res.clearCookie("token");
     res.json({
@@ -177,10 +256,55 @@ const logout = async (req, res) => {
     });
 };
 
+const set = async (req, res) => {
+
+    try {
+
+        // users.forEach(async (user) => {
+        //     user.isVerified = false;
+        // })
+
+        const user = await User.findOne({ email: "test@gmail.com" });
+        user.isVerified = false;
+        await user.save();
+
+        user.save();
+        res.json({
+            success: true,
+            message: "Set successfully",
+            user,
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error setting", error: error.message });
+    }
+
+};
+
+const resendOtp = async (req, res) => {
+    try {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        req.session.otp = otp;
+        req.session.email = req.session.email;
+
+        console.log(otp);
+
+        SendVerificationCode(req.session.email, otp);
+        if (!req.session.email) return res.json({ success: false, message: 'Something went wrong' });
+        req.session.otpExpiresAt = Date.now() + 300000; // 5 minutes in milliseconds
+        res.json({ success: true, message: 'OTP sent successfully', });
+    } catch (error) {
+        res.status(500).json({ message: 'Error sending OTP', error: error.message });
+    }
+}
+
 module.exports = {
     register,
     login,
     authMiddleware,
     logout,
-    googleAuth
+    googleAuth,
+    verify,
+    resendOtp,
+    set
 };

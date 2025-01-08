@@ -10,7 +10,8 @@ function ShopLayout() {
         <>
             {location.pathname === "/" ? <HomeHeader/> : <ShopHeader/>}
             <main className={`flex flex-col w-full ${location.pathname === "/" ? "" : "shop-header"}`}>
-            {(location.pathname.includes("shop") || location.pathname.includes("account")) && <Breadcrumbs />}
+            {(location.pathname.includes("shop") || location.pathname.includes("account")) && !location.pathname.includes("product") && <Breadcrumbs />}
+
             <Outlet />
             </main>
             <Footer/>

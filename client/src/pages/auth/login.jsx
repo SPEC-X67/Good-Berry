@@ -38,6 +38,7 @@ function AuthLogin() {
     
     if (loginSuccess === 'success') {
         dispatch(checkAuth()).then((data) => {
+
             if (data.payload.success) {
               navigate('/');
                 toast({
@@ -68,16 +69,24 @@ function AuthLogin() {
     event.preventDefault();
 
     dispatch(loginUser(formData)).then((data) => {
+
       if (data?.payload?.success) {
         toast({
           title: data?.payload?.message,
         });
         navigate('/'); // Add navigation after successful login
       } else {
-        toast({
-          title: data?.payload?.message || "Something went wrong",
-          variant: "destructive",
-        });
+        if(data?.payload?.isVerify) {
+          navigate('/auth/verify-email');
+          toast({
+            title: data?.payload?.message
+          });
+        } else {
+          toast({
+            title: data?.payload?.message || "Something went wrong",
+            variant: "destructive",
+          });
+        }
       }
     });
   }

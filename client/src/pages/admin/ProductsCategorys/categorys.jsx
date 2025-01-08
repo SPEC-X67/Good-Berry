@@ -18,8 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import EditCategoryModal from "./EditCategoryModal";
-import AddCategoryModal from "./AddCategoryModal";
+import EditCategoryModal from "./edit-category";
+import AddCategoryModal from "./add-category";
 import { toast } from "@/hooks/use-toast";
 
 function Categorys() {
@@ -76,7 +76,16 @@ function Categorys() {
             {categories.map((category, index) => (
               <TableRow key={category.id}>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell>{category.name}</TableCell>
+                <TableCell>
+                <div className="flex items-center gap-3">
+                      <img
+                        src={category.image}
+                        alt={category.name}
+                        className="h-12 w-12 rounded-lg border p-1"
+                      />
+                      <span>{category.name}</span>
+                </div>
+                </TableCell>
                 <TableCell>
                   <Switch checked={category.status === "Active"} />
                 </TableCell>

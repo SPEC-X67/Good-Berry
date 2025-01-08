@@ -13,7 +13,7 @@ router.get('/products', productController.getAllProducts);
 router.post('/products', productController.addProduct);
 router.get('/products/:id', productController.getProduct);
 router.put('/products/:id', productController.updateProduct);
-router.patch('/products/:id', productController.removeProduct);
+router.patch('/products/:id', productController.unListProduct);
 
 // Category
 router.post('/categories', categoryController.addCategory);

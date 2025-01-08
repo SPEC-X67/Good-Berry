@@ -16,18 +16,34 @@ const initialState = {
 
 function AuthRegister() {
   const [formData, setFormData] = useState(initialState);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
-
+  
+  
   function onSubmit(event) {
     event.preventDefault();
+    if(formData.email === "" || formData.password === "" || formData.username === ""){ 
+      toast({
+        title: "Please enter email and password",
+        variant: "destructive",
+      });
+      return
+    }
+  
+    if(formData.password.length < 8) {
+      toast({
+        title: "Password must be at least 8 characters long",
+        variant: "destructive",
+      })
+    }
     dispatch(registerUser(formData)).then((data) => {
       if (data?.payload?.success) {
         toast({
           title: data?.payload?.message,
         });
-        navigate("/auth/login");
+        navigate("/auth/verify-email");
       } else {
         toast({
           title: data?.payload?.message,

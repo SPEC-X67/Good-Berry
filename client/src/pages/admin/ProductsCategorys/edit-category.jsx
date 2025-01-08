@@ -17,28 +17,24 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useDispatch } from "react-redux";
-import { updateCategory } from "@/store/admin-slice";
+import { updateCategory, uploadToCloudinary } from "@/store/admin-slice";
 import PropTypes from "prop-types";
 
 const EditCategoryModal = ({ category, onClose }) => {
   const dispatch = useDispatch();
   const [name, setName] = useState(category?.name || "");
   const [status, setStatus] = useState(category?.status || "");
+  const [categoryImage, setCategoryImage] = useState(category?.image || "");
+  const [previewImage, setPreviewImage] = useState(category?.image || "");
+  const [uploading , setUploading] = useState(false);
+
   const { toast } = useToast();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (name.trim() === "") {
-      toast({
-        title: "Category name cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      const data = await dispatch(updateCategory({ id: category._id, name: name.trim(), status })).unwrap();
+      const data = await dispatch(updateCategory({ id: category._id, name: name.trim(), status, image: categoryImage })).unwrap();
 
       if (data.success) {
         toast({ title: data.message });
@@ -57,6 +53,34 @@ const EditCategoryModal = ({ category, onClose }) => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]; // Access the first selected file
+    if (!file) return; // Exit if no file is selected
+
+    setUploading(true);    
+    setCategoryImage(null); // Clear previous image URL if uploading a new one
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+  
+    // Upload to Cloudinary
+    const data = await dispatch(uploadToCloudinary(file));
+    
+    if (!data.payload || !data.payload.url) {
+      toast({
+        title: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const cloudinaryUrl = data.payload.url;
+    setCategoryImage(cloudinaryUrl);
+    setUploading(false);
+  };
+  
+
+    const isFormValid = name.trim() !== "" && categoryImage;
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
@@ -67,6 +91,26 @@ const EditCategoryModal = ({ category, onClose }) => {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleImageUpload(e)}
+            className="mt-1"
+          />
+          {previewImage && (
+            <div className="relative w-20 h-20">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className={`w-20 border p-2 h-20 rounded-md ${uploading ? "opacity-50" : ""}`}
+              />
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+                </div>
+              )}
+            </div>
+          )}
           <Input
             type="text"
             placeholder="Category Name"
@@ -94,7 +138,7 @@ const EditCategoryModal = ({ category, onClose }) => {
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Update</Button>
+            <Button type="submit" disabled={!isFormValid}>Update</Button>
           </div>
         </form>
       </DialogContent>
@@ -107,6 +151,7 @@ EditCategoryModal.propTypes = {
     _id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
   }).isRequired,
   onClose: PropTypes.func.isRequired,
 };

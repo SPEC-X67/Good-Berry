@@ -5,7 +5,11 @@ import { ChevronRight } from "lucide-react";
 export default function AdminBreadcrumbs() {
   const location = useLocation();
 
-  const pathnames = location.pathname.split("/").filter(Boolean);
+  // Split the path into segments and filter out dynamic IDs
+  const pathnames = location.pathname
+    .split("/")
+    .filter(Boolean)
+    .filter((segment) => !/^[0-9a-fA-F]{24}$/.test(segment)); // Adjust regex for your dynamic segments
 
   const isAdmin = pathnames[0] === "admin";
 
@@ -16,18 +20,18 @@ export default function AdminBreadcrumbs() {
           <ol className="flex items-center space-x-2">
             {/* Admin root breadcrumb */}
             {isAdmin && (
-              <>
-                <li>
-                  <Link to="/admin" className="text-gray-500 hover:text-gray-700">
-                    Admin
-                  </Link>
-                </li>
-              </>
+              <li>
+                <Link to="/admin" className="text-gray-500 hover:text-gray-700">
+                  Admin
+                </Link>
+              </li>
             )}
 
-            {pathnames.slice(isAdmin ? 1 : 0).map((name, index) => {
+            {pathnames.slice(isAdmin ? 1 : 0).map((name, index, array) => {
               const path = `/${pathnames.slice(0, index + (isAdmin ? 2 : 1)).join("/")}`;
-              const isLast = index === pathnames.length - (isAdmin ? 2 : 1);
+
+              // Determine if the current item is the last in the filtered array
+              const isLast = index === array.length - 1;
 
               return (
                 <React.Fragment key={path}>

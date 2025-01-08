@@ -18,28 +18,25 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useDispatch } from "react-redux";
-import { addCategory } from "@/store/admin-slice";
+import { addCategory, uploadToCloudinary } from "@/store/admin-slice";
 
 const AddCategoryModal = () => {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false); // Control dialog open/close
   const [categoryName, setCategoryName] = useState("");
+  const [categoryImage, setCategoryImage] = useState("");
+  const [previewImage, setPreviewImage] = useState("");
   const [categoryStatus, setCategoryStatus] = useState("Active");
   const { toast } = useToast();
 
   const handleAddCategory = async () => {
-    if (categoryName.trim() === "") {
-      toast({
-        title: "Category name cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newCategory = { name: categoryName, status: categoryStatus };
+    
+    const newCategory = { name: categoryName, status: categoryStatus, image: categoryImage };
 
     try {
       const data = await dispatch(addCategory(newCategory)).unwrap();
+      setCategoryImage('');
+      setPreviewImage('');
 
       if (data.success) {
         toast({ title: data.message });
@@ -60,6 +57,30 @@ const AddCategoryModal = () => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]; // Access the first selected file
+    if (!file) return; // Exit if no file is selected
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+  
+    // Upload to Cloudinary
+    const data = await dispatch(uploadToCloudinary(file));
+  
+    if (!data.payload || !data.payload.url) {
+      toast({
+        title: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const cloudinaryUrl = data.payload.url;
+    setCategoryImage(cloudinaryUrl);
+  };
+
+  const isFormValid = categoryName.trim() !== "" && categoryImage;
+  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -73,6 +94,19 @@ const AddCategoryModal = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleImageUpload(e)}
+            className="mt-1"
+          />
+          {previewImage && (
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="w-20 border p-2 h-20 rounded-md"
+            />
+          )}
           <Input
             type="text"
             placeholder="Category Name"
@@ -96,7 +130,7 @@ const AddCategoryModal = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleAddCategory}>Add Category</Button>
+          <Button onClick={handleAddCategory} disabled={!isFormValid}>Add Category</Button>
         </div>
       </DialogContent>
     </Dialog>

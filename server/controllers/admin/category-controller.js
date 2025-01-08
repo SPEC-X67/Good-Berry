@@ -3,7 +3,7 @@ const Category = require('../../models/Categorys.js');
 // Add Category
 const addCategory = async (req, res) => {
   try {
-    const { name, status } = req.body;
+    const { name, status, image } = req.body;
 
     // Check for existing category with case-insensitive regex
     const existingCategory = await Category.findOne({ name: { $regex: `^${name.trim()}$`, $options: 'i' } });
@@ -13,7 +13,7 @@ const addCategory = async (req, res) => {
     }
 
     // Create the new category
-    const category = await Category.create({ name, status });
+    const category = await Category.create({ name, status, image });
     return res.status(201).json({ success: true, message: 'Category created successfully', category });
 
   } catch (error) {
@@ -35,8 +35,10 @@ const getAllCategories = async (req, res) => {
 // Update the category
 const updateCategory = async (req, res) => {
   try {
-    const { name, status } = req.body;
+    const { name, status, image } = req.body;
     const { id: categoryId } = req.params;
+
+    console.log(req.body);
 
     const categoryExists = await Category.findOne({
       $and: [
@@ -51,9 +53,11 @@ const updateCategory = async (req, res) => {
 
     const updatedCategory = await Category.findByIdAndUpdate(
       categoryId,
-      { name, status },
+      { name, status, image },
       { new: true }
     );
+
+    console.log(updatedCategory);
 
     if (!updatedCategory) {
       return res.status(404).json({ success: false, message: 'Category not found' });

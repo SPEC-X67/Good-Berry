@@ -19,11 +19,11 @@ import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/Listing/products";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomersPage from "./pages/admin/Customers/customers";
-import AddProduct from "./pages/admin/ProductsCategorys/AddProduct";
+import ProductForm from "./pages/admin/ProductsCategorys/product-form";
 import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
-import VeryOtp from "./components/shop/verify-otp";
-import Account from "./pages/account/account";
+import VeryOtp from "./pages/auth/verify-otp";
+import Account from "./pages/shop/account/account";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -46,7 +46,7 @@ function App() {
         <Route path="/" element={<ShopLayout />}>
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
           <Route path="shop" element={<ShoppingListing />} />
-          <Route path="shop/product" element={< ProductPage />} />
+          <Route path="shop/product/:id" element={< ProductPage  />} />
         </Route>
 
         {/* Protected Shop Routes */}
@@ -81,9 +81,10 @@ function App() {
             </CheckAuth>
           }
         >
+          <Route index element={<AuthLogin />} />
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
-          <Route path="register/verify-otp" element={<VeryOtp />} />
+          <Route path="verify-email" element={<VeryOtp />} />
           <Route path="login/forgot-password" element={<ForgetPassword />} />
         </Route>
 
@@ -100,7 +101,8 @@ function App() {
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products">
             <Route index element={<AdminProducts />} />
-            <Route path="add" element={<AddProduct />} />
+            <Route path="add" element={<ProductForm />} />
+            <Route path="edit/:id" element={<ProductForm />} />
           </Route>
 
           <Route path="categorys" element={<AdminCategorys />} />

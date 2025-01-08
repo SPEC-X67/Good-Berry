@@ -24,17 +24,17 @@ import {
   addProduct,
   getAllCategories,
   uploadToCloudinary,
+  editProduct,
+  getProductDetails,
 } from "@/store/admin-slice";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import ImageCropDialog from "@/components/ui/image-crop";
 
 export default function ProductForm() {
+  const { id } = useParams();
   const { categories } = useSelector((state) => state.admin);
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(getAllCategories());
-  }, [dispatch, categories]);
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [name, setName] = useState("");
@@ -43,8 +43,49 @@ export default function ProductForm() {
   const [variants, setVariants] = useState([]);
   const [packSizes, setPackSizes] = useState(["300ml", "500ml", "850ml"]);
   const [newPackSize, setNewPackSize] = useState("");
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+const [currentImage, setCurrentImage] = useState(null);
+const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
+
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    dispatch(getAllCategories());
+
+    if (id) {
+      const fetchProduct = async () => {
+        const result = await dispatch(getProductDetails(id));
+        if (result.payload?.success) {
+          const { product, variants } = result.payload;
+
+          setName(product.name);
+          setDescription(product.description);
+          setSelectedCategory(product.category);
+          setIsFeatured(product.isFeatured);
+
+          // Transform and set variants
+          const transformedVariants = variants.map((variant) => ({
+            title: variant.title,
+            salePrice: variant.salePrice,
+            price: variant.price,
+            description: variant.description,
+            images: variant.images.map((url) => ({
+              preview: url,
+              cloudinaryUrl: url,
+              uploading: false,
+            })),
+            availableQuantity: variant.availableQuantity,
+            selectedPackSizes: variant.selectedPackSizes,
+          }));
+
+          setVariants(transformedVariants);
+        }
+      };
+
+      fetchProduct();
+    }
+  }, [dispatch, id]);
 
   const availableCategories = categories.filter(
     (category) => category.status === "Active"
@@ -100,73 +141,74 @@ export default function ProductForm() {
 
   const handleImageUpload = async (e, variantIndex) => {
     const files = e.target.files;
-
-    if (
-      variants[variantIndex].images &&
-      variants[variantIndex].images.length >= 4
-    ) {
+  
+    if (variants[variantIndex].images && variants[variantIndex].images.length >= 4) {
       toast({
         title: "You can only upload maximum 4 images",
         variant: "destructive",
       });
       return;
     }
-
-    if (files) {
-      try {
-        const uploadPromises = Array.from(files).map(async (file) => {
-          const previewUrl = URL.createObjectURL(file);
-
-          setVariants((prev) => {
-            const updatedVariants = [...prev];
-            updatedVariants[variantIndex].images = [
-              ...(updatedVariants[variantIndex].images || []),
-              { preview: previewUrl, uploading: true },
-            ].slice(0, 4);
-            return updatedVariants;
-          });
-
-          // Upload to Cloudinary
-          const data = await dispatch(uploadToCloudinary(file));
-
-          if (!data.payload || !data.payload.url) {
-            toast({
-              title: "Failed to upload image. Please try again.",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          const cloudinaryUrl = data.payload.url;
-
-          // Update the variant with the Cloudinary URL
-          setVariants((prev) => {
-            const updatedVariants = [...prev];
-            const currentImages = updatedVariants[variantIndex].images;
-            const imageIndex = currentImages.findIndex(
-              (img) => img.preview === previewUrl
-            );
-
-            if (imageIndex !== -1) {
-              currentImages[imageIndex] = {
-                preview: cloudinaryUrl,
-                uploading: false,
-                cloudinaryUrl,
-              };
-            }
-
-            return updatedVariants;
-          });
-
-          return cloudinaryUrl;
-        });
-
-        await Promise.all(uploadPromises);
-      } catch (error) {
-        console.error("Error handling image upload:", error);
-      }
+  
+    if (files && files[0]) {
+      setCurrentVariantIndex(variantIndex);
+      const imageUrl = URL.createObjectURL(files[0]);
+      setCurrentImage(imageUrl);
+      setCropDialogOpen(true);
     }
   };
+
+  const handleCroppedImage = async (croppedFile) => {
+    try {
+      const previewUrl = URL.createObjectURL(croppedFile);
+  
+      setVariants((prev) => {
+        const updatedVariants = [...prev];
+        updatedVariants[currentVariantIndex].images = [
+          ...(updatedVariants[currentVariantIndex].images || []),
+          { preview: previewUrl, uploading: true },
+        ].slice(0, 4);
+        return updatedVariants;
+      });
+  
+      const data = await dispatch(uploadToCloudinary(croppedFile));
+  
+      if (!data.payload || !data.payload.url) {
+        toast({
+          title: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      const cloudinaryUrl = data.payload.url;
+  
+      setVariants((prev) => {
+        const updatedVariants = [...prev];
+        const currentImages = updatedVariants[currentVariantIndex].images;
+        const imageIndex = currentImages.findIndex(
+          (img) => img.preview === previewUrl
+        );
+  
+        if (imageIndex !== -1) {
+          currentImages[imageIndex] = {
+            preview: cloudinaryUrl,
+            uploading: false,
+            cloudinaryUrl,
+          };
+        }
+  
+        return updatedVariants;
+      });
+    } catch (error) {
+      console.error("Error handling cropped image:", error);
+      toast({
+        title: "Failed to process image. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
 
   const handleRemoveImage = (variantIndex, imgIndex) => {
     setVariants((prev) => {
@@ -226,8 +268,6 @@ export default function ProductForm() {
     }
 
     handleSubmit();
-
-    return;
   };
 
   const handleSubmit = async () => {
@@ -239,29 +279,34 @@ export default function ProductForm() {
       variants: variants.map((variant) => ({
         ...variant,
         images: variant.images
-          .filter((img) => !img.uploading) // Filter out any images still uploading
-          .map((img) => img.cloudinaryUrl), // Get just the Cloudinary URLs
+          .filter((img) => !img.uploading)
+          .map((img) => img.cloudinaryUrl),
       })),
     };
 
-    const data = await dispatch(addProduct(formData));
-
-    console.log(data.payload.message);
-
     try {
-      if (data.payload.success) {
+      const action = id
+        ? editProduct({ ...formData, id })
+        : addProduct(formData);
+      const data = await dispatch(action);
+
+      if (data.payload?.success) {
         toast({
           title: data.payload.message,
         });
         navigate(-1);
       } else {
         toast({
-          title: data.payload.message,
+          title: data.payload?.message || "Operation failed",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      toast({
+        title: "An error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -269,7 +314,9 @@ export default function ProductForm() {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-[1200px] bg-white rounded-lg shadow-sm">
         <div className="p-4 sm:p-6">
-          <h1 className="text-2xl font-semibold mb-6">Add Product</h1>
+          <h1 className="text-2xl font-semibold mb-6">
+            {id ? "Edit Product" : "Add Product"}
+          </h1>
 
           <div className="grid gap-6">
             <div className="grid sm:grid-cols-2 gap-4">
@@ -474,7 +521,7 @@ export default function ProductForm() {
                           </div>
                         </div>
                         <div>
-                          <Label>Images (Max: 3)</Label>
+                          <Label>Images (Max: 4)</Label>
                           <Input
                             type="file"
                             accept="image/*"
@@ -526,11 +573,20 @@ export default function ProductForm() {
             </div>
 
             <Button className="mt-4" onClick={(e) => checkValidation(e)}>
-              Add Product
+              {id ? "Update Product" : "Add Product"}
             </Button>
           </div>
         </div>
       </div>
+      <ImageCropDialog
+        isOpen={cropDialogOpen}
+        onClose={() => {
+          setCropDialogOpen(false);
+          setCurrentImage(null);
+        }}
+        image={currentImage}
+        onCropComplete={handleCroppedImage}
+      />
     </div>
   );
 }

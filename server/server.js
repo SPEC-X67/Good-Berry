@@ -1,8 +1,10 @@
+const dotenv = require('dotenv');
+dotenv.config();
 const express = require('express');
 const mongoose = require('mongoose');
+const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const authRouter = require('./routes/auth/auth-routes');
 const adminRouter = require('./routes/admin/admin-routes');
 const commonRouter = require('./routes/common/common-routes');
@@ -11,10 +13,8 @@ const connectCloudinary = require('./config/cloudnary');
 const passport = require('./config/passport');
 const session = require('express-session');
 
-dotenv.config();
-
 // Database connection
-mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.gwyoo.mongodb.net/`)
+mongoose.connect(`mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/`)
 .then(() => console.log('Database connected successfully'))
 .catch((err) => console.log(err));
 
@@ -41,7 +41,10 @@ app.use(
 app.use(session({
     secret: 'your-session-secret',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: 'mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/',
+      })
   }));
   
 app.use(cookieParser());
@@ -53,6 +56,7 @@ app.use(passport.session());
 app.use('/api/auth', authRouter);
 app.use('/api/admin',adminRouter);
 app.use('/api', commonRouter);
+
 
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

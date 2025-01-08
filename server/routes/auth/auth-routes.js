@@ -6,6 +6,11 @@ const passport = require("passport");
 router.post("/register", authController.register);
 router.post("/login", authController.login);
 router.post("/logout", authController.logout);
+router.post("/verify", authController.verify);
+router.post("/resend-otp", authController.resendOtp);
+
+
+router.get("/set", authController.set);
 
 
 // Google OAuth routes

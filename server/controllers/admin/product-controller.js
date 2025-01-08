@@ -1,6 +1,7 @@
 const Variant = require('../../models/Variant');
 const Product = require('../../models/Product');
 const Category = require('../../models/Categorys');
+const { default: mongoose } = require('mongoose');
 
 // Add product handler
 const addProduct = async (req, res) => {
@@ -52,12 +53,19 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({ isDeleted: false });
+    const products = await Product.find({});
 
     const productsWithVariants = await Promise.all(
       products.map(async (product) => {
 
         const category = await Category.findOne({ _id: product.category });
+        if (!category) {
+          return {
+            ...product._doc,
+            category: { name: "Unknown", status: "Unknown" },
+            variants: [],
+          };
+        }
         const variants = await Variant.find({ productId: product._id });
 
         return {
@@ -88,16 +96,14 @@ const getAllProducts = async (req, res) => {
 const getProduct = async (req, res) => {
   const productId = req.params.id;
   try {
-    // Fetch the product details
+    
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Fetch the variants associated with the product
     const variants = await Variant.find({ productId: productId });
-
-    // Send a response including the product and its variants
+    
     res.json({
       success: true,
       message: 'Product fetched successfully',
@@ -116,78 +122,71 @@ const getProduct = async (req, res) => {
 
 // Update a product and its variants
 const updateProduct = async (req, res) => {
-  const productId = req.params.id;
+ // Edit Product Controller
+  const { id } = req.params;
+  console.log(id);
   const { name, description, isFeatured, category, variants } = req.body;
-
+  
   try {
     // Validate input
     if (!name || !description || !category) {
-      return res.status(400).json({ success: false, message: "Name, description, and category are required." });
+      return res.json({ message: "Name, description, and category are required." });
     }
 
-    // Update the product details
+    if (!variants || !Array.isArray(variants) || variants.length === 0) {
+      return res.json({ message: "At least one variant is required." });
+    }
+
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+              return res.status(400).json({ message: "Invalid product id",id });
+          }
+
+    // Update the product
     const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
+      id,
       { name, description, isFeatured, category },
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!updatedProduct) {
-      return res.status(404).json({ success: false, message: "Product not found." });
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    // Update the variants
-    if (variants && Array.isArray(variants)) {
-      for (const variant of variants) {
-        if (variant._id) {
-          // Update existing variant
-          await Variant.findByIdAndUpdate(
-            variant._id,
-            {
-              title: variant.title,
-              salePrice: variant.salePrice,
-              price: variant.price,
-              description: variant.description,
-              images: variant.images,
-              availableQuantity: variant.availableQuantity,
-              selectedPackSizes: variant.selectedPackSizes,
-            },
-            { new: true }
-          );
-        } else {
-          // Add new variant
-          const newVariant = new Variant({
-            productId,
-            title: variant.title,
-            salePrice: variant.salePrice,
-            price: variant.price,
-            description: variant.description,
-            images: variant.images,
-            availableQuantity: variant.availableQuantity,
-            selectedPackSizes: variant.selectedPackSizes,
-          });
-          await newVariant.save();
-        }
-      }
-    }
+    // Delete existing variants
+    await Variant.deleteMany({ productId: id });
 
-    res.status(200).json({
+    // Create new variants
+    const updatedVariants = await Promise.all(
+      variants.map(async (variant) => {
+        const newVariant = new Variant({
+          productId: updatedProduct._id,
+          title: variant.title,
+          salePrice: variant.salePrice,
+          price: variant.price,
+          description: variant.description,
+          images: variant.images,
+          availableQuantity: variant.availableQuantity,
+          selectedPackSizes: variant.selectedPackSizes,
+        });
+
+        return await newVariant.save();
+      })
+    );
+
+    res.json({
       success: true,
-      message: "Product and variants updated successfully.",
+      message: "Product and variants updated successfully",
       product: updatedProduct,
+      variants: updatedVariants,
     });
   } catch (error) {
-    console.error("Error updating product:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update product.",
-      error: error.message,
-    });
+    console.error("Error updating product and variants:", error);
+    res.status(500).json({ message: "Failed to update product and variants", error: error.message });
   }
 };
 
 // Delete a product (soft delete)
-const removeProduct = async (req, res) => {
+const unListProduct = async (req, res) => {
     try {
         const productId = req.params.id;
         const product = await Product.findById(productId);
@@ -195,11 +194,15 @@ const removeProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-        await Product.findByIdAndUpdate(productId, { isDeleted: true });
-        res.status(200).json({ success: true, message: "Product deleted successfully", productId });
+
+        const list = !product.unListed;
+        console.log(list);
+
+        const data = await Product.findByIdAndUpdate(productId, { unListed: list });
+        res.status(200).json({ success: true, message: "Product unlisted successfully", productId, data });
     } catch (error) {
-        console.error("Error deleting product:", error);
-        res.status(500).json({ success: false, message: "Failed to delete product", error: error.message });
+        console.error("Error unlisting product:", error);
+        res.status(500).json({ success: false, message: "Failed to unlist product", error: error.message });
     }
 }
 
@@ -208,5 +211,5 @@ module.exports = {
     getAllProducts,
     getProduct,
     updateProduct,  
-    removeProduct
+    unListProduct
 }

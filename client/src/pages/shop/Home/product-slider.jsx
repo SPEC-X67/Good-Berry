@@ -21,14 +21,15 @@ export function ProductSlider({ products }) {
 
   return (
     <div className="relative group pb-10"> {/* Moved group class here */}
-      <div ref={emblaRef}>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+      <div ref={emblaRef} className="overflow-x-auto no-scrollbar" style={{ height: "360px" }}>
+
+        <div className="flex gap-8">
           {products?.map((product, i) => (
             <Link to={`shop/product/${product._id}`} key={i}>
             <div
               className="flex flex-col items-center group cursor-pointer hover:scale-105 rounded-lg hover:shadow-lg transition-all duration-300 ease-in-out hover:bg-[#ffffff]"
             >
-              <div className="relative mb-4 w-full aspect-square">
+              <div className="relative mb-4 w-60 h-60 flex-shrink-0">
                 <img
                   src={product.firstVariant.images}
                   alt="Decorative leaf"

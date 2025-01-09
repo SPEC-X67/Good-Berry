@@ -23,7 +23,7 @@ import ProductForm from "./pages/admin/ProductsCategorys/product-form";
 import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
 import VeryOtp from "./pages/auth/verify-otp";
-import Account from "./pages/shop/account/account";
+import Account from "./pages/user";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -46,7 +46,7 @@ function App() {
         <Route path="/" element={<ShopLayout />}>
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
           <Route path="shop" element={<ShoppingListing />} />
-          <Route path="shop/product/:id" element={< ProductPage  />} />
+          <Route path="shop/product/:id" element={< ProductPage />} />
         </Route>
 
         {/* Protected Shop Routes */}

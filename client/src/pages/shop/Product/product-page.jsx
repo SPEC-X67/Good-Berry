@@ -1,4 +1,4 @@
-import { Copy, Heart, Maximize, Share2, Star } from "lucide-react";
+import { Check, Copy, Heart, Maximize, Share2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,53 +23,121 @@ import { useDispatch, useSelector } from "react-redux";
 import { getSingleProduct } from "@/store/shop-slice";
 import ZoomImage from "@/components/ui/zoom-image";
 import { Skeleton } from "@/components/ui/skeleton";
+import CartSidebar from "../cart/cart-sidebar";
+import { addToCart } from "@/store/shop-slice/cart-slice";
 
 export default function ProductPage() {
-
   const { id } = useParams();
   const dispatch = useDispatch();
 
-
   useEffect(() => {
     dispatch(getSingleProduct(id));
-  }, [dispatch, id] );
+  }, [dispatch, id]);
 
-  const { product, pflavors, recomentedProds } = useSelector((state) => state.shop);
-  const flavors = pflavors || {}; 
-  
+  const { product, pflavors, recomentedProds } = useSelector(
+    (state) => state.shop
+  );
+  const flavors = pflavors || {};
+
   // Get available flavor keys
   const flavorKeys = Object.keys(flavors);
-  
-  const [selectedFlavor, setSelectedFlavor] = useState(flavorKeys[0] || '');
-  
+
+  const [selectedFlavor, setSelectedFlavor] = useState(flavorKeys[0] || "");
+
   const [selectedImage, setSelectedImage] = useState(
-    flavorKeys.length > 0 ? flavors[selectedFlavor]?.images?.[0] : ''
+    flavorKeys.length > 0 ? flavors[selectedFlavor]?.images?.[0] : ""
   );
-  
+
   const [quantity, setQuantity] = useState(1);
   const [packageSize, setPackageSize] = useState(
-    flavorKeys.length > 0 && flavors[selectedFlavor] && flavors[selectedFlavor].packageSizes
+    flavorKeys.length > 0 &&
+      flavors[selectedFlavor] &&
+      flavors[selectedFlavor].packageSizes
       ? flavors[selectedFlavor].packageSizes[0]
-      : ''
+      : ""
   );
+
+  const [currentPrice, setCurrentPrice] = useState({
+    price: 0,
+    salePrice: 0,
+  });
+
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { toast } = useToast();
-  
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
   // Only get flavor if it exists
   const flavor = flavorKeys.length > 0 ? flavors[selectedFlavor] : null;
+
+  const calculateDiscount = (originalPrice, salePrice) => {
+    if (!originalPrice || !salePrice) return 0;
+    return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+  };
 
   useEffect(() => {
     if (flavorKeys.length > 0 && !selectedFlavor) {
       setSelectedFlavor(flavorKeys[0]);
       setSelectedImage(flavors[flavorKeys[0]].images[0]);
       setPackageSize(flavors[flavorKeys[0]].packageSizes[0]);
+
+      const initialPricing = flavors[flavorKeys[0]].packSizePricing.find(
+        (p) => p.size === flavors[flavorKeys[0]].packageSizes[0]
+      );
+      setCurrentPrice({
+        price: initialPricing?.price || 0,
+        salePrice: initialPricing?.salePrice || 0,
+      });
     }
   }, [pflavors]);
 
   const handleFlavorChange = (value) => {
     setSelectedFlavor(value);
-    setSelectedImage(flavors[value].images[0]);
-    setPackageSize(flavors[value].packageSizes[0]);
+    setSelectedImage(flavors[value]?.images[0]);
+    const newPackageSize = flavors[value]?.packageSizes[0];
+    setPackageSize(newPackageSize);
+
+    const newPricing = flavors[value]?.packSizePricing.find(
+      (p) => p.size === newPackageSize
+    );
+    setCurrentPrice({
+      price: newPricing?.price || 0,
+      salePrice: newPricing?.salePrice || 0,
+    });
+  };
+
+  const handlePackageSizeChange = (size) => {
+    setPackageSize(size);
+    const newPricing = flavor?.packSizePricing.find((p) => p.size === size);
+    setCurrentPrice({
+      price: newPricing?.price || 0,
+      salePrice: newPricing?.salePrice || 0,
+    });
+  };
+
+  const handleAddToCart = async() => {
+    setIsAddingToCart(true);
+    const cartItem = {
+      productId: product._id,
+      name: product.name,
+      flavor: flavor.title,
+      packageSize,
+      quantity,
+      price: currentPrice.salePrice,
+      image: selectedImage
+    };
+    
+    await dispatch(addToCart(cartItem));
+    // Simulate adding to cart
+    setTimeout(() => {
+      setIsAddingToCart(false);
+      setAddedToCart(true);
+      setIsCartOpen(true);
+      // Reset added state after a delay
+      setTimeout(() => setAddedToCart(false), 2000);
+    }, 1000);
   };
 
   const handleCopyLink = async () => {
@@ -91,20 +159,26 @@ export default function ProductPage() {
     return (
       <div className="flex flex-row space-x-3 flex justify-center items-center p-10 mt-10">
         <div className="flex flex-row gap-4">
-      <Skeleton className="h-[450px] w-[450px] rounded-xl" />
-        <div className="flex flex-row gap-4">
-        <Skeleton className="h-[90px] w-[100px]" />
-        <Skeleton className="h-[90px] w-[100px]" />
-        <Skeleton className="h-[90px] w-[100px]" />
+          <Skeleton className="h-[450px] w-[450px] rounded-xl" />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-row gap-4">
+              <Skeleton className="h-[90px] w-[100px]" />
+              <Skeleton className="h-[90px] w-[100px]" />
+              <Skeleton className="h-[90px] w-[100px]" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="mt-3 h-[150px] w-full" />
+          </div>
         </div>
-        </div>
-        <div className="flex flex-row gap-4">
-        <Skeleton className="h-4 w-[200px]" />
-        </div>
-    
-    </div>
-      ) 
+      </div>
+    );
   }
+
+  const discountPercentage = calculateDiscount(
+    currentPrice.price,
+    currentPrice.salePrice
+  );
 
   return (
     <div className="container product-page mx-auto px-4 py-6 lg:py-8">
@@ -125,24 +199,30 @@ export default function ProductPage() {
         {/* Product Images */}
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Main Image */}
-          <div className="relative flex-1 order-1 lg:order-2" style={{maxHeight: "350px"}}>
+          <div
+            className="relative flex-1 order-1 lg:order-2"
+            style={{ maxHeight: "350px" }}
+          >
             <div
               className="relative aspect-square overflow-hidden rounded-lg border bg-white"
               style={{ maxWidth: "500px" }}
             >
-               <ZoomImage src={selectedImage} className="object-contain p-4 w-full h-full"/>
+              <ZoomImage
+                src={selectedImage}
+                className="object-contain p-4 w-full h-full"
+              />
               <div
                 className="absolute top-0 right-0 flex items-center justify-center mt-5 mr-5 rounded-full bg-[#83ac2b]"
                 style={{ width: "50px", height: "50px" }}
               >
                 <span className="text-base text-white">
-                  -{Math.round(((flavor.originalPrice - flavor.price) / flavor.originalPrice) * 100)}%
+                  -{discountPercentage}%
                 </span>
               </div>
               <button
                 className="absolute bottom-4 right-4 rounded-lg bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-colors hover:bg-white"
                 onClick={() => {
-                  console.log("View in full screen")
+                  console.log("View in full screen");
                 }}
               >
                 <Maximize className="h-5 w-5" />
@@ -177,9 +257,9 @@ export default function ProductPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-medium">{product.name}</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {flavor.title.toUpperCase()} STYLE FLAVER
-                  </p>
+                </p>
               </div>
               <Button
                 variant="outline"
@@ -193,12 +273,14 @@ export default function ProductPage() {
 
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-medium text-[#8CC63F]">
-              ₹{flavor.price.toFixed(2)}
+              ₹{currentPrice.salePrice?.toFixed(2)}
             </span>
             <span className="text-sm text-muted-foreground line-through">
-              ₹{flavor.originalPrice.toFixed(2)}
+              ₹{currentPrice.price?.toFixed(2)}
             </span>
-            <span className="ml-4 text-sm text-[#8CC63F] border border-[#8CC63F] px-3 py-1 rounded-full">{flavor.stock < 0 ? "OUT STOCK" : "IN STOCK" }</span>
+            <span className="ml-4 text-sm text-[#8CC63F] border border-[#8CC63F] px-3 py-1 rounded-full">
+              {flavor.stock < 0 ? "OUT STOCK" : "IN STOCK"}
+            </span>
           </div>
 
           <p className="text-sm text-muted-foreground">{flavor.description}</p>
@@ -228,7 +310,7 @@ export default function ProductPage() {
                 {flavor.packageSizes.map((size) => (
                   <button
                     key={size}
-                    onClick={() => setPackageSize(size)}
+                    onClick={() => handlePackageSizeChange(size)}
                     className={cn(
                       "rounded-md border px-4 py-2 text-sm transition-colors",
                       packageSize === size
@@ -258,9 +340,25 @@ export default function ProductPage() {
                   +
                 </button>
               </div>
-              <Button className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]">
-                ADD TO CART
-              </Button>
+              <Button 
+          className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]"
+          onClick={handleAddToCart}
+          disabled={isAddingToCart || addedToCart}
+        >
+          {isAddingToCart ? (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Adding...
+            </div>
+          ) : addedToCart ? (
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              Added!
+            </div>
+          ) : (
+            "ADD TO CART"
+          )}
+        </Button>
             </div>
 
             <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -317,16 +415,17 @@ export default function ProductPage() {
               </div>
             </div>
           </div>
-            <Button type="button" size="icon" onClick={handleCopyLink}>
-              <Copy className="h-4 w-4" />
-            </Button>
+          <Button type="button" size="icon" onClick={handleCopyLink}>
+            <Copy className="h-4 w-4" />
+          </Button>
         </DialogContent>
       </Dialog>
 
-      <ProductDetails
-        description={product.description}
-      />
-      <RelatedProducts products={recomentedProds} id={product._id}/>
+      <ProductDetails description={product.description} />
+      <RelatedProducts products={recomentedProds} id={product._id} />
+
+      <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen}/>
+
     </div>
   );
 }

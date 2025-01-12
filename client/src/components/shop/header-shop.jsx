@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button"
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux';
 import { logodark} from '@/assets/images';
+import CartSidebar from '@/pages/shop/cart/cart-sidebar';
+import { useState } from 'react';
 
 function ShopHeader() {
     const user = useSelector(state => state.auth.user)
-    
+    const items = useSelector(state => state.cart.items)
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
     return (
         <header className="fixed top-0 z-50 w-full py-1 transition-colors home-header duration-300 bg-white">
         <div className="flex h-16 items-center px-4">
@@ -48,16 +53,17 @@ function ShopHeader() {
               <Heart className="h-5 w-5 text-black fw-bold" />
               <span className="sr-only">Wishlist</span>
             </Button>
-            <Button variant="transparent" size="icon" className="relative">
+            <Button variant="transparent" size="icon" className="relative" onClick={() => setIsCartOpen(true)}>
               <ShoppingCart className="h-5 w-5 text-black fw-bold" />
               <span className="sr-only">Cart</span>
-              <span className="absolute right-0 -top-0 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-black flex items-center justify-center">
-                0
+              <span className="absolute right-0 -top-0 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center">
+                {items.length}
               </span>
             </Button>
-            <span className="text-sm font-bold text-black">$0.00</span>
+            <span className="text-sm font-bold text-black">₹{subtotal.toFixed(2)}</span>
           </div>
         </div>
+        <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
       </header>
     )
 }

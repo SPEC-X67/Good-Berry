@@ -51,7 +51,7 @@ export default function ProductsPage() {
           id: product._id,
           image: product.variants?.[0]?.images?.[0] || '',
           name: product.name || '',
-          salePrice: product.variants?.[0]?.salePrice || 0,
+          salePrice: product.variants?.[0]?.packSizePricing?.[0]?.salePrice || 0,
           variants: Array.isArray(product.variants) ? product.variants.length : 0,
           stock: totalStock,
           category: product.category.name || '',
@@ -152,7 +152,7 @@ export default function ProductsPage() {
                       <span>{product.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-5">{product.salePrice}</TableCell>
+                  <TableCell className="px-5">₹{product.salePrice}</TableCell>
                   <TableCell className="px-5">{product.variants}</TableCell>
                   <TableCell className="px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${

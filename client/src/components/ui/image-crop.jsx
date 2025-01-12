@@ -65,12 +65,12 @@ export default function ImageCropDialog({ isOpen, onClose, image, onCropComplete
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Crop Image</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <div className="relative w-full max-h-[500px] overflow-auto">
+          <div className="relative max-h-[500px] p-1 overflow-auto no-scrollbar">
             <ReactCrop
               crop={crop}
               onChange={setCrop}

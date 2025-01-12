@@ -4,11 +4,16 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux';
 import { logodark, logolight } from '@/assets/images';
+import CartSidebar from '@/pages/shop/cart/cart-sidebar';
 
 function HomeHeader() {
 
     const [isScrolled, setIsScrolled] = useState(false)
     const user = useSelector(state => state.auth.user)
+    const items = useSelector(state => state.cart.items)
+
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const [isCartOpen, setIsCartOpen] = useState(false);
 
     useEffect(() => {
       const handleScroll = () => {
@@ -59,16 +64,17 @@ function HomeHeader() {
               <Heart className={`h-5 w-5 ${isScrolled ? 'text-black' : 'text-white'} fw-bold`} />
               <span className="sr-only">Wishlist</span>
             </Button>
-            <Button variant="transparent" size="icon" className="relative">
+            <Button variant="transparent" size="icon" className="relative" onClick={() => setIsCartOpen(true)}>
               <ShoppingCart className={`h-5 w-5 ${isScrolled ? 'text-black' : 'text-white'} fw-bold`} />
               <span className="sr-only">Cart</span>
               <span className="absolute right-0 -top-0 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center">
-                0
+                {items.length}
               </span>
             </Button>
-            <span className={`text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>$0.00</span>
+            <span className={`text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>₹{subtotal.toFixed(2)}</span>
           </div>
         </div>
+          <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
       </header>
     )
 }

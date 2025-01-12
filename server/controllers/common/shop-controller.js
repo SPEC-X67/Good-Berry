@@ -31,10 +31,9 @@ const getProductDetails = async (req, res) => {
       acc[variant.title.toLowerCase().replace(/\s+/g, '')] = {
         title: variant.title,
         description: variant.description,
-        price: variant.salePrice,
-        originalPrice: variant.price,
         images: variant.images,
         packageSizes: variant.selectedPackSizes,
+        packSizePricing : variant.packSizePricing,
         stock: variant.availableQuantity
       };
       return acc;
@@ -60,7 +59,7 @@ const getProductDetails = async (req, res) => {
           _id: 1,
           name: 1,
           description: 1,
-          'firstVariant.salePrice': 1,
+          'firstVariant.salePrice': { $arrayElemAt: ['$firstVariant.packSizePricing.salePrice', 0] }, // Get the first sale price
           'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] }, // Get the first image
         },
       },
@@ -136,7 +135,7 @@ const getAllProducts = async (req, res) => {
           description: 1,
           categoryName: 1,
           "firstVariant.title": 1,
-          "firstVariant.salePrice": 1,
+          "firstVariant.salePrice": {$arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0]},
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] },
           isNew: 1,
         },

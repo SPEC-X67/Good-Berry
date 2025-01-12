@@ -6,11 +6,11 @@ import AdminLayout from "./components/admin/layout";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminProducts from "./pages/admin/ProductsCategorys/products";
 import AdminCategorys from "./pages/admin/ProductsCategorys/categorys";
-import AdminOrders from "./pages/admin/orders";
+import AdminOrders from "./pages/admin/order/orders";
 import AdminFeatures from "./pages/admin/features";
 import ShopLayout from "./components/shop/layout";
 import ShoppingHome from "./pages/shop/Home/home";
-import ShoppingCheckout from "./pages/checkout";
+import ShoppingCheckout from "./pages/shop/cart/checkout";
 import NotFound from "./pages/404";
 import CheckAuth from "./components/common/check-auth";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,6 +24,10 @@ import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
 import VeryOtp from "./pages/auth/verify-otp";
 import Account from "./pages/user";
+import { fetchCart } from "./store/shop-slice/cart-slice";
+import ShoppingCart from "./pages/shop/cart/shopping-cart";
+import OrderView from "./pages/shop/cart/view-order";
+import OrderDetails from "./pages/admin/order/order-details";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -33,6 +37,10 @@ function App() {
 
   useEffect(() => {
     dispatch(checkAuth());
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchCart());
   }, [dispatch]);
 
   if (isLoading)
@@ -46,7 +54,7 @@ function App() {
         <Route path="/" element={<ShopLayout />}>
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
           <Route path="shop" element={<ShoppingListing />} />
-          <Route path="shop/product/:id" element={< ProductPage />} />
+          <Route path="shop/product/:id" element={<ProductPage />} />
         </Route>
 
         {/* Protected Shop Routes */}
@@ -58,7 +66,10 @@ function App() {
             </CheckAuth>
           }
         >
-          <Route path="checkout" element={<ShoppingCheckout />} />
+          <Route path="cart">
+            <Route index element={<ShoppingCart />} />
+            <Route path="checkout" element={<ShoppingCheckout />} />
+          </Route>
         </Route>
 
         <Route
@@ -70,6 +81,7 @@ function App() {
           }
         >
           <Route index element={<Account />} />
+          <Route path="order" element={<OrderView />} />
         </Route>
 
         {/* Auth Routes */}
@@ -106,7 +118,12 @@ function App() {
           </Route>
 
           <Route path="categorys" element={<AdminCategorys />} />
-          <Route path="orders" element={<AdminOrders />} />
+          
+          <Route path="orders" >
+            <Route index element={<AdminOrders />} />
+            <Route path=":orderId" element={<OrderDetails />} />
+          </Route>
+
           <Route path="features" element={<AdminFeatures />} />
         </Route>
 

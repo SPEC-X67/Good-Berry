@@ -44,8 +44,8 @@ export default function ProductForm() {
   const [packSizes, setPackSizes] = useState(["300ml", "500ml", "850ml"]);
   const [newPackSize, setNewPackSize] = useState("");
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
-const [currentImage, setCurrentImage] = useState(null);
-const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
+  const [currentImage, setCurrentImage] = useState(null);
+  const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -67,8 +67,6 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
           // Transform and set variants
           const transformedVariants = variants.map((variant) => ({
             title: variant.title,
-            salePrice: variant.salePrice,
-            price: variant.price,
             description: variant.description,
             images: variant.images.map((url) => ({
               preview: url,
@@ -77,6 +75,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
             })),
             availableQuantity: variant.availableQuantity,
             selectedPackSizes: variant.selectedPackSizes,
+            packSizePricing: variant.packSizePricing || [],
           }));
 
           setVariants(transformedVariants);
@@ -96,12 +95,11 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       ...prev,
       {
         title: "",
-        salePrice: "",
-        price: "",
         description: "",
         images: [],
         availableQuantity: "",
         selectedPackSizes: [],
+        packSizePricing: [],
       },
     ]);
   };
@@ -110,6 +108,30 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
     setVariants((prev) => {
       const updatedVariants = [...prev];
       updatedVariants[index][field] = value;
+      return updatedVariants;
+    });
+  };
+
+  const handleUpdatePackSizePrice = (variantIndex, packSize, field, value) => {
+    setVariants((prev) => {
+      const updatedVariants = [...prev];
+      const variant = updatedVariants[variantIndex];
+
+      const existingPriceIndex = variant.packSizePricing.findIndex(
+        (p) => p.size === packSize
+      );
+
+      if (existingPriceIndex >= 0) {
+        variant.packSizePricing[existingPriceIndex][field] = value;
+      } else {
+        variant.packSizePricing.push({
+          size: packSize,
+          [field]: value,
+          price: field === "price" ? value : "",
+          salePrice: field === "salePrice" ? value : "",
+        });
+      }
+
       return updatedVariants;
     });
   };
@@ -123,11 +145,20 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       const updatedVariants = [...prev];
       const currentSizes =
         updatedVariants[variantIndex].selectedPackSizes || [];
-      updatedVariants[variantIndex].selectedPackSizes = currentSizes.includes(
-        size
-      )
+      const isSelected = currentSizes.includes(size);
+
+      // Remove or add the size from selectedPackSizes
+      updatedVariants[variantIndex].selectedPackSizes = isSelected
         ? currentSizes.filter((s) => s !== size)
         : [...currentSizes, size];
+
+      // Remove pricing for unselected size
+      if (isSelected) {
+        updatedVariants[variantIndex].packSizePricing = updatedVariants[
+          variantIndex
+        ].packSizePricing.filter((p) => p.size !== size);
+      }
+
       return updatedVariants;
     });
   };
@@ -141,15 +172,18 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
 
   const handleImageUpload = async (e, variantIndex) => {
     const files = e.target.files;
-  
-    if (variants[variantIndex].images && variants[variantIndex].images.length >= 4) {
+
+    if (
+      variants[variantIndex].images &&
+      variants[variantIndex].images.length >= 4
+    ) {
       toast({
         title: "You can only upload maximum 4 images",
         variant: "destructive",
       });
       return;
     }
-  
+
     if (files && files[0]) {
       setCurrentVariantIndex(variantIndex);
       const imageUrl = URL.createObjectURL(files[0]);
@@ -161,7 +195,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
   const handleCroppedImage = async (croppedFile) => {
     try {
       const previewUrl = URL.createObjectURL(croppedFile);
-  
+
       setVariants((prev) => {
         const updatedVariants = [...prev];
         updatedVariants[currentVariantIndex].images = [
@@ -170,9 +204,9 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
         ].slice(0, 4);
         return updatedVariants;
       });
-  
+
       const data = await dispatch(uploadToCloudinary(croppedFile));
-  
+
       if (!data.payload || !data.payload.url) {
         toast({
           title: "Failed to upload image. Please try again.",
@@ -180,16 +214,16 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
         });
         return;
       }
-  
+
       const cloudinaryUrl = data.payload.url;
-  
+
       setVariants((prev) => {
         const updatedVariants = [...prev];
         const currentImages = updatedVariants[currentVariantIndex].images;
         const imageIndex = currentImages.findIndex(
           (img) => img.preview === previewUrl
         );
-  
+
         if (imageIndex !== -1) {
           currentImages[imageIndex] = {
             preview: cloudinaryUrl,
@@ -197,7 +231,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
             cloudinaryUrl,
           };
         }
-  
+
         return updatedVariants;
       });
     } catch (error) {
@@ -208,7 +242,6 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       });
     }
   };
-  
 
   const handleRemoveImage = (variantIndex, imgIndex) => {
     setVariants((prev) => {
@@ -227,43 +260,51 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       const variant = variants[i];
       if (
         !variant.title ||
-        !variant.salePrice ||
-        !variant.price ||
         !variant.description ||
         !variant.availableQuantity ||
         variant.selectedPackSizes.length === 0 ||
         variant.images.length === 0
       ) {
         toast({
-          title:
-            "Please fill in all the required fields for variant " + (i + 1),
+          title: `Please fill in all required fields for variant ${i + 1}`,
           variant: "destructive",
         });
         return;
       }
 
-      if (
-        variant.price < 0 ||
-        variant.salePrice < 0 ||
-        variant.availableQuantity < 0
-      ) {
-        toast({
-          title:
-            "Price, sale price, and available quantity should be greater than 0",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Validate prices for each selected pack size
+      for (const size of variant.selectedPackSizes) {
+        const pricing = variant.packSizePricing.find((p) => p.size === size);
+        if (!pricing || !pricing.price || !pricing.salePrice) {
+          toast({
+            title: `Please set both price and sale price for ${size} in variant ${
+              i + 1
+            }`,
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const price = parseFloat(variant.price);
-      const salePrice = parseFloat(variant.salePrice);
+        const price = parseFloat(pricing.price);
+        const salePrice = parseFloat(pricing.salePrice);
 
-      if (salePrice > price) {
-        toast({
-          title: "Sale price should be less than the price",
-          variant: "destructive",
-        });
-        return;
+        if (price < 0 || salePrice < 0) {
+          toast({
+            title: "Prices should be greater than 0",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (salePrice > price) {
+          toast({
+            title: `Sale price should be less than price for ${size} in variant ${
+              i + 1
+            }`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
 
@@ -277,10 +318,14 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       isFeatured,
       category: selectedCategory,
       variants: variants.map((variant) => ({
-        ...variant,
+        title: variant.title,
+        description: variant.description,
         images: variant.images
           .filter((img) => !img.uploading)
           .map((img) => img.cloudinaryUrl),
+        availableQuantity: variant.availableQuantity,
+        selectedPackSizes: variant.selectedPackSizes,
+        packSizePricing: variant.packSizePricing,
       })),
     };
 
@@ -309,6 +354,57 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
       });
     }
   };
+
+  const renderPackSizePricing = (variant, variantIndex) => (
+    <div className="mt-4">
+      <Label>Pack Size Pricing</Label>
+      <div className="grid gap-4 mt-2">
+        {variant.selectedPackSizes.map((size) => {
+          const pricing =
+            variant.packSizePricing.find((p) => p.size === size) || {};
+          return (
+            <div
+              key={size}
+              className="grid sm:grid-cols-2 gap-4 p-4 border rounded"
+            >
+              <div>
+                <Label>{size} - Regular Price</Label>
+                <Input
+                  type="number"
+                  value={pricing.price || ""}
+                  onChange={(e) =>
+                    handleUpdatePackSizePrice(
+                      variantIndex,
+                      size,
+                      "price",
+                      e.target.value
+                    )
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{size} - Sale Price</Label>
+                <Input
+                  type="number"
+                  value={pricing.salePrice || ""}
+                  onChange={(e) =>
+                    handleUpdatePackSizePrice(
+                      variantIndex,
+                      size,
+                      "salePrice",
+                      e.target.value
+                    )
+                  }
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center">
@@ -405,45 +501,6 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                               className="mt-1"
                             />
                           </div>
-
-                          <div>
-                            <Label htmlFor={`variant-price-${index}`}>
-                              Price
-                            </Label>
-                            <Input
-                              id={`variant-price-${index}`}
-                              type="number"
-                              value={variant.price}
-                              onChange={(e) =>
-                                handleUpdateVariant(
-                                  index,
-                                  "price",
-                                  e.target.value
-                                )
-                              }
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor={`variant-salePrice-${index}`}>
-                              Sale Price
-                            </Label>
-                            <Input
-                              id={`variant-salePrice-${index}`}
-                              type="number"
-                              value={variant.salePrice}
-                              onChange={(e) =>
-                                handleUpdateVariant(
-                                  index,
-                                  "salePrice",
-                                  e.target.value
-                                )
-                              }
-                              className="mt-1"
-                            />
-                          </div>
                           <div>
                             <Label htmlFor={`variant-quantity-${index}`}>
                               Available Quantity
@@ -463,6 +520,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                             />
                           </div>
                         </div>
+
                         <div>
                           <Label htmlFor={`variant-description-${index}`}>
                             Description
@@ -481,6 +539,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                             rows={3}
                           />
                         </div>
+
                         <div>
                           <Label>Pack Sizes</Label>
                           <div className="grid sm:grid-cols-4 gap-4 mt-2">
@@ -506,7 +565,7 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                           </div>
                           <div className="mt-4 flex items-center space-x-2">
                             <Input
-                              placeholder="Add pack size"
+                              placeholder="Add new pack size"
                               value={newPackSize}
                               onChange={(e) => setNewPackSize(e.target.value)}
                               className="mt-1"
@@ -520,12 +579,15 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                             </Button>
                           </div>
                         </div>
+
+                        {/* Pack Size Pricing Section */}
+                        {renderPackSizePricing(variant, index)}
+
                         <div>
                           <Label>Images (Max: 4)</Label>
                           <Input
                             type="file"
                             accept="image/*"
-                            multiple
                             onChange={(e) => handleImageUpload(e, index)}
                             className="mt-1"
                           />
@@ -546,17 +608,18 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                                 )}
                                 <Button
                                   variant="destructive"
-                                  size="xs"
-                                  className="absolute top-1 right-1"
+                                  size="sm"
+                                  className="absolute top-1 right-1 h-6 w-6 p-0"
                                   onClick={() => handleRemoveImage(index, i)}
                                   disabled={img.uploading}
                                 >
-                                  <X className="w-4 h-4" />
+                                  <X className="h-4 w-4" />
                                 </Button>
                               </div>
                             ))}
                           </div>
                         </div>
+
                         <Button
                           variant="destructive"
                           size="sm"
@@ -570,23 +633,23 @@ const [currentVariantIndex, setCurrentVariantIndex] = useState(null);
                   </AccordionItem>
                 ))}
               </Accordion>
-            </div>
 
-            <Button className="mt-4" onClick={(e) => checkValidation(e)}>
-              {id ? "Update Product" : "Add Product"}
-            </Button>
+              <Button className="mt-6" onClick={checkValidation}>
+                {id ? "Update Product" : "Add Product"}
+              </Button>
+            </div>
           </div>
         </div>
+        <ImageCropDialog
+          isOpen={cropDialogOpen}
+          onClose={() => {
+            setCropDialogOpen(false);
+            setCurrentImage(null);
+          }}
+          image={currentImage}
+          onCropComplete={handleCroppedImage}
+        />
       </div>
-      <ImageCropDialog
-        isOpen={cropDialogOpen}
-        onClose={() => {
-          setCropDialogOpen(false);
-          setCurrentImage(null);
-        }}
-        image={currentImage}
-        onCropComplete={handleCroppedImage}
-      />
     </div>
   );
 }

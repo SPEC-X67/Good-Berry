@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const categoryController = require('../../controllers/admin/category-controller');
-const userController = require('../../controllers/admin/user-controller');
-const productController = require('../../controllers/admin/product-controller');
+const categoryController = require('../controllers/admin/category-controller');
+const userController = require('../controllers/admin/user-controller');
+const productController = require('../controllers/admin/product-controller');
 
 //Coustomer
 router.get('/users', userController.getAllUsers);

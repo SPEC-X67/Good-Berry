@@ -7,7 +7,6 @@ const { default: mongoose } = require('mongoose');
 const addProduct = async (req, res) => {
   const { name, description, isFeatured, category, variants } = req.body;
   try {
-    // Validate input
     if (!name || !description || !category) {
       return res.json({ message: "Name, description, and category are required." });
     }
@@ -16,11 +15,9 @@ const addProduct = async (req, res) => {
       return res.json({ message: "At least one variant is required." });
     }
 
-    // Create the product
     const newProduct = new Product({ name, description, isFeatured, category });
     const savedProduct = await newProduct.save();
 
-    // Create variants for the product
     const savedVariants = await Promise.all(
       variants.map(async (variant) => {
         const newVariant = new Variant({
@@ -28,7 +25,6 @@ const addProduct = async (req, res) => {
           title: variant.title,
           description: variant.description,
           images: variant.images,
-          availableQuantity: variant.availableQuantity,
           selectedPackSizes: variant.selectedPackSizes,
           packSizePricing: variant.packSizePricing
         });
@@ -161,7 +157,6 @@ const updateProduct = async (req, res) => {
           title: variant.title,
           description: variant.description,
           images: variant.images,
-          availableQuantity: variant.availableQuantity,
           selectedPackSizes: variant.selectedPackSizes,
           packSizePricing: variant.packSizePricing,
         });

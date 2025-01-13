@@ -74,7 +74,7 @@ function AuthLogin() {
         toast({
           title: data?.payload?.message,
         });
-        navigate('/'); // Add navigation after successful login
+        navigate('/');
       } else {
         if(data?.payload?.isVerify) {
           navigate('/auth/verify-email');

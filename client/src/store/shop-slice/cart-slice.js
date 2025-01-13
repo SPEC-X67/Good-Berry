@@ -1,29 +1,72 @@
-// cartSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const api = 'http://localhost:5000/api/user';
 
-const loadCartFromStorage = () => {
-  try {
-    const cartItems = localStorage.getItem('cartItems');
-    return cartItems ? JSON.parse(cartItems) : [];
-  } catch (error) {
-    console.error('Error loading cart from storage:', error);
-    return [];
+const cartStorage = {
+  load: () => {
+    try {
+      const cartItems = localStorage.getItem('cartItems');
+      return cartItems ? JSON.parse(cartItems) : [];
+    } catch (error) {
+      console.error('Error loading cart from storage:', error);
+      return [];
+    }
+  },
+  save: (items) => {
+    try {
+      localStorage.setItem('cartItems', JSON.stringify(items));
+    } catch (error) {
+      console.error('Error saving cart to storage:', error);
+    }
+  },
+  clear: () => {
+    try {
+      localStorage.removeItem('cartItems');
+    } catch (error) {
+      console.error('Error clearing cart from storage:', error);
+    }
   }
 };
 
-// Async thunks for cart operations
+export const syncCartAfterLogin = createAsyncThunk(
+  'cart/syncCartAfterLogin',
+  async () => {
+    const localCart = cartStorage.load();
+
+    if (localCart.length === 0) {
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${api}/cart/sync`, localCart, {
+        withCredentials: true,
+      });
+
+      cartStorage.clear();
+
+      return response.data;
+    } catch (error) {
+      console.error('Error syncing cart after login:', error);
+      throw error;
+    }
+  }
+);
+
+
 export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async (_, { getState }) => {
     const { auth } = getState();
-    if (!auth.isAuthenticated) {
-      return loadCartFromStorage();
+    
+    if (!auth.user) {
+      return cartStorage.load();
     }
     
     try {
-      const response = await axios.get('/api/cart');
+      const response = await axios.get(`${api}/cart`, {
+        withCredentials: true 
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -36,32 +79,39 @@ export const addToCart = createAsyncThunk(
   'cart/addToCart',
   async (cartItem, { getState }) => {
     const { auth } = getState();
+    const itemToAdd = { ...cartItem };
     
-    if (!auth.isAuthenticated) {
-      const currentCart = loadCartFromStorage();
+    if (!auth.user) {
+      delete itemToAdd.userId;
+    }
+    
+    if (!auth.user) {
+      const currentCart = cartStorage.load();
       const existingItemIndex = currentCart.findIndex(
-        item => item.productId === cartItem.productId && 
-               item.flavor === cartItem.flavor &&
-               item.packageSize === cartItem.packageSize
+        item => item.productId === itemToAdd.productId && 
+               item.flavor === itemToAdd.flavor &&
+               item.packageSize === itemToAdd.packageSize
       );
 
       let updatedCart;
       if (existingItemIndex > -1) {
         updatedCart = currentCart.map((item, index) =>
           index === existingItemIndex
-            ? { ...item, quantity: item.quantity + cartItem.quantity }
+            ? { ...item, quantity: item.quantity + itemToAdd.quantity }
             : item
         );
       } else {
-        updatedCart = [...currentCart, cartItem];
+        updatedCart = [...currentCart, itemToAdd];
       }
 
-      localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+      cartStorage.save(updatedCart);
       return updatedCart;
     }
     
     try {
-      const response = await axios.post('/api/cart', cartItem);
+      const response = await axios.post(`${api}/cart`, itemToAdd, {
+        withCredentials: true
+      });
       return response.data;
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -75,21 +125,23 @@ export const updateCartItemQuantity = createAsyncThunk(
   async ({ itemId, quantity, packageSize }, { getState }) => {
     const { auth } = getState();
     
-    if (!auth.isAuthenticated) {
-      const currentCart = loadCartFromStorage();
+    if (!auth.user) {
+      const currentCart = cartStorage.load();
       const updatedCart = currentCart.map(item =>
         item.productId === itemId && item.packageSize === packageSize 
           ? { ...item, quantity } 
           : item
       );
-      localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+      cartStorage.save(updatedCart);
       return updatedCart;
     }
     
     try {
-      const response = await axios.put(`/api/cart/${itemId}`, { 
+      const response = await axios.put(`${api}/cart/${itemId}`, { 
         quantity,
         packageSize 
+      }, {
+        withCredentials: true
       });
       return response.data;
     } catch (error) {
@@ -104,18 +156,19 @@ export const removeFromCart = createAsyncThunk(
   async ({ itemId, packageSize }, { getState }) => {
     const { auth } = getState();
     
-    if (!auth.isAuthenticated) {
-      const currentCart = loadCartFromStorage();
+    if (!auth.user) {
+      const currentCart = cartStorage.load();
       const updatedCart = currentCart.filter(
         item => !(item.productId === itemId && item.packageSize === packageSize)
       );
-      localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+      cartStorage.save(updatedCart);
       return { itemId, packageSize };
     }
     
     try {
-      await axios.delete(`/api/cart/${itemId}`, { 
-        data: { packageSize } 
+      await axios.delete(`${api}/cart/${itemId}`, {
+        data: { packageSize },
+        withCredentials: true,
       });
       return { itemId, packageSize };
     } catch (error) {
@@ -135,14 +188,14 @@ const cartSlice = createSlice({
   reducers: {
     clearCart: (state) => {
       state.items = [];
-      localStorage.removeItem('cartItems');
+      cartStorage.clear();
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Cart
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
@@ -153,23 +206,35 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
-      // Add to Cart
+      .addCase(syncCartAfterLogin.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.items = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(syncCartAfterLogin.rejected, (state, action) => {
+        state.error = action.error.message;
+      })
+      .addCase(addToCart.pending, (state) => {
+        state.error = null;
+      })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items = action.payload;
         state.error = null;
+      })
+      .addCase(addToCart.rejected, (state, action) => {
+        state.error = action.error.message;
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         const { itemId, packageSize } = action.payload;
         state.items = state.items.filter(
           item => !(item.productId === itemId && item.packageSize === packageSize)
         );
-        state.loading = false;
+        state.error = null;
       })
       .addCase(updateCartItemQuantity.fulfilled, (state, action) => {
         state.items = action.payload;
-
-        console.log("Action",action.payload);
-        state.loading = false;
+        state.error = null;
       });
   },
 });

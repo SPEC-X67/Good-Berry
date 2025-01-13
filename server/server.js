@@ -5,13 +5,14 @@ const mongoose = require('mongoose');
 const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const authRouter = require('./routes/auth/auth-routes');
-const adminRouter = require('./routes/admin/admin-routes');
-const commonRouter = require('./routes/common/common-routes');
-const adminAuth = require('./middleware/admin-auth');
+const authRouter = require('./routes/auth-routes');
+const adminRouter = require('./routes/admin-routes');
+const commonRouter = require('./routes/common-routes');
+const userRouter = require('./routes/user-routes');
 const connectCloudinary = require('./config/cloudnary');
 const passport = require('./config/passport');
 const session = require('express-session');
+const auth = require('./middleware/auth');
 
 // Database connection
 mongoose.connect(`mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/`)
@@ -45,7 +46,7 @@ app.use(session({
     store: MongoStore.create({
         mongoUrl: 'mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/',
       })
-  }));
+}));
   
 app.use(cookieParser());
 app.use(express.json());
@@ -55,8 +56,7 @@ app.use(passport.session());
 
 app.use('/api/auth', authRouter);
 app.use('/api/admin',adminRouter);
+app.use('/api/user', userRouter);
 app.use('/api', commonRouter);
-
-
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

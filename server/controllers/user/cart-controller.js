@@ -1,0 +1,211 @@
+const mongoose = require('mongoose');
+const Cart = require('../../models/Cart');
+const Product = require('../../models/Product');
+
+const cartController = {
+  // Get cart items for a user
+  getCart: async (req, res) => {
+    console.log(req.user);
+    try {
+      const userId = req.user.id;
+
+      const cart = await Cart.findOne({ userId })
+      if (!cart) {
+        return res.json([]);
+      }
+      res.json(cart.items);
+    } catch (error) {
+      console.error('Get cart error:', error);
+      res.status(500).json({ error: 'Error fetching cart items' });
+    }
+  },
+
+  // Add item to cart
+  addToCart: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      console.log(req.body)
+      const { productId, quantity, packageSize, flavor, name, image, price } = req.body;
+
+      if (!productId || !quantity || !packageSize) {
+        return res.status(400).json({
+          error: 'Missing required fields: productId, quantity, and packageSize are required'
+        });
+      }
+
+      const product = await Product.findOne({ _id: productId });
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+
+      let cart = await Cart.findOne({ userId });
+
+      if (!cart) {
+        cart = new Cart({
+          userId,
+          items: []
+        });
+      }
+
+      const existingItemIndex = cart.items.findIndex(
+        item => item.productId.toString() === productId &&
+          item.packageSize === packageSize
+      );
+
+      if (existingItemIndex > -1) {
+        cart.items[existingItemIndex].quantity += quantity;
+      } else {
+        cart.items.push({
+          productId,
+          packageSize,
+          quantity,
+          flavor,
+          name,
+          image,
+          price,
+        });
+      }
+
+      await cart.save();
+
+      res.json(cart.items);
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      res.status(500).json({ error: 'Error adding item to cart' });
+    }
+  },
+
+  // Sync cart
+  syncCart: async (req, res) => {
+    const userId = req.user.id;
+    const localCart = req.body;
+  
+    try {
+      let cart = await Cart.findOne({ userId });
+  
+      if (!cart) {
+        cart = new Cart({
+          userId,
+          items: [],
+        });
+      }
+  
+      const serverCart = cart.items || [];
+  
+      localCart.forEach(localItem => {
+        const existingItem = serverCart.find(
+          item =>
+            item.productId.toString() === localItem.productId &&
+            item.flavor === localItem.flavor &&
+            item.packageSize === localItem.packageSize
+        );
+  
+        if (existingItem) {
+          existingItem.quantity += localItem.quantity;
+        } else {
+          serverCart.push(localItem);
+        }
+      });
+  
+      cart.items = serverCart;
+      await cart.save();
+  
+      res.json(cart.items);
+    } catch (error) {
+      console.error('Error syncing cart:', error);
+      res.status(500).json({ message: 'Failed to sync cart' });
+    }
+  },  
+
+  // Update item quantity
+  updateQuantity: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { itemId } = req.params;
+      const { quantity, packageSize } = req.body;
+
+      console.log(userId, itemId, quantity, packageSize);
+
+      if (!quantity || !packageSize) {
+        return res.status(400).json({
+          error: 'Missing required fields: quantity and packageSize are required'
+        });
+      }
+
+      const cart = await Cart.findOne({ userId });
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found' });
+      }
+
+      const itemIndex = cart.items.findIndex(
+        item => item.productId.toString() === itemId &&
+          item.packageSize === packageSize
+      );
+
+      if (itemIndex === -1) {
+        return res.status(404).json({ error: 'Item not found in cart' });
+      }
+
+      cart.items[itemIndex].quantity = quantity;
+      await cart.save();
+
+      res.json(cart.items);
+    } catch (error) {
+      console.error('Update quantity error:', error);
+      res.status(500).json({ error: 'Error updating item quantity' });
+    }
+  },
+
+  // Remove item from cart
+  removeItem: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { itemId } = req.params;
+      const { packageSize } = req.body;
+
+      console.log(userId, itemId, packageSize);
+
+      if (!packageSize) {
+        return res.status(400).json({
+          error: 'Missing required field: packageSize'
+        });
+      }
+
+      const cart = await Cart.findOne({ userId });
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found' });
+      }
+
+      cart.items = cart.items.filter(
+        item => !(item.productId.toString() === itemId &&
+          item.packageSize === packageSize)
+      );
+
+      await cart.save();
+      res.json({ itemId, packageSize });
+    } catch (error) {
+      console.error('Remove item error:', error);
+      res.status(500).json({ error: 'Error removing item from cart' });
+    }
+  },
+
+  // Clear cart
+  clearCart: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const cart = await Cart.findOne({ userId });
+
+      if (cart) {
+        cart.items = [];
+        await cart.save();
+      }
+
+      res.json({ message: 'Cart cleared successfully' });
+    } catch (error) {
+      console.error('Clear cart error:', error);
+      res.status(500).json({ error: 'Error clearing cart' });
+    }
+  }
+};
+
+module.exports = cartController;

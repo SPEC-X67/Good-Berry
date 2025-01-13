@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authController = require("../../controllers/auth/auth-controller");
+const authController = require("../controllers/auth/auth-controller");
 const passport = require("passport");
 
 router.post("/register", authController.register);
@@ -28,6 +28,7 @@ router.get("/google/callback",
     }),
     authController.googleAuth
 );
+
 router.get("/auth-check", authController.authMiddleware, (req, res) => {
     const user = req.user;
     res.status(200).json({ success: true, message: "Authenticated user!", user });

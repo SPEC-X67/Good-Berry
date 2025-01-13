@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +73,6 @@ export default function ProductForm() {
               cloudinaryUrl: url,
               uploading: false,
             })),
-            availableQuantity: variant.availableQuantity,
             selectedPackSizes: variant.selectedPackSizes,
             packSizePricing: variant.packSizePricing || [],
           }));
@@ -97,7 +96,6 @@ export default function ProductForm() {
         title: "",
         description: "",
         images: [],
-        availableQuantity: "",
         selectedPackSizes: [],
         packSizePricing: [],
       },
@@ -116,11 +114,11 @@ export default function ProductForm() {
     setVariants((prev) => {
       const updatedVariants = [...prev];
       const variant = updatedVariants[variantIndex];
-
+  
       const existingPriceIndex = variant.packSizePricing.findIndex(
         (p) => p.size === packSize
       );
-
+  
       if (existingPriceIndex >= 0) {
         variant.packSizePricing[existingPriceIndex][field] = value;
       } else {
@@ -129,9 +127,10 @@ export default function ProductForm() {
           [field]: value,
           price: field === "price" ? value : "",
           salePrice: field === "salePrice" ? value : "",
+          quantity: field === "quantity" ? value : "",
         });
       }
-
+  
       return updatedVariants;
     });
   };
@@ -261,7 +260,6 @@ export default function ProductForm() {
       if (
         !variant.title ||
         !variant.description ||
-        !variant.availableQuantity ||
         variant.selectedPackSizes.length === 0 ||
         variant.images.length === 0
       ) {
@@ -275,11 +273,9 @@ export default function ProductForm() {
       // Validate prices for each selected pack size
       for (const size of variant.selectedPackSizes) {
         const pricing = variant.packSizePricing.find((p) => p.size === size);
-        if (!pricing || !pricing.price || !pricing.salePrice) {
+        if (!pricing || !pricing.price || !pricing.salePrice || !pricing.quantity) {
           toast({
-            title: `Please set both price and sale price for ${size} in variant ${
-              i + 1
-            }`,
+            title: `Please set price, sale price, and quantity for ${size} in variant ${i + 1}`,
             variant: "destructive",
           });
           return;
@@ -287,8 +283,17 @@ export default function ProductForm() {
 
         const price = parseFloat(pricing.price);
         const salePrice = parseFloat(pricing.salePrice);
+        const quantity = parseInt(pricing.quantity);
 
-        if (price < 0 || salePrice < 0) {
+        if (quantity < 0) {
+          toast({
+            title: "Quantity should be greater than 0",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (price < 0 || salePrice < 0 ) {
           toast({
             title: "Prices should be greater than 0",
             variant: "destructive",
@@ -323,11 +328,12 @@ export default function ProductForm() {
         images: variant.images
           .filter((img) => !img.uploading)
           .map((img) => img.cloudinaryUrl),
-        availableQuantity: variant.availableQuantity,
         selectedPackSizes: variant.selectedPackSizes,
         packSizePricing: variant.packSizePricing,
       })),
     };
+
+    console.log(variants);
 
     try {
       const action = id
@@ -357,15 +363,14 @@ export default function ProductForm() {
 
   const renderPackSizePricing = (variant, variantIndex) => (
     <div className="mt-4">
-      <Label>Pack Size Pricing</Label>
+      <Label>Pack Size Pricing and Quantity</Label>
       <div className="grid gap-4 mt-2">
         {variant.selectedPackSizes.map((size) => {
-          const pricing =
-            variant.packSizePricing.find((p) => p.size === size) || {};
+          const pricing = variant.packSizePricing.find((p) => p.size === size) || {};
           return (
             <div
               key={size}
-              className="grid sm:grid-cols-2 gap-4 p-4 border rounded"
+              className="grid sm:grid-cols-3 gap-4 p-4 border rounded" 
             >
               <div>
                 <Label>{size} - Regular Price</Label>
@@ -393,6 +398,23 @@ export default function ProductForm() {
                       variantIndex,
                       size,
                       "salePrice",
+                      e.target.value
+                    )
+                  }
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label>{size} - Quantity</Label>
+                <Input
+                  type="number"
+                  value={pricing.quantity || ""}
+                  onChange={(e) =>
+                    handleUpdatePackSizePrice(
+                      variantIndex,
+                      size,
+                      "quantity",
                       e.target.value
                     )
                   }
@@ -501,26 +523,8 @@ export default function ProductForm() {
                               className="mt-1"
                             />
                           </div>
-                          <div>
-                            <Label htmlFor={`variant-quantity-${index}`}>
-                              Available Quantity
-                            </Label>
-                            <Input
-                              id={`variant-quantity-${index}`}
-                              type="number"
-                              value={variant.availableQuantity}
-                              onChange={(e) =>
-                                handleUpdateVariant(
-                                  index,
-                                  "availableQuantity",
-                                  e.target.value
-                                )
-                              }
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
 
+                        </div>
                         <div>
                           <Label htmlFor={`variant-description-${index}`}>
                             Description
@@ -620,14 +624,17 @@ export default function ProductForm() {
                           </div>
                         </div>
 
+                        <div className="flex justify-end">
                         <Button
                           variant="destructive"
                           size="sm"
-                          className="mt-4"
+                          className="mt-4 w-[180px]"
                           onClick={() => handleRemoveVariant(index)}
-                        >
+                          >
+                          <Trash className="w-4 h-4" />
                           Remove Variant
                         </Button>
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>

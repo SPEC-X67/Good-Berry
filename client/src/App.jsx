@@ -24,7 +24,7 @@ import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
 import VeryOtp from "./pages/auth/verify-otp";
 import Account from "./pages/user";
-import { fetchCart } from "./store/shop-slice/cart-slice";
+import { fetchCart, syncCartAfterLogin } from "./store/shop-slice/cart-slice";
 import ShoppingCart from "./pages/shop/cart/shopping-cart";
 import OrderView from "./pages/shop/cart/view-order";
 import OrderDetails from "./pages/admin/order/order-details";
@@ -34,14 +34,18 @@ function App() {
     (state) => state.auth
   );
   const dispatch = useDispatch();
-
+  
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
-
+  
   useEffect(() => {
     dispatch(fetchCart());
-  }, [dispatch]);
+  }, [dispatch, user]);
+
+  if(user){
+    dispatch(syncCartAfterLogin());
+  }
 
   if (isLoading)
     return <Skeleton className="w-[100px] h-[20px] rounded-full" />;

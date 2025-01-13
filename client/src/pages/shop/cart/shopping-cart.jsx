@@ -18,8 +18,6 @@ export default function ShoppingCart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  console.log("From here",items)
-
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (item?.price * item?.quantity), 0)
     setSubtotal(newSubtotal)

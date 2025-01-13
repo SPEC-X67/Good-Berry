@@ -63,8 +63,8 @@ const getProductDetails = async (req, res) => {
           'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] }, // Get the first image
         },
       },
-      { $limit: 5 }, // Limit the number of recommended products
-    ]);   // Select only necessary fields
+      { $limit: 5 }, 
+    ]);   
 
     res.status(200).json({ variantsFormatted, product, recommendedProducts });
 

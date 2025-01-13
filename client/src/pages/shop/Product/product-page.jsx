@@ -34,9 +34,9 @@ export default function ProductPage() {
     dispatch(getSingleProduct(id));
   }, [dispatch, id]);
 
-  const { product, pflavors, recomentedProds } = useSelector(
-    (state) => state.shop
-  );
+  const { product, pflavors, recomentedProds } = useSelector((state) => state.shop);
+  const { user } = useSelector((state) => state.auth);
+  
   const flavors = pflavors || {};
 
   // Get available flavor keys
@@ -120,6 +120,7 @@ export default function ProductPage() {
   const handleAddToCart = async() => {
     setIsAddingToCart(true);
     const cartItem = {
+      ...(user && { userId: user._id }),
       productId: product._id,
       name: product.name,
       flavor: flavor.title,
@@ -129,15 +130,17 @@ export default function ProductPage() {
       image: selectedImage
     };
     
-    await dispatch(addToCart(cartItem));
-    // Simulate adding to cart
-    setTimeout(() => {
+    try {
+      await dispatch(addToCart(cartItem));
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
-      // Reset added state after a delay
+    
       setTimeout(() => setAddedToCart(false), 2000);
-    }, 1000);
+    } catch (error) {
+      setIsAddingToCart(false);
+      console.error("Error adding to cart:", error);
+    }
   };
 
   const handleCopyLink = async () => {

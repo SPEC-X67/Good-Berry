@@ -17,7 +17,8 @@ const variantSchema = new mongoose.Schema({
   packSizePricing: [{
     size: String,
     price: Number,
-    salePrice: Number
+    salePrice: Number,
+    quantity: Number
   }]
 });
 

@@ -28,7 +28,6 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  // Fetch all products on component mount
   useEffect(() => {
     dispatch(getAllProducts());
   }, [dispatch]);
@@ -44,7 +43,10 @@ export default function ProductsPage() {
       .filter((product) => product.category.status == 'Active')
       .map((product) => {
         const totalStock = Array.isArray(product.variants)
-          ? product.variants.reduce((acc, variant) => acc + (Number(variant.availableQuantity) || 0), 0)
+          ? product.variants.reduce((acc, variant) => 
+            acc + (Array.isArray(variant.packSizePricing)
+            ? variant.packSizePricing.reduce((sum, pack) => sum + (Number(pack.quantity) || 0), 0)
+            : 0), 0)
           : 0;
           
         return {

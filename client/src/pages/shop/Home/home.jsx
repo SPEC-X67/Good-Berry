@@ -8,7 +8,6 @@ import { FeaturedProductCard } from "./featured-product-card";
 import { useDispatch, useSelector } from "react-redux";
 import { featuredProducts, getProducts } from "@/store/shop-slice";
 
-
 function ShoppingHome() {
   const page = 1;
   const limit = 10;

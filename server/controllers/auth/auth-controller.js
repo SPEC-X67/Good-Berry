@@ -259,20 +259,17 @@ const logout = async (req, res) => {
 const set = async (req, res) => {
 
     try {
+        const users = await User.find({});
+        await Promise.all(
+            users.map(user => {
+                user.phone = null;
+                return user.save();
+            })
+        );
 
-        // users.forEach(async (user) => {
-        //     user.isVerified = false;
-        // })
-
-        const user = await User.findOne({ email: "test@gmail.com" });
-        user.isVerified = false;
-        await user.save();
-
-        user.save();
         res.json({
             success: true,
             message: "Set successfully",
-            user,
         });
 
     } catch (error) {

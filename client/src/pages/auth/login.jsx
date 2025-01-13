@@ -22,7 +22,7 @@ const admin = {
 
 const user = {
   email: "test@gmail.com",
-  password: "1",
+  password: "Danmash665",
 };
 
 function AuthLogin() {

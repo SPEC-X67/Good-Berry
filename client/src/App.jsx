@@ -43,9 +43,11 @@ function App() {
     dispatch(fetchCart());
   }, [dispatch, user]);
 
-  if(user){
-    dispatch(syncCartAfterLogin());
-  }
+  useEffect(() => {
+    if (user) {
+      dispatch(syncCartAfterLogin());
+    }
+  }, [dispatch, user]);
 
   if (isLoading)
     return <Skeleton className="w-[100px] h-[20px] rounded-full" />;

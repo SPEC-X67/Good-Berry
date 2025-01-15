@@ -14,24 +14,14 @@ const AccountDetailPage = () => {
 
 
   const [data, setData] = useState({
-    username: "",
-    email: "",
-    phone: "",
+    username: user.username || "",
+    email: user.email || "",
+    phone: user.phone || "",
   });
 
   useEffect(() => {
     dispatch(getUser())
   }, [dispatch]);
-
-  useEffect(() => {
-    if (user) {
-      setData({
-        username: user.username || "",
-        email: user.email || "",
-        phone: user.phone || "",
-      });
-    }
-  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

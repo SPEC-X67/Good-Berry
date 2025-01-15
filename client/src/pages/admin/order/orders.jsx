@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, Filter, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,63 +7,68 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders} from './moke-data';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllOrders } from '@/store/admin-slice/order-slice';
 
 function AdminOrders() {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch();
+  const { orders, isLoading, error, currentPage, totalPages } = useSelector((state) => state.adminOrder);
+  const searchInputRef = useRef(null);
+  
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const loadOrders = useCallback((page = 1) => {
+    dispatch(fetchAllOrders({ 
+      page, 
+      limit: 5, 
+      search: debouncedSearch, 
+      status: statusFilter 
+    }));
+  }, [dispatch, debouncedSearch, statusFilter]);
+
+  const handleSearch = (e) => {
+    setSearchInput(e.target.value);
+  };
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchInput]);
 
   useEffect(() => {
-    filterOrders();
-  }, [orders, searchTerm, statusFilter]);
+    loadOrders(1);
+  }, [debouncedSearch, statusFilter, loadOrders]);
 
-  async function loadOrders() {
-    setLoading(true);
-    try {
-      const fetchedOrders = await fetchOrders();
-      setOrders(fetchedOrders);
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+  };
 
-  function filterOrders() {
-    let filtered = orders;
-    if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-    setFilteredOrders(filtered);
-  }
+  const handlePageChange = (newPage) => {
+    loadOrders(newPage);
+  };
 
-  function getStatusColor(status) {
+  const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'canceled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'processing': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case 'shipped': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+      case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-200';
+      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading orders...</div>;
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading orders...</div>;
+  if (error) {
+    return <div className="flex items-center justify-center h-screen">Error fetching orders: {error}</div>;
   }
 
   return (
@@ -76,24 +81,24 @@ function AdminOrders() {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
+              ref={searchInputRef}
               placeholder="Search by Order ID or Customer Name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={handleSearch}
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value)}>
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-[180px]">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
               <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="canceled">Canceled</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -112,22 +117,22 @@ function AdminOrders() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map(order => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.customerName}</TableCell>
-                  <TableCell>{order.orderDate}</TableCell>
+              {orders.map(order => (
+                <TableRow key={order._id}>
+                  <TableCell className="font-medium">#{order.orderId}</TableCell>
+                  <TableCell>{order.userId.username}</TableCell>
+                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(order.status)}>
                       {order.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
+                  <TableCell>₹{order.total.toFixed(2)}</TableCell>
                   <TableCell>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => navigate(`/admin/orders/${order.id}`)}
+                      onClick={() => navigate(`/admin/orders/${order.orderId}`)}
                     >
                       View Details
                     </Button>
@@ -138,6 +143,31 @@ function AdminOrders() {
           </Table>
         </CardContent>
       </Card>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <span className="text-sm font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

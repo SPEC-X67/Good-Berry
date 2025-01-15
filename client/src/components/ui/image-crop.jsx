@@ -9,7 +9,7 @@ function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
     makeAspectCrop(
       {
         unit: '%',
-        width: 90,
+        width: 95,
       },
       aspect,
       mediaWidth,
@@ -30,6 +30,11 @@ export default function ImageCropDialog({ isOpen, onClose, image, onCropComplete
     setCrop(centerAspectCrop(width, height, aspect));
   }
 
+  function onImageLoad(e) {
+    const { width, height } = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, aspect));
+  }
+
   const handleCropComplete = async () => {
     if (!crop || !imgRef.current) return;
 
@@ -37,32 +42,55 @@ export default function ImageCropDialog({ isOpen, onClose, image, onCropComplete
     const ctx = canvas.getContext('2d');
     const image = imgRef.current;
 
+    // Get the actual dimensions
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+    // Set canvas dimensions to match the cropped area at full resolution
+    canvas.width = Math.round(crop.width * scaleX);
+    canvas.height = Math.round(crop.height * scaleY);
 
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Draw the image with proper scaling
     ctx.drawImage(
       image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
+      Math.round(crop.x * scaleX),
+      Math.round(crop.y * scaleY),
+      Math.round(crop.width * scaleX),
+      Math.round(crop.height * scaleY),
       0,
       0,
-      crop.width,
-      crop.height
+      canvas.width,
+      canvas.height
     );
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const croppedFile = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
-      onCropComplete(croppedFile);
-      onClose();
-    }, 'image/jpeg');
+    // Convert to blob with high quality
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          console.error('Canvas to Blob conversion failed');
+          return;
+        }
+        
+        // Preserve original file name and extension if possible
+        const originalFileName = image.src.split('/').pop()?.split('?')[0] || 'cropped-image';
+        const fileExtension = originalFileName.split('.').pop() || 'jpeg';
+        const newFileName = `cropped-${originalFileName}`;
+        
+        const croppedFile = new File([blob], newFileName, { 
+          type: `image/${fileExtension === 'png' ? 'png' : 'jpeg'}`
+        });
+        
+        onCropComplete(croppedFile);
+        onClose();
+      },
+      image.src.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg',
+      1.0 // Maximum quality (1.0)
+    );
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-sm">

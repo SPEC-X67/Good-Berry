@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { fetchOrderById, cancelOrderItem } from "@/store/shop-slice/order-slice";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,7 @@ export default function OrderView() {
   const dispatch = useDispatch();
   const { order, isLoading, error } = useSelector((state) => state.order);
   const [cancelReason, setCancelReason] = useState("");
+  const navigate = useNavigate();
 
   const { toast } = useToast();
 
@@ -141,15 +142,16 @@ export default function OrderView() {
             {order.items.map((product) => (
               <div
                 key={product._id}
-                className="flex flex-col md:flex-row items-start md:items-center gap-4"
+                className="flex flex-col md:flex-row items-start md:items-center gap-4 cursor-pointer"
               >
                 <img
                   src={product.image}
                   alt={product.name}
                   className="w-24 h-24 object-cover rounded-md"
+                  onClick={() => navigate(`/shop/product/${product.productId}`)}
                 />
-                <div className="flex-grow">
-                  <h3 className="font-semibold">{product.name}</h3>
+                <div className="flex-grow" onClick={() => navigate(`/shop/product/${product.productId}`)}>
+                  <h3 className="font-semibold">{product.name} - <span> {product.packageSize}</span></h3>
                   <p className="text-sm text-muted-foreground">
                     Quantity: {product.quantity} | Price: <span className="text-[#92c949] font-semibold">$
                     {product.price.toFixed(2)}</span>

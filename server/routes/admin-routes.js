@@ -3,7 +3,7 @@ const router = express.Router();
 const categoryController = require('../controllers/admin/category-controller');
 const userController = require('../controllers/admin/user-controller');
 const productController = require('../controllers/admin/product-controller');
-const orderController = require('../controllers/common/order-controller');
+const orderController = require('../controllers/admin/order-controller');
 
 // Customer
 router.get('/users', userController.getAllUsers);
@@ -24,6 +24,8 @@ router.delete('/categories/:id', categoryController.deleteCategory);
 
 // Order
 router.get('/orders', orderController.getAllOrders);
+router.get('/orders/:id', orderController.getOrderById);
 router.patch('/orders/:id/status', orderController.updateOrderStatus);
+// router.put('/orders/:orderId/items/:itemId', orderController.updateOrderItemStatus);
 
 module.exports = router;

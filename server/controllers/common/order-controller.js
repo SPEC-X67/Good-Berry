@@ -151,10 +151,6 @@ const orderController = {
         return res.status(404).json({ message: 'Item not found in order' });
       }
   
-      if (item.status !== 'processing') {
-        return res.status(400).json({ message: 'Item cannot be cancelled' });
-      }
-  
       item.status = 'cancelled';
       item.cancellationReason = reason;
 
@@ -168,84 +164,6 @@ const orderController = {
     } catch (error) {
       res.status(500).json({ 
         message: 'Error cancelling item', 
-        error: error.message 
-      });
-    }
-  },
-  
-  // Admin controllers
-  getAllOrders : async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const status = req.query.status;
-      const orderId = req.query.orderId;
-      const startDate = req.query.startDate;
-      const endDate = req.query.endDate;
-  
-      let query = {};
-  
-      // Add filters
-      if (status) query.status = status;
-      if (orderId) query.orderId = orderId;
-      if (startDate || endDate) {
-        query.createdAt = {};
-        if (startDate) query.createdAt.$gte = new Date(startDate);
-        if (endDate) query.createdAt.$lte = new Date(endDate);
-      }
-  
-      const orders = await Order.find(query)
-        .populate('userId', 'name email')
-        .populate('addressId')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit);
-  
-      const total = await Order.countDocuments(query);
-  
-      res.json({
-        orders,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalOrders: total
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        message: 'Error fetching orders', 
-        error: error.message 
-      });
-    }
-  },
-  
-  updateOrderStatus : async (req, res) => {
-    try {
-      const { status } = req.body;
-      
-      if (!['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status' });
-      }
-  
-      const order = await Order.findById(req.params.id)
-        .populate('addressId');
-      
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      // Validate status transition
-      if (order.status === 'cancelled' || order.status === 'delivered') {
-        return res.status(400).json({ 
-          message: 'Cannot update status of cancelled or delivered orders' 
-        });
-      }
-  
-      order.status = status;
-      await order.save();
-      
-      res.json(order);
-    } catch (error) {
-      res.status(500).json({ 
-        message: 'Error updating order status', 
         error: error.message 
       });
     }

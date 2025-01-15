@@ -42,7 +42,6 @@ const orderController = {
         addressId,
         shippingMethod,
         paymentMethod,
-        status: 'pending',
         cancellation: {
           reason: '',
           message: '',
@@ -80,7 +79,7 @@ const orderController = {
       let query = { userId: req.user.id}; 
 
       if(status === 'all') {
-        query.status = { $in: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] };
+        query.status = { $in: ['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'] };
       } else if (status) {
         query.status = status;
       }
@@ -113,7 +112,7 @@ const orderController = {
   getOrderById : async (req, res) => {
     try {
       const order = await Order.findOne({ 
-        _id: req.params.id, 
+        orderId: req.params.id, 
         userId: req.user.id 
       }).populate('addressId');
       
@@ -132,38 +131,43 @@ const orderController = {
   
   cancelOrder : async (req, res) => {
     try {
-      const { reason, message } = req.body;
+      const { productId, reason } = req.body;
   
       if (!reason) {
         return res.status(400).json({ message: 'Cancellation reason is required' });
       }
   
       const order = await Order.findOne({ 
-        _id: req.params.id, 
-        userId: req.user._id 
+        orderId: req.params.id, 
+        userId: req.user.id 
       }).populate('addressId');
       
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
   
-      if (order.status !== 'pending') {
-        return res.status(400).json({ message: 'Order cannot be cancelled' });
+      const item = order.items.find(item => item.productId.toString() === productId);
+      if (!item) {
+        return res.status(404).json({ message: 'Item not found in order' });
       }
   
-      order.status = 'cancelled';
-      order.cancellation = {
-        reason,
-        message: message || '',
-        date: new Date()
-      };
+      if (item.status !== 'processing') {
+        return res.status(400).json({ message: 'Item cannot be cancelled' });
+      }
+  
+      item.status = 'cancelled';
+      item.cancellationReason = reason;
+
+      if(order.items.every(item => item.status === 'cancelled')) {
+        order.status = 'cancelled';
+      }
   
       await order.save();
       
       res.json(order);
     } catch (error) {
       res.status(500).json({ 
-        message: 'Error cancelling order', 
+        message: 'Error cancelling item', 
         error: error.message 
       });
     }
@@ -217,7 +221,7 @@ const orderController = {
     try {
       const { status } = req.body;
       
-      if (!['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+      if (!['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status' });
       }
   

@@ -23,6 +23,31 @@ export const fetchOrders = createAsyncThunk(
         params: { page, limit, search, status },
         withCredentials: true
       });
+      console.log(response);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchOrderById = createAsyncThunk(
+  'order/fetchOrderById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${api}/order/${id}`, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const cancelOrderItem = createAsyncThunk(
+  'order/cancelOrderItem',
+  async ({ orderId, productId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${api}/order/${orderId}/cancel`, { productId, reason }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -34,6 +59,7 @@ const orderSlice = createSlice({
   name: 'order',
   initialState: {
     orders: [],
+    order: null,
     isLoading: false,
     error: null,
     currentPage: 1,
@@ -67,6 +93,33 @@ const orderSlice = createSlice({
         state.totalPages = action.payload.totalPages;
       })
       .addCase(fetchOrders.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchOrderById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchOrderById.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.order = action.payload;
+      })
+      .addCase(fetchOrderById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(cancelOrderItem.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(cancelOrderItem.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.order = action.payload;
+        const index = state.orders.findIndex(order => order.orderId === action.payload.orderId);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        }
+      })
+      .addCase(cancelOrderItem.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

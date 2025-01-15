@@ -17,7 +17,19 @@ const OrderItemSchema = new mongoose.Schema({
   quantity: {
     type: Number
   },
-  image: String
+  image: String,
+  status: {
+    type: String,
+    default: 'processing'
+  },
+  cancellationReason: {
+    type: String,
+    default: ''
+  },
+  returnReason: {
+    type: String,
+    default: ''
+  }
 });
 
 const OrderSchema = new mongoose.Schema({
@@ -46,14 +58,7 @@ const OrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: 'pending'
-  },
-  cancellation: {
-    reason: {
-      type: String
-    },
-    message: String,
-    date: Date
+    default: 'processing'
   },
   subtotal: Number,
   shippingCost: Number,
@@ -87,7 +92,6 @@ async function generateOrderId() {
 
   const sequence = (count + 1).toString().padStart(4, '0');
   
-  // Format: PET + YY + MM + DD + 4-digit sequence
   return `ORD${year}${month}${day}${sequence}`;
 }
 

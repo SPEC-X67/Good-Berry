@@ -87,7 +87,8 @@ function App() {
           }
         >
           <Route index element={<Account />} />
-          <Route path="order" element={<OrderView />} />
+          <Route path="order" element={<Account />} />
+          <Route path="order/:id" element={<OrderView />} />
         </Route>
 
         {/* Auth Routes */}

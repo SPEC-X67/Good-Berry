@@ -6,12 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const getStatusBadgeColor = (status) => {
+  switch (status) {
+    case 'processing':
+      return 'bg-blue-100 text-blue-800';
+    case 'shipped':
+      return 'bg-yellow-100  text-yellow-800';
+    case 'delivered':
+      return 'bg-green-100 text-green-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const { orders, isLoading, error, currentPage, totalPages } = useSelector((state) => state.order);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const navigate = useNavigate();
 
   const loadOrders = useCallback((page = 1) => {
     dispatch(fetchOrders({ page, limit: 9, search: searchTerm, status: statusFilter }));
@@ -62,10 +79,10 @@ const OrdersPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="shipped">Shipped</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -86,10 +103,10 @@ const OrdersPage = () => {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(order.status)}`}>
                   {order.status}
                 </span>
-                <Button variant="outline" size="sm">View Details</Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/account/order/${order.orderId}`)}>View Details</Button>
               </div>
             </CardContent>
           </Card>

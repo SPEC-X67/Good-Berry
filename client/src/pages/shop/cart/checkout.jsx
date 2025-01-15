@@ -10,119 +10,143 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, X, MapPin, ShoppingCart, Wallet, Pencil } from "lucide-react";
+import { Plus, MapPin, ShoppingCart, Wallet, Pencil, Loader2, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import OrderSuccess from "./success-order";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAddresses, updateAddress, setDefault, addAddress } from '@/store/user-slice/account-slice';
+import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { createOrder } from '@/store/shop-slice/order-slice';
+import { clearCart } from "@/store/shop-slice/cart-slice";
+import { useNavigate } from "react-router-dom";
+
+const addressSchema = z.object({
+  street: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  zip: z.string().min(1, 'ZIP code is required')
+    .regex(/^\d+$/, 'ZIP code must contain only numbers'),
+  country: z.string().min(1, 'Country is required'),
+  name: z.string().min(1, 'Name is required'),
+  type: z.string().min(1, 'Address type is required'),
+  mobile: z.string()
+    .min(1, 'Mobile number is required')
+    .regex(/^\d{10}$/, 'Mobile number must be 10 digits')
+});
 
 export default function CheckoutPage() {
+  const dispatch = useDispatch();
+  const { addresses } = useSelector(state => state.account);
   const [activeStep, setActiveStep] = useState("address");
-  const [selectedAddress, setSelectedAddress] = useState("1");
+  const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedShipping, setSelectedShipping] = useState("free");
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [summary, setSummary] = useState({
-    subtotal: 2347,
-    coupon: 50,
-    shipping: 0,
-    total: 2347,
-  });
-
-  const shippingMethods = [
-    {
-      id: "free",
-      name: "Regular shipment",
-      description: "Free delivery",
-      date: "17 Oct, 2023",
-      price: 0,
-    },
-    {
-      id: "express",
-      name: "Express delivery",
-      description: "Get your delivery as soon as possible",
-      date: "1 Oct, 2023",
-      price: 29,
-    },
-    {
-      id: "scheduled",
-      name: "Scheduled delivery",
-      description: "Pick a date when you want to get your delivery",
-      date: "Select Date →",
-      price: 15,
-    },
-  ];
-
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
-  const [addresses, setAddresses] = useState([
-    {
-      id: "1",
-      street: "2118 Thornridge Cir",
-      city: "Syracuse",
-      state: "Connecticut",
-      zip: "35624",
-      country: "United States",
-      name: "Thornridge",
-      type: "HOME",
-      mobile: "9656633324",
-    },
-  ]);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newAddress = {
-      id: isEditing || Date.now().toString(),
-      street: formData.get("street"),
-      city: formData.get("city"),
-      state: formData.get("state"),
-      zip: formData.get("zip"),
-      country: formData.get("country"),
-      name: formData.get("name"),
-      type: formData.get("type"),
-      mobile: formData.get("mobile"),
+  const items = useSelector(state => state.cart.items)
+  const { isLoading } = useSelector(state => state.order)
+
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      street: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: '',
+      name: '',
+      type: '',
+      mobile: ''
+    },
+    mode: 'onChange'
+  });
+
+  useEffect(() => {
+    dispatch(fetchAddresses());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const defaultAddress = addresses.find(addr => addr.isDefault);
+      setSelectedAddress(defaultAddress?._id || addresses[0]._id);
+    }
+  }, [addresses]);
+
+  useEffect(() => {
+    if (isEditing) {
+      const editingAddress = addresses.find(addr => addr._id === isEditing);
+      if (editingAddress) {
+        reset({
+          street: editingAddress.street,
+          city: editingAddress.city,
+          state: editingAddress.state,
+          zip: editingAddress.zip,
+          country: editingAddress.country,
+          name: editingAddress.name,
+          type: editingAddress.type,
+          mobile: editingAddress.mobile
+        });
+      }
+    } else {
+      reset({
+        street: '',
+        city: '',
+        state: '',
+        zip: '',
+        country: '',
+        name: '',
+        type: '',
+        mobile: ''
+      });
+    }
+  }, [isEditing, addresses, reset]);
+
+  const onSubmit = (data) => {
+    const addressData = {
+      ...data,
+      isDefault: true
     };
 
     if (isEditing) {
-      setAddresses(
-        addresses.map((addr) => (addr.id === isEditing ? newAddress : addr))
-      );
-      setIsEditing(null);
+      dispatch(updateAddress({ id: isEditing, data: addressData }))
+        .unwrap()
+        .then(() => {
+          setIsEditing(null);
+          setShowForm(false);
+          toast({
+            title: 'Address updated successfully',
+          });
+        });
     } else {
-      setAddresses([...addresses, newAddress]);
+      dispatch(addAddress(addressData))
+        .unwrap()
+        .then(() => {
+          setShowForm(false);
+          toast({
+            title: 'Address added successfully',
+          });
+        });
     }
-    setShowForm(false);
   };
 
   const handleEdit = (address) => {
-    setIsEditing(address.id);
+    setIsEditing(address._id);
     setShowForm(true);
   };
-
-  const handleDelete = (id) => {
-    setAddresses(addresses.filter((addr) => addr.id !== id));
-  };
-
-  const editingAddress = isEditing
-    ? addresses.find((addr) => addr.id === isEditing)
-    : null;
-
-  const getSelectedAddress = () => {
-    return addresses.find((addr) => addr.id === selectedAddress);
-  };
-
-  const getSelectedShipping = () => {
-    return shippingMethods.find((method) => method.id === selectedShipping);
-  };
-
-  useEffect(() => {
-    const shippingMethod = getSelectedShipping();
-    const shippingPrice = shippingMethod?.price || 0;
-    setSummary((prev) => ({
-      ...prev,
-      shipping: shippingPrice,
-      total: prev.subtotal - prev.coupon + shippingPrice,
-    }));
-  }, [selectedShipping]);
 
   const handleNext = () => {
     if (activeStep === "address") setActiveStep("shipping");
@@ -135,20 +159,66 @@ export default function CheckoutPage() {
   };
 
   const handlePay = () => {
-    // Simulate payment processing
-    setTimeout(() => {
-      setPaymentSuccess(true); // Show success message
-    }, 500); // Simulate delay
+    const orderData = {
+      addressId: selectedAddress,
+      shippingMethod: selectedShippingDetails,
+      paymentMethod: selectedPayment,
+      items: items
+    };
+
+    dispatch(createOrder(orderData))
+      .unwrap()
+      .then(() => {
+        setPaymentSuccess(true);
+        dispatch(clearCart());
+      })
+      .catch((error) => {
+        toast({
+          title: 'Error placing order',
+          description: error.message,
+          variant: 'destructive'
+        });
+      });
   };
 
   if (paymentSuccess) {
-    // Render success message
     return <OrderSuccess />;
   }
 
+  const selectedAddressDetails = addresses.find(addr => addr._id === selectedAddress);
+  
 
-  const selectedAddressDetails = getSelectedAddress();
-  const selectedShippingDetails = getSelectedShipping();
+  const shippingMethods = [
+    {
+      id: "free",
+      name: "Regular shipment",
+      description: "Free delivery",
+      price: 0,
+    },
+    {
+      id: "express",
+      name: "Express delivery",
+      description: "Get your delivery as soon as possible",
+      price: 99,
+    },
+    {
+      id: "scheduled",
+      name: "Scheduled delivery",
+      description: "Pick a date when you want to get your delivery",
+      date: "Select Date →",
+      price: 150,
+      disabled: true,
+    },
+  ];
+
+  const selectedShippingDetails = shippingMethods.find(method => method.id === selectedShipping);
+  const coupon = 0; 
+  const summary = {
+    subtotal: subtotal, 
+    coupon: coupon,
+    shipping: selectedShippingDetails?.price || 0,
+    total: subtotal + (-coupon) + (selectedShippingDetails?.price || 0) 
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -231,83 +301,91 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="px-0">
                 {showForm ? (
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                       <Label className="text-gray-600">Street Address</Label>
                       <Input
-                        name="street"
-                        defaultValue={editingAddress?.street}
-                        className="mt-1"
-                        required
+                        {...register('street')}
+                        className={`mt-1 ${errors.street ? 'border-red-500' : ''}`}
                       />
+                      {errors.street && (
+                        <p className="text-sm text-red-500 mt-1">{errors.street.message}</p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-gray-600">City</Label>
                         <Input
-                          name="city"
-                          defaultValue={editingAddress?.city}
-                          className="mt-1"
-                          required
+                          {...register('city')}
+                          className={`mt-1 ${errors.city ? 'border-red-500' : ''}`}
                         />
+                        {errors.city && (
+                          <p className="text-sm text-red-500 mt-1">{errors.city.message}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-gray-600">State</Label>
                         <Input
-                          name="state"
-                          defaultValue={editingAddress?.state}
-                          className="mt-1"
-                          required
+                          {...register('state')}
+                          className={`mt-1 ${errors.state ? 'border-red-500' : ''}`}
                         />
+                        {errors.state && (
+                          <p className="text-sm text-red-500 mt-1">{errors.state.message}</p>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-gray-600">Zip Code</Label>
                         <Input
-                          name="zip"
-                          defaultValue={editingAddress?.zip}
-                          className="mt-1"
-                          required
+                          {...register('zip')}
+                          className={`mt-1 ${errors.zip ? 'border-red-500' : ''}`}
                         />
+                        {errors.zip && (
+                          <p className="text-sm text-red-500 mt-1">{errors.zip.message}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-gray-600">Country</Label>
                         <Input
-                          name="country"
-                          defaultValue={editingAddress?.country}
-                          className="mt-1"
-                          required
+                          {...register('country')}
+                          className={`mt-1 ${errors.country ? 'border-red-500' : ''}`}
                         />
+                        {errors.country && (
+                          <p className="text-sm text-red-500 mt-1">{errors.country.message}</p>
+                        )}
                       </div>
                     </div>
                     <div>
                       <Label className="text-gray-600">Name</Label>
                       <Input
-                        name="name"
-                        defaultValue={editingAddress?.name}
-                        className="mt-1"
-                        required
+                        {...register('name')}
+                        className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
                       />
+                      {errors.name && (
+                        <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-gray-600">Type</Label>
                         <Input
-                          name="type"
-                          defaultValue={editingAddress?.type}
-                          className="mt-1"
-                          required
+                          {...register('type')}
+                          className={`mt-1 ${errors.type ? 'border-red-500' : ''}`}
                         />
+                        {errors.type && (
+                          <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-gray-600">Mobile</Label>
                         <Input
-                          name="mobile"
-                          defaultValue={editingAddress?.mobile}
-                          className="mt-1"
-                          required
+                          {...register('mobile')}
+                          className={`mt-1 ${errors.mobile ? 'border-red-500' : ''}`}
                         />
+                        {errors.mobile && (
+                          <p className="text-sm text-red-500 mt-1">{errors.mobile.message}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-4">
@@ -321,6 +399,7 @@ export default function CheckoutPage() {
                         onClick={() => {
                           setShowForm(false);
                           setIsEditing(null);
+                          reset();
                         }}
                       >
                         Cancel
@@ -330,16 +409,23 @@ export default function CheckoutPage() {
                 ) : (
                   <RadioGroup
                     value={selectedAddress}
-                    onValueChange={setSelectedAddress}
+                    onValueChange={(value) => {
+                      setSelectedAddress(value);
+                      dispatch(setDefault(value)).then(() => {
+                        toast({
+                          title: 'Default address updated successfully',
+                        });
+                      });
+                    }}
                     className="space-y-4"
                   >
                     {addresses.map((address) => (
-                      <Card key={address.id} className="bg-gray-50 border-0">
+                      <Card key={address._id} className="bg-gray-50 border-0">
                         <CardContent className="flex items-center justify-between p-4">
                           <div className="flex items-center gap-3">
                             <RadioGroupItem
-                              value={address.id}
-                              id={address.id}
+                              value={address._id}
+                              id={address._id}
                             />
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
@@ -363,13 +449,6 @@ export default function CheckoutPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(address.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -378,7 +457,7 @@ export default function CheckoutPage() {
                 )}
               </CardContent>
               <CardFooter className="flex justify-between py-4 px-0">
-                <Button variant="outline" disabled>
+                <Button variant="outline" onClick={() => navigate(-1)}>
                   Back
                 </Button>
                 <Button onClick={handleNext}>Next</Button>
@@ -402,15 +481,15 @@ export default function CheckoutPage() {
                   <Card key={method.id} className="bg-gray-50 border-0">
                     <CardContent className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
-                        <RadioGroupItem value={method.id} id={method.id} />
+                        <RadioGroupItem value={method.id} id={method.id} disabled={method.disabled} />
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{method.name}</span>
-                            <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded">
-                              {method.price > 0 ? `$${method.price}` : "Free"}
+                            <span className={`font-medium ${method.disabled ? 'text-gray-400' : ''}`}>{method.name}</span>
+                            <span className={`px-2 py-0.5 text-xs font-semibold text-primary-foreground rounded ${method.disabled ? 'bg-gray-400' : 'bg-primary' }`}>
+                              {method.price > 0 ? `₹${method.price}` : "Free"}
                             </span>
                           </div>
-                          <span className="text-sm text-gray-600">
+                          <span className={`text-sm ${method.disabled ? 'text-gray-300' : 'text-gray-600'} `}>
                             {method.description}
                           </span>
                         </div>
@@ -420,7 +499,7 @@ export default function CheckoutPage() {
                 ))}
               </RadioGroup>
 
-              <CardFooter className="flex justify-between py-4 px-0">
+              <CardFooter className="flex justify-between pt-9 px-0">
                 <Button variant="outline" onClick={handleBack}>
                   Back
                 </Button>
@@ -467,21 +546,21 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-sm font-semibold">
                           <span>Subtotal</span>
-                          <span>${summary.subtotal}</span>
+                          <span>₹{summary.subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Coupon</span>
-                          <span>-${summary.coupon}</span>
+                          <span>-₹{summary.coupon.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Shipping & Handling</span>
-                          <span>${summary.shipping}</span>
+                          <span>₹{summary.shipping.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-medium">
+                        <div className="flex justify-between font-semibold">
                           <span>Total</span>
-                          <span>${summary.total}</span>
+                          <span className="text-[#8ec743]">₹{summary.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -498,9 +577,9 @@ export default function CheckoutPage() {
                         className="space-y-4"
                       >
                         {[
-                          { id: "cod", name: "Cash on Delivery" },
-                          { id: "upi", name: "Pay with UPI" },
-                          { id: "card", name: "Credit/Debit" },
+                          { id: "cod", name: "Cash on Delivery", disabled: false },
+                          { id: "upi", name: "Pay with UPI", disabled: true },
+                          { id: "card", name: "Credit/Debit", disabled: true },
                         ].map((payment) => (
                           <Card
                             key={payment.id}
@@ -511,9 +590,10 @@ export default function CheckoutPage() {
                                 <RadioGroupItem
                                   value={payment.id}
                                   id={payment.id}
+                                  disabled={payment.disabled}
                                 />
                                 <div className="flex flex-col">
-                                  <div className="font-medium">
+                                  <div className={`font-medium ${payment.disabled ? 'text-gray-400' : ''}`}>
                                     {payment.name}
                                   </div>
                                 </div>
@@ -527,7 +607,22 @@ export default function CheckoutPage() {
                       <Button variant="outline" onClick={handleBack}>
                         Back
                       </Button>
-                      <Button variant="default" onClick={handlePay}>Pay</Button>
+                      <Button 
+                       variant="default"
+                       disabled={summary.total === 0}
+                       onClick={handlePay}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard />
+                            Proceed to Pay
+                          </>
+                        )}
+                      </Button>
                     </CardFooter>
                   </Card>
                 </div>

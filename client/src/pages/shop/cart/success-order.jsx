@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom'
 
 export default function OrderSuccess() {
   useEffect(() => {
-    // Trigger confetti animation on component mount
     const duration = 3 * 1000
     const animationEnd = Date.now() + duration
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }

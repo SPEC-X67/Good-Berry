@@ -54,14 +54,17 @@ export default function ShoppingCart() {
       
       <div className="flex flex-wrap gap-4 md:p-8 p-4">
         <div className="space-y-4 sm:w-full lg:w-2/3">
-          {items.map((item) => (
-            <Card key={item.productId} className=" w-full border-none border-b">
-              <CardContent className="flex flex-wrap items-center justify-between p-4">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={item?.image}
-                    alt={item?.name}
-                    width={80}
+          {items.length === 0 ? (
+            <p className="italic text-muted-foreground">No items in cart</p>
+          ) : (
+            items.map((item) => (
+              <Card key={item.productId} className="w-full border-none border-b">
+                <CardContent className="flex flex-wrap items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={item?.image}
+                      alt={item?.name}
+                      width={80}
                     height={80}
                     className="rounded-lg"
                   />
@@ -99,6 +102,7 @@ export default function ShoppingCart() {
                 </div>
               </CardContent>
             </Card>
+            )
           ))}
         </div>
 
@@ -145,7 +149,9 @@ export default function ShoppingCart() {
               </div>
             </div>
 
-            <Button className="w-full bg-[#8AB446] hover:bg-[#8AB446]/90" onClick={() => navigate('/shop/cart/checkout')}>
+            <Button className="w-full bg-[#8AB446] hover:bg-[#8AB446]/90" 
+             onClick={() => navigate('/shop/cart/checkout')}
+             disabled={items.length === 0}>
               Checkout
             </Button>
           </CardContent>

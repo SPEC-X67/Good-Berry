@@ -24,22 +24,24 @@ export default function ShoppingCart() {
     setTotal(newSubtotal - discount)
   }, [items, discount])
 
-  const handleQuantityChange = async (productId, currentQuantity, packageSize, action) => {
+  const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
     
     if (newQuantity > 0) {
       await dispatch(updateCartItemQuantity({
         itemId: productId,
         packageSize,
+        flavor,
         quantity: newQuantity
       }));
     }
   };
 
-  const handleRemoveItem = async (productId, packageSize) => {
+  const handleRemoveItem = async (productId, packageSize, flavor) => {
     await dispatch(removeFromCart({ 
-      itemId: productId, 
-      packageSize 
+      itemId: productId,    
+      packageSize,
+      flavor
     }));
   };
 
@@ -77,7 +79,7 @@ export default function ShoppingCart() {
                   <div className="flex items-center rounded-md border">
                     <button
                       className="px-3 py-2 hover:bg-muted"
-                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.packageSize, 'decrease')}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.packageSize, item.flavor, 'decrease')}
                       disabled={item.quantity <= 1}
                     >
                       -
@@ -85,7 +87,7 @@ export default function ShoppingCart() {
                     <span className="w-12 text-center">{item?.quantity}</span>
                     <button
                       className="px-3 py-2 hover:bg-muted"
-                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.packageSize, 'increase')}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.packageSize, item.flavor, 'increase')}
                     >
                       +
                     </button>
@@ -95,7 +97,7 @@ export default function ShoppingCart() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleRemoveItem(item.productId, item.packageSize)}
+                    onClick={() => handleRemoveItem(item.productId, item.packageSize, item.flavor)}
                   >
                     <X className="h-4 w-4" />
                   </Button>

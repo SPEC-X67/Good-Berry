@@ -25,9 +25,9 @@ function OrderDetails() {
 
   console.log("orderDetails", orderDetails);
 
-  async function handleUpdateItem(orderId, itemId, updates) {
+  async function handleUpdateItem(orderId, itemId, updates, packageSize) {
     try {
-      const response = await axios.put(`http://localhost:5000/api/admin/orders/${orderId}/items/${itemId}`, updates, { withCredentials: true });
+      const response = await axios.patch(`http://localhost:5000/api/admin/orders/${orderId}/items/${itemId}`, updates, { withCredentials: true });
       dispatch(fetchOrderById(orderId));
       setEditingItem(null);
     } catch (error) {
@@ -187,7 +187,7 @@ function OrderDetails() {
                 if (editingItem.item.status === 'cancelled') {
                   updates.cancellationReason = editingItem.item.cancellationReason;
                 }
-                handleUpdateItem(editingItem.orderId, editingItem.item._id, updates);
+                handleUpdateItem(editingItem.orderId, editingItem.item.productId, updates, editingItem.item.packageSize);
               }
             }}>
               <div className="grid gap-4 py-4">

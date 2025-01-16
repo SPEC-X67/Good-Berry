@@ -190,7 +190,7 @@ export default function OrderView() {
                         <AlertDialogFooter>
                           <AlertDialogCancel>No, keep it</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => handleCancel(product.productId)}
+                            onClick={() => handleCancel(product._id)}
                           >
                             Yes, cancel it
                           </AlertDialogAction>

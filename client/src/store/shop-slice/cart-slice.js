@@ -83,14 +83,11 @@ export const addToCart = createAsyncThunk(
     
     if (!auth.user) {
       delete itemToAdd.userId;
-    }
-    
-    if (!auth.user) {
       const currentCart = cartStorage.load();
       const existingItemIndex = currentCart.findIndex(
         item => item.productId === itemToAdd.productId && 
-               item.flavor === itemToAdd.flavor &&
-               item.packageSize === itemToAdd.packageSize
+               item.packageSize === itemToAdd.packageSize &&
+               item.flavor === itemToAdd.flavor 
       );
 
       let updatedCart;
@@ -122,13 +119,15 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItemQuantity = createAsyncThunk(
   'cart/updateQuantity',
-  async ({ itemId, quantity, packageSize }, { getState }) => {
+  async ({ itemId, quantity, packageSize, flavor }, { getState }) => { 
     const { auth } = getState();
     
     if (!auth.user) {
       const currentCart = cartStorage.load();
       const updatedCart = currentCart.map(item =>
-        item.productId === itemId && item.packageSize === packageSize 
+        item.productId === itemId && 
+        item.packageSize === packageSize && 
+        item.flavor === flavor
           ? { ...item, quantity } 
           : item
       );
@@ -139,7 +138,8 @@ export const updateCartItemQuantity = createAsyncThunk(
     try {
       const response = await axios.put(`${api}/cart/${itemId}`, { 
         quantity,
-        packageSize 
+        packageSize,
+        flavor 
       }, {
         withCredentials: true
       });
@@ -153,24 +153,26 @@ export const updateCartItemQuantity = createAsyncThunk(
 
 export const removeFromCart = createAsyncThunk(
   'cart/removeItem',
-  async ({ itemId, packageSize }, { getState }) => {
+  async ({ itemId, packageSize, flavor }, { getState }) => {  
     const { auth } = getState();
     
     if (!auth.user) {
       const currentCart = cartStorage.load();
       const updatedCart = currentCart.filter(
-        item => !(item.productId === itemId && item.packageSize === packageSize)
+        item => !(item.productId === itemId && 
+                 item.packageSize === packageSize && 
+                 item.flavor === flavor)
       );
       cartStorage.save(updatedCart);
-      return { itemId, packageSize };
+      return { itemId, packageSize, flavor };
     }
     
     try {
       await axios.delete(`${api}/cart/${itemId}`, {
-        data: { packageSize },
+        data: { packageSize, flavor },  
         withCredentials: true,
       });
-      return { itemId, packageSize };
+      return { itemId, packageSize, flavor };  
     } catch (error) {
       console.error('Error removing from cart:', error);
       throw error;
@@ -226,9 +228,11 @@ const cartSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
-        const { itemId, packageSize } = action.payload;
+        const { itemId, packageSize, flavor } = action.payload;
         state.items = state.items.filter(
-          item => !(item.productId === itemId && item.packageSize === packageSize)
+          item => !(item.productId === itemId && 
+                   item.packageSize === packageSize && 
+                   item.flavor === flavor)  
         );
         state.error = null;
       })

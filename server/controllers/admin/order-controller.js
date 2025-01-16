@@ -71,7 +71,7 @@ const orderController = {
         return res.status(400).json({ message: 'Invalid status' });
       }
   
-      const order = await Order.find({orderId : req.params.id})
+      const order = await Order.find({orderId : req.params.orderId})
         .populate('addressId');
       
       if (!order) {

@@ -24,10 +24,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { getProducts } from "@/store/shop-slice";
 
 const sortOptions = [
-  { value: "featured", label: "Featured" },
-  { value: "newest", label: "Newest" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
+  { value: 'featured', label: 'Featured' },
+  { value: 'new-arrivals', label: 'New Arrivals' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'rating', label: 'Average Rating' },
+  { value: 'name-asc', label: 'Name: A to Z' },
+  { value: 'name-desc', label: 'Name: Z to A' }
 ];
 
 export default function ShopPage() {
@@ -41,14 +44,13 @@ export default function ShopPage() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getProducts({ page: currentPage, limit: 10 }));
-  }, [dispatch, currentPage]);
+    dispatch(getProducts({ page: currentPage, limit: 10, sort }));
+  }, [dispatch, currentPage, sort]);
 
   const { products, pagination } = useSelector((state) => state.shop);
 
   const handlePriceFilter = () => {
     console.log("Filtering by price range:", priceRange);
-    // Implement price filtering logic here
   };
 
   return (
@@ -56,7 +58,6 @@ export default function ShopPage() {
       <div className="flex-1">
         <div className="container mx-auto  max-w-[1400px] px-4 lg:pt-16 md:pt-10 pt-4">
           <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8 ">
-            {/* Filters - Desktop */}
             <div className="hidden lg:block space-y-8">
               <PriceFilter
                 value={priceRange}

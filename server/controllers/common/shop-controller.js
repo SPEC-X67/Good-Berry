@@ -1,6 +1,7 @@
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
 const mongoose = require('mongoose');
+const Category = require('../../models/Categorys');
 
 const getProductDetails = async (req, res) => {
   try {
@@ -78,8 +79,20 @@ const getProductDetails = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, sort = 'featured' } = req.query;
     const skip = (page - 1) * limit;
+
+    const sortConfigurations = {
+      'price-asc': { 'firstVariant.salePrice': 1 },
+      'price-desc': { 'firstVariant.salePrice': -1 },
+      'rating': { 'averageRating': -1 },
+      'featured': { 'featured': -1, 'createdAt': -1 },
+      'new-arrivals': { 'createdAt': -1 },
+      'name-asc': { 'name': 1 },
+      'name-desc': { 'name': -1 }
+    };
+
+    const sortStage = { $sort: sortConfigurations[sort] || sortConfigurations['featured'] };
 
     const products = await Product.aggregate([
       {
@@ -117,15 +130,24 @@ const getAllProducts = async (req, res) => {
           foreignField: "_id",
           as: "categoryDetails",
         },
-      }, {
+      },
+      {
         $match: {
           "categoryDetails.status": "Active",
         },
       },
-
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviews"
+        },
+      },
       {
         $addFields: {
           categoryName: { $arrayElemAt: ["$categoryDetails.name", 0] },
+          averageRating: { $avg: "$reviews.rating" }
         },
       },
       {
@@ -135,11 +157,15 @@ const getAllProducts = async (req, res) => {
           description: 1,
           categoryName: 1,
           "firstVariant.title": 1,
-          "firstVariant.salePrice": {$arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0]},
+          "firstVariant.salePrice": { $arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0] },
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] },
           isNew: 1,
+          featured: 1,
+          averageRating: 1,
+          createdAt: 1
         },
       },
+      sortStage,
       { $skip: skip },
       { $limit: parseInt(limit, 10) },
     ]);
@@ -162,6 +188,5 @@ const getAllProducts = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-
 
 module.exports = { getProductDetails, getAllProducts };

@@ -21,24 +21,21 @@ import { fetchUsers, updateUserStatus } from '@/store/admin-slice';
 
 export default function CustomersPage() {
   const dispatch = useDispatch();
-  const { users, isLoading } = useSelector(state => state.admin);  // Destructure isLoading to manage loading state
+  const { users, isLoading } = useSelector(state => state.admin);  
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState([]);
 
-  // Fetch users on component mount
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  // Update customers when users data changes
   useEffect(() => {
     if (users && Array.isArray(users)) {
-      // Ensure each user has orders and status fields, set default values
       const usersWithFields = users.map(customer => ({
         ...customer,
         phone: customer.phone || "not Added",
-        orders: customer.orders || 0,  // Default orders to 0
-        status: customer.isBlocked ? 'Blocked' : 'Active',  // Set status based on isBlocked
+        orders: customer.orders || 0, 
+        status: customer.isBlocked ? 'Blocked' : 'Active',  
       }));
       setCustomers(usersWithFields);
     }
@@ -58,12 +55,12 @@ export default function CustomersPage() {
   };
 
   const handleBlockUnblock = (userId, currentStatus) => {
-    const isBlocked = !currentStatus; // Toggle block/unblock status
+    const isBlocked = !currentStatus; 
       dispatch(updateUserStatus({ id: userId, isBlocked }));
 };
 
   if (isLoading) {
-    return <div>Loading...</div>;  // Display loading message when fetching data
+    return <div>Loading...</div>;  
   }
 
   return (

@@ -4,11 +4,6 @@ function CheckAuth({ isAuthenticated, user, children }) {
   const location = useLocation();
   const isAdmin = user?.role === "admin";
 
-  // Redirect blocked users to the blocked account page
-  if (isAuthenticated && user?.isBlocked) {
-    return <Navigate to="/auth/blocked-account" />;
-  }
-
   // Redirect unauthenticated users from protected shop routes
   const isProtectedShopRoute = location.pathname.includes("/shop/");
   if (!isAuthenticated && isProtectedShopRoute) {

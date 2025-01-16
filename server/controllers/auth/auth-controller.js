@@ -143,6 +143,10 @@ const authMiddleware = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, "This the thing i love");
         req.user = decoded;
+        const user = await User.findById(decoded.id);
+        if (user.isBlocked) {
+            return res.redirect('http://localhost:5000/auth/logout');
+        }
         next();
     } catch (e) {
         if (e.message === "jwt expired") {

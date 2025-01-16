@@ -145,7 +145,7 @@ const accountSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateUser.fulfilled, (state, action) => {
-                state.user = action.payload;
+                state.user = action.payload.data;
                 state.isLoading = false;
             })
             .addCase(updateUser.rejected, (state, action) => {

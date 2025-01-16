@@ -29,6 +29,7 @@ import ShoppingCart from "./pages/shop/cart/shopping-cart";
 import OrderView from "./pages/shop/cart/view-order";
 import OrderDetails from "./pages/admin/order/order-details";
 import ResetPassword from "./pages/auth/reset-password";
+import SearchProduct from "./pages/shop/Listing/search-product";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -62,6 +63,7 @@ function App() {
           <Route index element={<ShoppingHome />} /> {/* Home Page */}
           <Route path="shop" element={<ShoppingListing />} />
           <Route path="shop/product/:id" element={<ProductPage />} />
+          <Route path="search" element={<SearchProduct/>}/>
         </Route>
 
         {/* Protected Shop Routes */}

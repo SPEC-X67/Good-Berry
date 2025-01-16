@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import CommonForm from "@/components/common/form";
 import { resetPasswordFormControls } from "@/config";
 import { resetPassword } from "@/store/auth-slice";
@@ -15,8 +15,21 @@ function ResetPassword() {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
   const { toast } = useToast();
-  const { token } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const queryParams = new URLSearchParams(location.search);
+  const token = queryParams.get("token");
+
+  useEffect(() => {
+    if (!token) {
+      toast({
+        title: "Invalid or missing token",
+        variant: "destructive",
+      });
+      navigate("/auth/login");
+    }
+  }, [token, toast, navigate]);
 
   function onSubmit(event) {
     event.preventDefault();

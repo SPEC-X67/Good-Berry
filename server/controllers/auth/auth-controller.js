@@ -321,7 +321,7 @@ const forgetPassword = async (req, res) => {
         const resetToken = jwt.sign(
             { id: user._id, email: user.email },
             "This the thing i love",
-            { expiresIn: "1h" }
+            { expiresIn: "5m" }
         );
 
         const resetLink = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
@@ -344,7 +344,21 @@ const forgetPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
     const { token, password } = req.body;
 
+    if(password.length < 8){
+        return res.json({
+            success: false,
+            message: "Password must 8 characters",
+        });
+    }
+
     try {
+        if (!token) {
+            return res.json({
+                success: false,
+                message: "Token is required",
+            });
+        }
+
         const decoded = jwt.verify(token, "This the thing i love");
         const user = await User.findById(decoded.id);
 
@@ -363,7 +377,14 @@ const resetPassword = async (req, res) => {
             success: true,
             message: "Password reset successfully",
         });
+
     } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            return res.status(400).json({
+                success: false,
+                message: "Token has expired",
+            });
+        }
         console.error("Error resetting password:", error);
         res.status(500).json({
             success: false,

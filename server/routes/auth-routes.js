@@ -8,10 +8,10 @@ router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 router.post("/verify", authController.verify);
 router.post("/resend-otp", authController.resendOtp);
-
+router.post('/forget-password', authController.forgetPassword);
+router.post('/reset-password', authController.resetPassword);
 
 router.get("/set", authController.set);
-
 
 // Google OAuth routes
 router.get("/google",

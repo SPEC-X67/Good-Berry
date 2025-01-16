@@ -28,6 +28,7 @@ import { fetchCart, syncCartAfterLogin } from "./store/shop-slice/cart-slice";
 import ShoppingCart from "./pages/shop/cart/shopping-cart";
 import OrderView from "./pages/shop/cart/view-order";
 import OrderDetails from "./pages/admin/order/order-details";
+import ResetPassword from "./pages/auth/reset-password";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -105,8 +106,8 @@ function App() {
           <Route path="register" element={<AuthRegister />} />
           <Route path="verify-email" element={<VeryOtp />} />
           <Route path="login/forgot-password" element={<ForgetPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
         </Route>
-
         {/* Admin Routes */}
         <Route
           path="/admin"

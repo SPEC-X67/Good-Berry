@@ -30,6 +30,22 @@ export const fetchOrderById = createAsyncThunk(
   }
 );
 
+export const updateOrderItemStatus = createAsyncThunk(
+  'adminOrder/updateOrderItemStatus',
+  async ({ orderId, productId, updates }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+        `${api}/orders/${orderId}/items/${productId}`,
+        updates,
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const adminOrderSlice = createSlice({
   name: 'adminOrder',
   initialState: {
@@ -66,6 +82,18 @@ const adminOrderSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchOrderById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateOrderItemStatus.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateOrderItemStatus.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderDetails = action.payload;
+        state.error = null;
+      })
+      .addCase(updateOrderItemStatus.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

@@ -25,6 +25,6 @@ router.delete('/categories/:id', categoryController.deleteCategory);
 // Order
 router.get('/orders', orderController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);
-router.patch('/orders/:orderId/status/:itemId', orderController.updateOrderStatus);
+router.patch('/orders/:orderId/items/:productId', orderController.updateOrderItemStatus);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const Order = require('../../models/Order');
 const Cart = require('../../models/Cart');
 const Address = require('../../models/Address');
+const Variant = require('../../models/Variant')
 
 const orderController = {  
   createOrder : async (req, res) => {
@@ -29,6 +30,41 @@ const orderController = {
       const cart = await Cart.findOne({ userId: req.user.id });
       if (!cart || cart.items.length === 0) {
         return res.status(400).json({ message: 'Cart is empty' });
+      }
+
+      for (const cartItem of cart.items) {
+        const variant = await Variant.findOne({ productId: cartItem.productId, title : cartItem.flavor });
+        console.log("Varient",variant);
+
+        if (!variant) {
+          return res.status(400).json({ 
+            message: `Product variant not found for product ID: ${cartItem.productId}` 
+          });
+        }
+
+        const packSize = variant.packSizePricing.find(
+          pack => pack.size === cartItem.packageSize
+        );
+
+
+        console.log("Packsize",packSize)
+        console.log("Item Pakesize", cartItem.packageSize)
+
+
+        if (!packSize) {
+          return res.status(400).json({ 
+            message: `Pack size ${cartItem.packageSize} not found for this product` 
+          });
+        }
+
+        if (packSize.quantity < cartItem.quantity) {
+          return res.status(400).json({ 
+            message: `Insufficient quantity available. Required: ${cartItem.quantity}, Available: ${packSize.quantity}` 
+          });
+        }
+
+        packSize.quantity -= cartItem.quantity;
+        await variant.save();
       }
   
       const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -79,7 +115,7 @@ const orderController = {
       let query = { userId: req.user.id}; 
 
       if(status === 'all') {
-        query.status = { $in: ['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'] };
+        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled'] };
       } else if (status) {
         query.status = status;
       }
@@ -129,48 +165,79 @@ const orderController = {
     }
   },
   
- cancelOrder : async (req, res) => {
+  cancelOrder: async (req, res) => {
     try {
       const { itemId, reason } = req.body;
-  
+
       if (!reason) {
         return res.status(400).json({ message: 'Cancellation reason is required' });
       }
-  
-      const order = await Order.findOne({ 
-        orderId: req.params.id, 
-        userId: req.user.id 
+
+      const order = await Order.findOne({
+        orderId: req.params.id,
+        userId: req.user.id
       }).populate('addressId');
-      
+
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-  
+
       const item = order.items.id(itemId);
       if (!item) {
         return res.status(404).json({ message: 'Item not found in order' });
       }
-  
+
       if (item.status !== 'processing') {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: `Item cannot be cancelled in ${item.status} status`
         });
       }
 
+      const variant = await Variant.findOne({productId : item.productId, title : item.flavor});
+
+      console.log(variant)
+      if (!variant) {
+        return res.status(404).json({ message: 'Product variant not found' });
+      }
+
+      const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
+
+      if (packSize) {
+        packSize.quantity += item.quantity; 
+        await variant.save();
+      }
+
       item.status = 'cancelled';
       item.cancellationReason = reason;
+      item.cancellation = {
+        reason,
+        message: '',
+        date: new Date()
+      };
 
       if (order.items.every(item => item.status === 'cancelled')) {
         order.status = 'cancelled';
       }
-  
+
+      else if (order.items.some(item => item.status === 'processing')) {
+        order.status = 'processing';
+      }
+
+      else if (order.items.some(item => item.status === 'shipped')) {
+        order.status = 'shipped';
+      } 
+
+      else if (order.items.some(item => item.status === 'delivered')) {
+        order.status = 'delivered';
+      } 
+
       await order.save();
-      
+
       res.json(order);
     } catch (error) {
-      res.status(500).json({ 
-        message: 'Error cancelling item', 
-        error: error.message 
+      res.status(500).json({
+        message: 'Error cancelling item',
+        error: error.message
       });
     }
   }

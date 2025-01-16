@@ -34,12 +34,7 @@ export default function ProductCard({ product, id}) {
               <Search className="h-5 w-5" />
               <span className="sr-only">Quick view</span>
             </Button>
-            <Button
-              variant="secondary"
-              className="h-10 rounded-full bg-white px-6 hover:bg-[#8CC63F] hover:text-white"
-            >
-              Add to Cart
-            </Button>
+
           </div>
         </div>
       </div>

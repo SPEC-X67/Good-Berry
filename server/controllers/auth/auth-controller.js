@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
-const { SendVerificationCode, SendWelcomeMessage } = require("../../middleware/email");
+const { SendVerificationCode, SendWelcomeMessage, SendResetPasswordLink } = require("../../middleware/email");
 
 //register
 const register = async (req, res) => {
@@ -299,6 +299,80 @@ const resendOtp = async (req, res) => {
     }
 }
 
+const forgetPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        if (!email) {
+            return res.json({
+                success: false,
+                message: "Please enter your email address",
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User with this email does not exist",
+            });
+        }
+
+        const resetToken = jwt.sign(
+            { id: user._id, email: user.email },
+            "This the thing i love",
+            { expiresIn: "1h" }
+        );
+
+        const resetLink = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
+        SendResetPasswordLink(user.email, resetLink);
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset link has been sent to your email",
+        });
+    } catch (error) {
+        console.error("Error sending reset password link:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to send reset password link",
+            error: error.message,
+        });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token, password } = req.body;
+
+    try {
+        const decoded = jwt.verify(token, "This the thing i love");
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "Invalid token or user does not exist",
+            });
+        }
+
+        const hashPassword = await bcrypt.hash(password, 12);
+        user.password = hashPassword;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset successfully",
+        });
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to reset password",
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -307,5 +381,7 @@ module.exports = {
     googleAuth,
     verify,
     resendOtp,
-    set
+    set,
+    forgetPassword,
+    resetPassword
 };

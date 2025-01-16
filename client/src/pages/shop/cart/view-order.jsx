@@ -152,6 +152,14 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, navigate }) 
             item={item}
           />
         )}
+        {item.status === "shipped" && (
+          <CancellationDialog
+            onCancel={onCancel}
+            cancelReason={cancelReason}
+            setCancelReason={setCancelReason}
+            item={item}
+          />
+        )}
       </div>
     </div>
   );
@@ -356,7 +364,7 @@ export default function OrderView() {
               <p className="text-sm text-gray-600">
                 If you have any questions about your order, please contact our
                 customer support at <span className="font-medium">+91 96566 33324</span> or{" "}
-                <span className="font-medium">support@example.com</span>
+                <span className="font-medium">goodberry@support.com</span>
               </p>
             </div>
           </div>

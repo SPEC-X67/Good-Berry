@@ -69,12 +69,19 @@ export default function ProductPage() {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // Only get flavor if it exists
   const flavor = flavorKeys.length > 0 ? flavors[selectedFlavor] : null;
 
   const calculateDiscount = (originalPrice, salePrice) => {
     if (!originalPrice || !salePrice) return 0;
     return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+  };
+
+  const calculateStockStatus = (flavor, packageSize) => {
+    if (!flavor || !flavor.packSizePricing) return { status: "OUT OF STOCK", color: "text-red-600 border-red-600" };
+    const pack = flavor.packSizePricing.find(p => p.size === packageSize);
+    return pack && pack.quantity > 0 
+      ? { status: "IN STOCK", color: "text-[#8CC63F] border-[#8CC63F]" }
+      : { status: "OUT STOCK", color: "text-red-600 border-red-600" };
   };
 
   useEffect(() => {
@@ -118,6 +125,7 @@ export default function ProductPage() {
   };
 
   const handleAddToCart = async() => {
+    if (stockStatus.status === "OUT STOCK") return;
     setIsAddingToCart(true);
     const cartItem = {
       ...(user && { userId: user._id }),
@@ -182,6 +190,8 @@ export default function ProductPage() {
     currentPrice.price,
     currentPrice.salePrice
   );
+
+  const stockStatus = calculateStockStatus(flavor, packageSize);
 
   return (
     <div className="container product-page mx-auto px-4 py-6 lg:py-8">
@@ -281,8 +291,8 @@ export default function ProductPage() {
             <span className="text-sm text-muted-foreground line-through">
               ₹{currentPrice.price?.toFixed(2)}
             </span>
-            <span className="ml-4 text-sm text-[#8CC63F] border border-[#8CC63F] px-3 py-1 rounded-full">
-              {flavor.stock < 0 ? "OUT STOCK" : "IN STOCK"}
+            <span className={`ml-4 text-sm ${stockStatus.color} border px-3 py-1 rounded-full`}>
+              {stockStatus.status}
             </span>
           </div>
 
@@ -344,24 +354,24 @@ export default function ProductPage() {
                 </button>
               </div>
               <Button 
-          className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]"
-          onClick={handleAddToCart}
-          disabled={isAddingToCart || addedToCart}
-        >
-          {isAddingToCart ? (
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-              Adding...
-            </div>
-          ) : addedToCart ? (
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4" />
-              Added!
-            </div>
-          ) : (
-            "ADD TO CART"
-          )}
-        </Button>
+                className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK"}
+              >
+                {isAddingToCart ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    Adding...
+                  </div>
+                ) : addedToCart ? (
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    Added!
+                  </div>
+                ) : (
+                  "ADD TO CART"
+                )}
+              </Button>
             </div>
 
             <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

@@ -48,3 +48,20 @@ export const forgetFormControls = [
         type: 'email',
     }
 ]
+
+export const resetPasswordFormControls = [
+  {
+    name: 'password',
+    label: 'New Password',
+    placeholder: 'Enter your new password',
+    componentType: 'input',
+    type: 'password',
+  },
+  {
+    name: 'confirmPassword',
+    label: 'Confirm Password',
+    placeholder: 'Confirm your new password',
+    componentType: 'input',
+    type: 'password',
+  }
+];

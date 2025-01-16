@@ -102,6 +102,30 @@ export const resendOtp = createAsyncThunk(
   }
 )
 
+export const forgetPassword = createAsyncThunk(
+  "auth/forgetPassword",
+  async (email, thunkAPI) => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/forget-password", { email });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue({ error: error.message });
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async ({ token, password }, thunkAPI) => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/reset-password", { token, password });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue({ error: error.message });
+    }
+  }
+);
+
 const authSlice = createSlice({
     name: "auth",
     initialState,

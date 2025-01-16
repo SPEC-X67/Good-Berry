@@ -5,14 +5,12 @@ const addCategory = async (req, res) => {
   try {
     const { name, status, image } = req.body;
 
-    // Check for existing category with case-insensitive regex
     const existingCategory = await Category.findOne({ name: { $regex: `^${name.trim()}$`, $options: 'i' } });
 
     if (existingCategory) {
       return res.json({ success: false, message: 'Category already exists' });
     }
 
-    // Create the new category
     const category = await Category.create({ name, status, image });
     return res.status(201).json({ success: true, message: 'Category created successfully', category });
 
@@ -25,8 +23,23 @@ const addCategory = async (req, res) => {
 // Get all categories
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find();
-    res.status(200).json(categories);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+
+
+    const categories = await Category.find()
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+    const totalCategorys = await Category.countDocuments();
+
+
+    res.status(200).json({
+      categories,
+      totalCategorys,
+      currentPage: page,
+      totalPages: Math.ceil(totalCategorys / limit),
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch categories' });
   }

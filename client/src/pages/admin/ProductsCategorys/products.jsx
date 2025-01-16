@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Table,
   TableBody,
@@ -8,7 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Search, Filter } from 'lucide-react';
+import { MoreHorizontal, Search, Filter, ChevronRight, ChevronLeft } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,85 +18,75 @@ import {
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllProducts, unlistProduct } from '@/store/admin-slice';
+import { fetchProducts, unlistProduct } from '@/store/admin-slice';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export default function ProductsPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { products } = useSelector((state) => state.admin);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { products, isLoading, totalPages, currentPage } = useSelector((state) => state.admin);
+  const searchInputRef = useRef(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    dispatch(getAllProducts());
-  }, [dispatch]);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [itemsPerPage] = useState(5);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  console.log(products)
+  const loadProducts = useCallback((page = 1) => {
+    dispatch(fetchProducts({ 
+      page, 
+      limit: itemsPerPage, 
+      search: debouncedSearch 
+    }));
+  }, [dispatch, debouncedSearch, itemsPerPage]);
 
-  // Calculate filtered fields using useMemo
-  const filteredFields = useMemo(() => {
-    if (!products || !Array.isArray(products)) return [];
-
-    
-    return products
-      .filter((product) => product.category.status == 'Active')
-      .map((product) => {
-        const totalStock = Array.isArray(product.variants)
-          ? product.variants.reduce((acc, variant) => 
-            acc + (Array.isArray(variant.packSizePricing)
-            ? variant.packSizePricing.reduce((sum, pack) => sum + (Number(pack.quantity) || 0), 0)
-            : 0), 0)
-          : 0;
-          
-        return {
-          id: product._id,
-          image: product.variants?.[0]?.images?.[0] || '',
-          name: product.name || '',
-          salePrice: product.variants?.[0]?.packSizePricing?.[0]?.salePrice || 0,
-          variants: Array.isArray(product.variants) ? product.variants.length : 0,
-          stock: totalStock,
-          category: product.category.name || '',
-          status: product.unListed ? 'Unlisted' : 'Listed',
-        };
-      });
-  }, [products]);
-
-  // Filter products based on search term
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm) return filteredFields;
-    
-    const term = searchTerm.toLowerCase();
-    return filteredFields.filter(
-      (product) =>
-        product.name.toLowerCase().includes(term) ||
-        product.salePrice.toString().includes(term) ||
-        (typeof product.category === 'string' && product.category.toLowerCase().includes(term))
-    );
-  }, [searchTerm, filteredFields]);
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value.toLowerCase());
+  const handleSearch = (e) => {
+    setSearchInput(e.target.value);
   };
 
-  const handleUnlist = async(id) => {
-    const data = await dispatch(unlistProduct(id));
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 300);
 
-    if (data.payload.success) {
-       toast({
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchInput]);
+
+  useEffect(() => {
+    loadProducts(1);
+  }, [debouncedSearch, loadProducts]);
+
+  const handleUnlist = async () => {
+    if (selectedProduct) {
+      const data = await dispatch(unlistProduct(selectedProduct._id));
+
+      if (data.payload.success) {
+        toast({
           title: data.payload.message,
         });
-    } else {
-      toast({
-        title: data.payload.message || "Failed to delete product",
-        variant: "destructive",
-      });
+      } else {
+        toast({
+          title: data.payload.message || "Failed to update product status",
+          variant: "destructive",
+        });
+      }
+      setSelectedProduct(null);
     }
   };
 
+  const handlePageChange = (newPage) => {
+    loadProducts(newPage);
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-4 space-y-8">
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="bg-white rounded-lg shadow-sm pb-2">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Products</h2>
@@ -107,9 +97,10 @@ export default function ProductsPage() {
                   size={20}
                 />
                 <Input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Search products..."
-                  value={searchTerm}
+                  value={searchInput}
                   onChange={handleSearch}
                   className="pl-8 pr-4 py-2 w-64"
                 />
@@ -141,34 +132,34 @@ export default function ProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product, index) => (
-                <TableRow key={product.id}>
+              {products.map((product, index) => (
+                <TableRow key={product._id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.image}
-                        alt={product.name}
+                        src={product.image || ''}
+                        alt={product.name || 'Product Image'}
                         className="h-12 w-12 rounded-lg border p-1"
                       />
-                      <span>{product.name}</span>
+                      <span>{product.name || 'N/A'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-5">₹{product.salePrice}</TableCell>
-                  <TableCell className="px-5">{product.variants}</TableCell>
+                  <TableCell className="px-5">₹{product.salePrice || 0}</TableCell>
+                  <TableCell className="px-5">{product.variantCount || 0}</TableCell>
                   <TableCell className="px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      product.stock < 1 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                      product.totalStock < 1 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
                     }`}>
-                      {product.stock}
+                      {product.totalStock || 0}
                     </span>
                   </TableCell>
-                  <TableCell className="px-5">{product.category}</TableCell>
+                  <TableCell className="px-5">{product.category.name || 'N/A'}</TableCell>
                   <TableCell className="pl-4">
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      product.status === 'Unlisted' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                      product.unListed ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
                     }`}>
-                      {product.status}
+                      {product.unListed ? 'Unlisted' : 'Listed'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -179,9 +170,10 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/admin/products/edit/${product.id}`)} >Edit</DropdownMenuItem>
-                        <DropdownMenuItem className={`${product.status === 'Unlisted' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`} onClick={() => handleUnlist(product.id)}>
-                          {product.status === 'Unlisted' ? 'List' : 'Unlist'}
+                        <DropdownMenuItem onClick={() => navigate(`/admin/products/edit/${product._id}`)} >Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSelectedProduct(product)} className={product.unListed  ? "text-green-500"
+                                : "text-red-500"}>
+                          {product.unListed ? 'List' : 'Unlist'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -191,7 +183,52 @@ export default function ProductsPage() {
             </TableBody>
           </Table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-end mt-5 mr-4 gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm font-medium">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
+
+      {selectedProduct && (
+        <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
+          <DialogTrigger />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="mb-3">Confirm Action</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to {selectedProduct.unListed ? 'list' : 'unlist'} this product?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedProduct(null)}>No, keep it</Button>
+              <Button varient="primary" onClick={handleUnlist}>Yes, 
+                {selectedProduct.unListed ? ' list' : ' unlist'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

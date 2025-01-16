@@ -12,7 +12,7 @@ const api = "http://localhost:5000/api/admin";
 // Thunk to Fetch Users
 export const fetchUsers = createAsyncThunk(
   "admin/fetchUsers",
-  async ({ page = 1, limit = 10, search = '' } = {}, thunkAPI) => {
+  async ({ page = 1, limit = 6, search = '' } = {}, thunkAPI) => {
     try {
       const response = await axios.get(`${api}/users`, {
         params: { page, limit, search },
@@ -44,12 +44,14 @@ export const updateUserStatus = createAsyncThunk(
 
 export const getAllCategories = createAsyncThunk(
   "admin/getAllCategories",
-  async (_, thunkAPI) => {
+  async ({ page = 1, limit = 5 } = {}, thunkAPI) => {
     try {
-      const response = await fetch(`${api}/categories`);
-      if (!response.ok) throw new Error("Failed to fetch categories");
-      const data = await response.json();
-      return data;
+      const response = await axios.get(`${api}/categories`,
+      {
+        params: { page, limit },
+        withCredentials: true,
+      });
+      return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }
@@ -128,20 +130,6 @@ export const editProduct = createAsyncThunk(
     }
 );
 
-export const getAllProducts = createAsyncThunk(
-  "admin/getAllProducts",
-  async (_, thunkAPI) => {
-    try {
-      const response = await fetch(`${api}/products`);
-      console.log(response)
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
 
 export const getProductDetails = createAsyncThunk(
   "admin/getProductDetails",
@@ -189,6 +177,21 @@ export const unlistProduct = createAsyncThunk(
   }
 )
 
+// Thunk to Fetch Products
+export const fetchProducts = createAsyncThunk(
+  "admin/fetchProducts",
+  async ({ page = 1, limit = 5, search = '' } = {}, thunkAPI) => {
+    try {
+      const response = await axios.get(`${api}/products`, {
+        params: { page, limit, search },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
 
 const adminSlice = createSlice({
   name: "admin",
@@ -206,7 +209,9 @@ const adminSlice = createSlice({
         state.currentPage = action.payload.currentPage;
       })
       .addCase(getAllCategories.fulfilled, (state, action) => {
-        state.categories = action.payload;
+        state.categories = action.payload.categories;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.currentPage;
       })
       .addCase(addCategory.fulfilled, (state, action) => {
         if (action.payload && action.payload.success) {
@@ -237,9 +242,6 @@ const adminSlice = createSlice({
           state.products.push(action.payload.product);
         }
       })
-      .addCase(getAllProducts.fulfilled, (state, action) => {
-        state.products = action.payload.products;
-      })
       .addCase(unlistProduct.fulfilled, (state, action) => {
         const { productId }= action.payload;
         state.products = state.products.map(product =>
@@ -251,6 +253,11 @@ const adminSlice = createSlice({
         state.products = state.products.map(product =>
           product._id === productId ? { ...product, ...action.payload.product } : product
         );
+      })
+      .addCase(fetchProducts.fulfilled, (state, action) => {
+        state.products = action.payload.products;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.currentPage;
       })
       
 

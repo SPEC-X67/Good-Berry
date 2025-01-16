@@ -47,25 +47,38 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
-
-    const productsWithVariants = await Promise.all(
-      products.map(async (product) => {
-
-        const category = await Category.findOne({ _id: product.category });
-        if (!category) {
-          return {
-            ...product._doc,
-            category: { name: "Unknown", status: "Unknown" },
-            variants: [],
-          };
+    const { page = 1, limit = 5, search = '' } = req.query;
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+          ],
         }
+      : {};
+
+    const products = await Product.find(searchQuery)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalProducts = await Product.countDocuments(searchQuery);
+
+    const productsWithDetails = await Promise.all(
+      products.map(async (product) => {
+        const category = await Category.findOne({ _id: product.category });
         const variants = await Variant.find({ productId: product._id });
+
+        const totalStock = variants.reduce((acc, variant) => 
+          acc + variant.packSizePricing.reduce((sum, pack) => sum + (pack.quantity || 0), 0), 0);
 
         return {
           ...product._doc,
-          category: { name: category.name, status: category.status },
+          category: category ? { name: category.name, status: category.status } : { name: "Unknown", status: "Unknown" },
           variants,
+          image: variants[0]?.images[0] || '',
+          salePrice: variants[0]?.packSizePricing[0]?.salePrice || 0,
+          totalStock,
+          variantCount: variants.length,
         };
       })
     );
@@ -73,7 +86,9 @@ const getAllProducts = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Products fetched successfully",
-      products: productsWithVariants,
+      products: productsWithDetails,
+      totalPages: Math.ceil(totalProducts / limit),
+      currentPage: parseInt(page),
     });
   } catch (error) {
     console.error("Error fetching products:", error);

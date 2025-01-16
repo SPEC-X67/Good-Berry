@@ -181,6 +181,7 @@ export default function ShopPage() {
               </div>
 
               {/* Pagination */}
+              {pagination.totalPages > 1 && (
               <div className="mt-8 flex justify-center">
                 <nav
                   className="flex items-center gap-2"
@@ -196,11 +197,17 @@ export default function ShopPage() {
                       {i + 1}
                     </Button>
                   ))}
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === pagination.totalPages}
+                  >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </nav>
               </div>
+              )}
             </div>
           </div>
         </div>

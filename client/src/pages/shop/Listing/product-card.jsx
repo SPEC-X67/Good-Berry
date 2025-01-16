@@ -47,7 +47,7 @@ export default function ProductCard({ product, id}) {
           <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
           <p className="mt-1 text-sm text-gray-500">{product.categoryName}</p>
           <div className="mt-1 text-sm font-medium text-[#8CC63F]">
-            <span>₹{product.firstVariant.salePrice}</span>
+            <span>₹{product.firstVariant.salePrice.toFixed(2)}</span>
           </div>
       </div>
     </div>

@@ -129,9 +129,9 @@ const orderController = {
     }
   },
   
-  cancelOrder : async (req, res) => {
+ cancelOrder : async (req, res) => {
     try {
-      const { productId, reason } = req.body;
+      const { itemId, reason } = req.body;
   
       if (!reason) {
         return res.status(400).json({ message: 'Cancellation reason is required' });
@@ -146,15 +146,21 @@ const orderController = {
         return res.status(404).json({ message: 'Order not found' });
       }
   
-      const item = order.items.find(item => item.productId.toString() === productId);
+      const item = order.items.id(itemId);
       if (!item) {
         return res.status(404).json({ message: 'Item not found in order' });
       }
   
+      if (item.status !== 'processing') {
+        return res.status(400).json({ 
+          message: `Item cannot be cancelled in ${item.status} status`
+        });
+      }
+
       item.status = 'cancelled';
       item.cancellationReason = reason;
 
-      if(order.items.every(item => item.status === 'cancelled')) {
+      if (order.items.every(item => item.status === 'cancelled')) {
         order.status = 'cancelled';
       }
   
@@ -168,6 +174,6 @@ const orderController = {
       });
     }
   }
-};
+}
 
 module.exports = orderController;

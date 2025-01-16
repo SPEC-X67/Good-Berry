@@ -18,6 +18,7 @@ import {
   Package,
   RefreshCcw,
   Truck,
+  ShoppingBag,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -31,230 +32,338 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import PropTypes from "prop-types";
+
+const OrderStatusBadge = ({ status, icon }) => (
+  <Badge variant={status === "cancelled" ? "destructive" : "outline"} className="mt-2">
+    {icon}
+    <span className="ml-1">{status}</span>
+  </Badge>
+);
+
+
+const CancellationDialog = ({ onCancel, cancelReason, setCancelReason, item }) => (
+  <AlertDialog>
+    <AlertDialogTrigger asChild>
+      <Button variant="outline" size="sm">
+        Cancel Item
+      </Button>
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Cancel Order Item</AlertDialogTitle>
+        <AlertDialogDescription>
+          Are you sure you want to cancel {item.name} ({item.packageSize}
+          {item.flavor && `, ${item.flavor}`})? This action cannot be undone.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="space-y-2">
+          <h4 className="font-medium">Reason for Cancellation</h4>
+          <textarea
+            className="w-full min-h-[100px] p-3 border rounded-md"
+            placeholder="Please provide a reason for cancellation..."
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </div>
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Keep Item</AlertDialogCancel>
+        <AlertDialogAction
+          onClick={() => onCancel(item._id)}
+          disabled={!cancelReason.trim()}
+        >
+          Cancel Item
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
+
+const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, navigate }) => {
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "processing":
+        return <RefreshCcw className="h-4 w-4" />;
+      case "shipped":
+        return <Truck className="h-4 w-4" />;
+      case "delivered":
+        return <Package className="h-4 w-4" />;
+      case "cancelled":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <ShoppingBag className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+      <div 
+        className="relative cursor-pointer group"
+        onClick={() => navigate(`/shop/product/${item.productId}`)}
+      >
+        <img
+          src={item.image}
+          alt={item.name}
+          className="w-24 h-24 object-cover rounded-md transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 rounded-md transition-opacity" />
+      </div>
+      
+      <div className="flex-grow">
+        <div 
+          className="cursor-pointer"
+          onClick={() => navigate(`/shop/product/${item.productId}`)}
+        >
+          <h3 className="font-semibold text-lg">
+            {item.name}
+            {item.flavor && <span className="text-gray-600"> - {item.flavor}</span>}
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">Size: {item.packageSize}</p>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-sm">Quantity: {item.quantity}</p>
+            <p className="text-sm font-medium">
+              Price: <span className="text-[#92c949]">${(item.price * item.quantity).toFixed(2)}</span>
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3 mt-3">
+          <OrderStatusBadge 
+            status={item.status} 
+            icon={getStatusIcon(item.status)} 
+          />
+          {item.status === "cancelled" && (
+            <p className="text-sm text-red-500 italic">
+              {item.cancellationReason}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 min-w-[100px]">
+        {item.status === "processing" && (
+          <CancellationDialog
+            onCancel={onCancel}
+            cancelReason={cancelReason}
+            setCancelReason={setCancelReason}
+            item={item}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const OrderSummary = ({ order }) => (
+  <div className="grid gap-6 md:grid-cols-2 mt-6">
+    <div>
+      <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+      <div className="space-y-2">
+        <p className="flex justify-between">
+          <span className="text-gray-600">Subtotal:</span>
+          <span>${order.subtotal?.toFixed(2)}</span>
+        </p>
+        <p className="flex justify-between">
+          <span className="text-gray-600">Shipping:</span>
+          <span>${order.shippingCost?.toFixed(2)}</span>
+        </p>
+        {order.discount > 0 && (
+          <p className="flex justify-between text-[#92c949]">
+            <span>Discount:</span>
+            <span>-${order.discount?.toFixed(2)}</span>
+          </p>
+        )}
+        <Separator className="my-2" />
+        <p className="flex justify-between font-semibold">
+          <span>Total:</span>
+          <span className="text-[#92c949]">${order.total?.toFixed(2)}</span>
+        </p>
+      </div>
+    </div>
+    <div>
+      <h3 className="text-lg font-semibold mb-4">Shipping Details</h3>
+      <div className="space-y-2">
+        <p className="font-medium">{order.addressId?.name}</p>
+        <p className="text-gray-600">{order.addressId?.street}</p>
+        <p className="text-gray-600">
+          {order.addressId?.city}, {order.addressId?.state} {order.addressId?.zip}
+        </p>
+        <p className="text-gray-600">{order.addressId?.country}</p>
+      </div>
+    </div>
+  </div>
+);
 
 export default function OrderView() {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { order, isLoading, error } = useSelector((state) => state.order);
   const [cancelReason, setCancelReason] = useState("");
-  const navigate = useNavigate();
-
-  const { toast } = useToast();
 
   useEffect(() => {
     dispatch(fetchOrderById(id));
   }, [dispatch, id]);
 
-  const handleCancel = (productId) => {
-    dispatch(cancelOrderItem({ orderId: id, productId, reason: cancelReason }))
-      .unwrap()
-      .then(() => {
-        toast({
-          title: "Item Cancelled",
-          description: "The item has been successfully cancelled."
-        });
-      })
-      .catch((error) => {
-        toast({
-          title: "Error",
-          description: error.message
-        });
+  const handleCancel = async (itemId) => {
+    if (!cancelReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for cancellation",
+        variant: "destructive",
       });
-  };
+      return;
+    }
 
-  const handleReturn = (productId) => {
-    console.log("Return item:", productId);
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Processing":
-        return <RefreshCcw className="h-4 w-4 text-[#92c949]" />;
-      case "Shipped":
-        return <Truck className="h-4 w-4 text-[#92c949]" />;
-      case "Delivered":
-        return <Package className="h-4 w-4 text-[#92c949]" />;
-      case "Cancelled":
-      case "Returned":
-        return <AlertCircle className="h-4 w-4 text-[#92c949]" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-[#92c949]" />;
+    try {
+      await dispatch(cancelOrderItem({ 
+        orderId: id, 
+        itemId, 
+        reason: cancelReason 
+      })).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Item has been cancelled successfully",
+      });
+      setCancelReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel item",
+        variant: "destructive",
+      });
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/4" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex gap-4">
+                  <Skeleton className="h-24 w-24" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>Error loading order: {error.message}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!order) {
-    return <div>Order not found</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-yellow-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>Order not found</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-
-  let paymentMethodName = "";
-
-  if(order.paymentMethod === "cod"){
-    paymentMethodName = "Cash on Delivery";
-  } else if(order.paymentMethod === "card"){
-    paymentMethodName = "Credit Card";
-  } else if(order.paymentMethod === "upi"){
-    paymentMethodName = "Payed with UPI";
-  } 
 
   return (
     <div className="container mx-auto px-4 py-8 lg:my-8 max-w-7xl">
       <Card>
-        <CardHeader>
-          <CardTitle className="font-semibold">Order <span className="text-[#92c949]">#{order.orderId}</span></CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
+        <CardHeader className="border-b">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Order Details</h3>
-              <p className="text-sm text-muted-foreground">
-                Order Date: {new Date(order.createdAt).toLocaleDateString()}
+              <CardTitle className="text-2xl">
+                Order <span className="text-[#92c949]">#{order.orderId}</span>
+              </CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Placed on {new Date(order.createdAt).toLocaleDateString()} at{" "}
+                {new Date(order.createdAt).toLocaleTimeString()}
               </p>
-              <p className="text-lg font-semibold mt-2">
-                Total: <span className="text-[#92c949]">${order.total.toFixed(2)}</span>
-              </p>
-              <Badge variant="outline" className="mt-2">
-                {getStatusIcon(order.status)}
-                <span className="ml-1">Order Status: {order.status}</span>
-              </Badge>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Shipping Address</h3>
-              <p className="text-sm">{order.addressId.name}</p>
-              <p className="text-sm">{order.addressId.street}</p>
-              <p className="text-sm">
-                {order.addressId.city},{" "}
-                {order.addressId.state}{" "}
-                {order.addressId.zip}
-              </p>
-              <p className="text-sm">{order.addressId.country}</p>
-            </div>
+            <OrderStatusBadge 
+              status={order.status} 
+              icon={<Package className="h-4 w-4" />} 
+            />
           </div>
-          <Separator className="my-6" />
-          <div className="space-y-6">
-            {order.items.map((product) => (
-              <div
-                key={product._id}
-                className="flex flex-col md:flex-row items-start md:items-center gap-4 cursor-pointer"
-              >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-24 h-24 object-cover rounded-md"
-                  onClick={() => navigate(`/shop/product/${product.productId}`)}
-                />
-                <div className="flex-grow" onClick={() => navigate(`/shop/product/${product.productId}`)}>
-                  <h3 className="font-semibold">{product.name} - <span> {product.packageSize}</span></h3>
-                  <p className="text-sm text-muted-foreground">
-                    Quantity: {product.quantity} | Price: <span className="text-[#92c949] font-semibold">$
-                    {product.price.toFixed(2)}</span>
-                  </p>
-                  <Badge variant="outline" className="mt-2">
-                    {getStatusIcon(product.status)}
-                    <span className="ml-1">{product.status}</span>
-                  </Badge>
-                    {product.status === "cancelled" && <p className="mt-1 text-xs text-red-400">{product.cancellationReason}</p>}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {product.status === "processing" && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          Cancel
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you sure you want to cancel this item?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            cancel your order for this item.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <input
-                          type="text"
-                          placeholder="Reason for cancellation"
-                          value={cancelReason}
-                          onChange={(e) => setCancelReason(e.target.value)}
-                          className="mt-2 p-2 border rounded"
-                        />
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleCancel(product._id)}
-                          >
-                            Yes, cancel it
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {product.status === "delivered" && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          Return
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you sure you want to return this item?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will initiate the return process for this item.
-                            Please make sure you have the item in its original
-                            condition.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleReturn(product._id)}
-                          >
-                            Yes, return it
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="mt-6 space-y-4">
+            {order.items.map((item) => (
+              <OrderItem
+                key={item._id}
+                item={item}
+                onCancel={handleCancel}
+                cancelReason={cancelReason}
+                setCancelReason={setCancelReason}
+                navigate={navigate}
+              />
             ))}
           </div>
-          <Separator className="my-6" />
+
+          <Separator />
+          
+          <OrderSummary order={order} />
+
+          <Separator />
+
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 Payment Information
               </h3>
               <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                 <p className="text-sm">
-                  {paymentMethodName}
-                  </p>
+                <CreditCard className="h-5 w-5 text-gray-600" />
+                <p className="text-gray-600">
+                  {order.paymentMethod === "cod" && "Cash on Delivery"}
+                  {order.paymentMethod === "card" && "Credit Card"}
+                  {order.paymentMethod === "upi" && "UPI Payment"}
+                </p>
               </div>
             </div>
+            
             <div>
               <h3 className="text-lg font-semibold mb-2">Need Help?</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600">
                 If you have any questions about your order, please contact our
-                customer support at +91 96566 33324 or goodberry@support.com.
+                customer support at <span className="font-medium">+91 96566 33324</span> or{" "}
+                <span className="font-medium">support@example.com</span>
               </p>
             </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <p className="text-sm text-muted-foreground">
+
+        <CardFooter className="border-t">
+          <p className="text-sm text-gray-600 pt-4">
             Thank you for shopping with us! We appreciate your business.
           </p>
         </CardFooter>
@@ -262,3 +371,61 @@ export default function OrderView() {
     </div>
   );
 }
+
+
+OrderStatusBadge.propTypes = {
+  status: PropTypes.string.isRequired,
+  icon: PropTypes.node.isRequired,
+};
+
+CancellationDialog.propTypes = {
+  onCancel: PropTypes.func.isRequired,
+  cancelReason: PropTypes.string.isRequired,
+  setCancelReason: PropTypes.func.isRequired,
+  item: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    packageSize: PropTypes.string.isRequired,
+    flavor: PropTypes.string,
+    _id: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
+OrderItem.propTypes = {
+  item: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    productId: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    flavor: PropTypes.string,
+    packageSize: PropTypes.string.isRequired,
+    quantity: PropTypes.number.isRequired,
+    price: PropTypes.number.isRequired,
+    status: PropTypes.string.isRequired,
+    cancellationReason: PropTypes.string,
+  }).isRequired,
+  onCancel: PropTypes.func.isRequired,
+  cancelReason: PropTypes.string.isRequired,
+  setCancelReason: PropTypes.func.isRequired,
+  navigate: PropTypes.func.isRequired,
+};
+
+OrderSummary.propTypes = {
+  order: PropTypes.shape({
+    subtotal: PropTypes.number,
+    shippingCost: PropTypes.number,
+    discount: PropTypes.number,
+    total: PropTypes.number.isRequired,
+    addressId: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      street: PropTypes.string.isRequired,
+      city: PropTypes.string.isRequired,
+      state: PropTypes.string.isRequired,
+      zip: PropTypes.string.isRequired,
+      country: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
+};
+
+OrderView.propTypes = {
+  id: PropTypes.string,
+};

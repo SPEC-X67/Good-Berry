@@ -45,12 +45,16 @@ export const fetchOrderById = createAsyncThunk(
 
 export const cancelOrderItem = createAsyncThunk(
   'order/cancelOrderItem',
-  async ({ orderId, productId, reason }, { rejectWithValue }) => {
+  async ({ orderId, itemId, reason }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${api}/order/${orderId}/cancel`, { productId, reason }, { withCredentials: true });
+      const response = await axios.put(
+        `${api}/order/${orderId}/cancel`,
+        { itemId, reason },
+        { withCredentials: true }
+      );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );

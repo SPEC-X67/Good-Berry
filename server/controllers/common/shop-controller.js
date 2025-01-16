@@ -52,7 +52,7 @@ const getProductDetails = async (req, res) => {
       },
       {
         $addFields: {
-          firstVariant: { $arrayElemAt: ['$variants', 0] }, // Get the first variant
+          firstVariant: { $arrayElemAt: ['$variants', 0] }, 
         },
       },
       {
@@ -60,8 +60,8 @@ const getProductDetails = async (req, res) => {
           _id: 1,
           name: 1,
           description: 1,
-          'firstVariant.salePrice': { $arrayElemAt: ['$firstVariant.packSizePricing.salePrice', 0] }, // Get the first sale price
-          'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] }, // Get the first image
+          'firstVariant.salePrice': { $arrayElemAt: ['$firstVariant.packSizePricing.salePrice', 0] },
+          'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] },
         },
       },
       { $limit: 5 }, 

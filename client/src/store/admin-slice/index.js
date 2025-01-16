@@ -10,16 +10,20 @@ const initialState = {
 const api = "http://localhost:5000/api/admin";
 
 // Thunk to Fetch Users
-export const fetchUsers = createAsyncThunk("admin/fetchUsers", async (_, thunkAPI) => {
-  try {
-    const response = await fetch(`${api}/users`);
-    if (!response.ok) throw new Error("Failed to fetch users");
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.message);
+export const fetchUsers = createAsyncThunk(
+  "admin/fetchUsers",
+  async ({ page = 1, limit = 10, search = '' } = {}, thunkAPI) => {
+    try {
+      const response = await axios.get(`${api}/users`, {
+        params: { page, limit, search },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
   }
-});
+);
 
 // Thunk to Update Block/Unblock Status
 export const updateUserStatus = createAsyncThunk(
@@ -197,7 +201,9 @@ const adminSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchUsers.fulfilled, (state, action) => {
-        state.users = action.payload;
+        state.users = action.payload.users;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.currentPage;
       })
       .addCase(getAllCategories.fulfilled, (state, action) => {
         state.categories = action.payload;

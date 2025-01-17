@@ -27,11 +27,15 @@ export const featuredProducts = createAsyncThunk(
 
 export const getProducts = createAsyncThunk(
     "shop/getProducts",
-    async ({ page, limit, sort = 'featured' }) => {
-      const response = await axios.get(
-        `${api}/products?page=${page}&limit=${limit}&sort=${sort}`
-      );
-      return response.data;
+    async ({ page, limit, sort = 'featured', search = '' }) => {
+      try {
+        const response = await axios.get(
+          `${api}/products?page=${page}&limit=${limit}&sort=${sort}&search=${search}`
+        );
+        return response.data;
+      } catch (error) {
+        throw error.response?.data || error.message;
+      }
     }
   );
 

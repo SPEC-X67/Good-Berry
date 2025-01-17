@@ -77,7 +77,7 @@ export default function ProductPage() {
   };
 
   const calculateStockStatus = (flavor, packageSize) => {
-    if (!flavor || !flavor.packSizePricing) return { status: "OUT OF STOCK", color: "text-red-600 border-red-600" };
+    if (!flavor || !flavor.packSizePricing) return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
     const pack = flavor.packSizePricing.find(p => p.size === packageSize);
     return pack && pack.quantity > 0 
       ? { status: "IN STOCK", color: "text-[#8CC63F] border-[#8CC63F]" }

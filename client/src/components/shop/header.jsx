@@ -1,7 +1,7 @@
 import { Menu, Search, Heart, ShoppingCart, UserRound } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux';
 import { logodark, logolight } from '@/assets/images';
 import CartSidebar from '@/pages/shop/cart/cart-sidebar';
@@ -11,6 +11,7 @@ function HomeHeader() {
     const [isScrolled, setIsScrolled] = useState(false)
     const user = useSelector(state => state.auth.user)
     const items = useSelector(state => state.cart.items)
+    const navigate = useNavigate();
 
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -56,7 +57,7 @@ function HomeHeader() {
             <Link to={user ? '/account' : 'auth/login'} className={`text-sm font-medium ${isScrolled ? 'text-black' : 'text-white'} hidden md:block`}>
             {user ? <UserRound className={`h-5 w-5 mx-2 ${isScrolled ? 'text-black' : 'text-white'}`}/> : 'LOGIN/REGISTER'}
             </Link>
-            <Button variant="transparent" size="icon">
+            <Button variant="transparent" size="icon"  onClick={() => navigate('/search')}>
               <Search className={`h-5 w-5 ${isScrolled ? 'text-black' : 'text-white'} fw-bold`} />
               <span className="sr-only">Search</span>
             </Button>

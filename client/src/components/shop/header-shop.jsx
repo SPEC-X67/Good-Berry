@@ -1,6 +1,6 @@
 import { Menu, Search, Heart, ShoppingCart, UserRound } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux';
 import { logodark} from '@/assets/images';
 import CartSidebar from '@/pages/shop/cart/cart-sidebar';
@@ -11,6 +11,7 @@ function ShopHeader() {
     const items = useSelector(state => state.cart.items)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const navigate = useNavigate();
 
     return (
         <header className="fixed top-0 z-50 w-full py-1 transition-colors home-header duration-300 bg-white">
@@ -45,7 +46,7 @@ function ShopHeader() {
             <Link to={user ? '/account' : 'auth/login'} className="text-sm font-medium  text-black hidden md:block">
             {user ? <UserRound className="h-5 w-5 mx-2 text-black" /> : 'LOGIN/REGISTER'}
             </Link>
-            <Button variant="transparent" size="icon">
+            <Button variant="transparent" size="icon" onClick={() => navigate('/search')}>
               <Search className="h-5 w-5 text-black fw-bold" />
               <span className="sr-only">Search</span>
             </Button>

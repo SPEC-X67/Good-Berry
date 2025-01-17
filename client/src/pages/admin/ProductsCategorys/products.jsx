@@ -31,7 +31,7 @@ export default function ProductsPage() {
 
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(4);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const loadProducts = useCallback((page = 1) => {

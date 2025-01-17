@@ -61,7 +61,7 @@ export default function ShoppingCart() {
           ) : (
             items.map((item) => (
               <Card key={item.productId} className="w-full border-none border-b">
-                <CardContent className="flex flex-wrap items-center justify-between p-4">
+                <CardContent className="flex flex-wrap items-center justify-between p-4 cursor-pointer" onClick={() => navigate(`/shop/product/${item.productId}`)}>
                   <div className="flex items-center gap-4">
                     <img
                       src={item?.image}

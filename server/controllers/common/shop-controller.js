@@ -34,7 +34,7 @@ const getProductDetails = async (req, res) => {
         description: variant.description,
         images: variant.images,
         packageSizes: variant.selectedPackSizes,
-        packSizePricing : variant.packSizePricing,
+        packSizePricing: variant.packSizePricing,
         stock: variant.availableQuantity
       };
       return acc;
@@ -52,7 +52,7 @@ const getProductDetails = async (req, res) => {
       },
       {
         $addFields: {
-          firstVariant: { $arrayElemAt: ['$variants', 0] }, 
+          firstVariant: { $arrayElemAt: ['$variants', 0] },
         },
       },
       {
@@ -64,8 +64,8 @@ const getProductDetails = async (req, res) => {
           'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] },
         },
       },
-      { $limit: 5 }, 
-    ]);   
+      { $limit: 5 },
+    ]);
 
     res.status(200).json({ variantsFormatted, product, recommendedProducts });
 
@@ -79,7 +79,13 @@ const getProductDetails = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, sort = 'featured' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      sort = 'featured',
+      search = '' 
+    } = req.query;
+    
     const skip = (page - 1) * limit;
 
     const sortConfigurations = {
@@ -93,6 +99,18 @@ const getAllProducts = async (req, res) => {
     };
 
     const sortStage = { $sort: sortConfigurations[sort] || sortConfigurations['featured'] };
+
+    const searchPipeline = search ? [
+      {
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { 'categoryDetails.name': { $regex: search, $options: 'i' } }
+          ]
+        }
+      }
+    ] : [];
 
     const products = await Product.aggregate([
       {
@@ -150,6 +168,7 @@ const getAllProducts = async (req, res) => {
           averageRating: { $avg: "$reviews.rating" }
         },
       },
+      ...searchPipeline, 
       {
         $project: {
           _id: 1,
@@ -166,11 +185,28 @@ const getAllProducts = async (req, res) => {
         },
       },
       sortStage,
-      { $skip: skip },
-      { $limit: parseInt(limit, 10) },
+      { $skip: parseInt(skip) },
+      { $limit: parseInt(limit) },
     ]);
 
-    const totalCount = await Product.countDocuments({ unListed: false });
+    const matchStage = {
+      $match: {
+        unListed: false,
+        ...(search && {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { 'categoryDetails.name': { $regex: search, $options: 'i' } }
+          ]
+        })
+      }
+    };
+
+    const totalCount = await Product.aggregate([
+      matchStage,
+      { $count: "total" }
+    ]).then(result => (result[0]?.total || 0));
+
     const totalPages = Math.ceil(totalCount / limit);
 
     return res.json({
@@ -180,13 +216,18 @@ const getAllProducts = async (req, res) => {
         totalItems: totalCount,
         totalPages: totalPages,
         start: skip + 1,
-        end: Math.min(skip + parseInt(limit, 10), totalCount),
+        end: Math.min(skip + parseInt(limit), totalCount),
+        currentPage: parseInt(page)
       },
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server Error",
+      error: error.message 
+    });
   }
 };
 
-module.exports = { getProductDetails, getAllProducts };
+    module.exports = { getProductDetails, getAllProducts };

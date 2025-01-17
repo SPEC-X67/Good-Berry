@@ -79,9 +79,13 @@ export default function ProductPage() {
   const calculateStockStatus = (flavor, packageSize) => {
     if (!flavor || !flavor.packSizePricing) return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
     const pack = flavor.packSizePricing.find(p => p.size === packageSize);
-    return pack && pack.quantity > 0 
-      ? { status: "IN STOCK", color: "text-[#8CC63F] border-[#8CC63F]" }
-      : { status: "OUT STOCK", color: "text-red-600 border-red-600" };
+    if (pack && pack.quantity > 0) {
+      if (pack.quantity < 20) {
+        return { status: `Limited Stock (${pack.quantity})`, color: "text-yellow-600 border-yellow-600" };
+      }
+      return { status: "IN STOCK", color: "text-[#8CC63F] border-[#8CC63F]" };
+    }
+    return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
   };
 
   useEffect(() => {
@@ -349,6 +353,7 @@ export default function ProductPage() {
                 <button
                   className="px-3 py-2 hover:bg-muted"
                   onClick={() => setQuantity(quantity + 1)}
+                  disabled={quantity >= (flavor?.packSizePricing.find(p => p.size === packageSize)?.quantity || 0)}
                 >
                   +
                 </button>

@@ -44,7 +44,7 @@ export default function ShopPage() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getProducts({ page: currentPage, limit: 10, sort }));
+    dispatch(getProducts({ page: currentPage, limit: 3, sort }));
   }, [dispatch, currentPage, sort]);
 
   const { products, pagination } = useSelector((state) => state.shop);

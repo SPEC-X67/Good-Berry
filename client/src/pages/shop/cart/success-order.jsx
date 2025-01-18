@@ -95,7 +95,7 @@ export default function OrderSuccess() {
 
           <div className="mt-8 space-y-4">
             <Button asChild className="w-full bg-[#8CC63F] hover:bg-[#8CC63F]">
-              <Link to="/account">
+              <Link to="/account/order">
                 Track Your Order
               </Link>
             </Button>

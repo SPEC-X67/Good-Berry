@@ -460,7 +460,7 @@ export default function CheckoutPage() {
                 <Button variant="outline" onClick={() => navigate(-1)}>
                   Back
                 </Button>
-                <Button onClick={handleNext}>Next</Button>
+                <Button onClick={handleNext} disabled={addresses.length === 0}>Next</Button>
               </CardFooter>
             </Card>
           </div>

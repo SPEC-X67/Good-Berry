@@ -100,7 +100,7 @@ function OrderDetails() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><strong>Name:</strong> {orderDetails.userId.username}</p>
+              <p><strong>Name:</strong> {orderDetails?.addressId?.name || orderDetails.userId.username}</p>
               <p><MapPin className="inline-block mr-2" /> <strong>Address:</strong> {orderDetails.addressId.street}, {orderDetails.addressId.city}</p>
               <p><Phone className="inline-block mr-2" /> <strong>Phone:</strong> {orderDetails.addressId.mobile}</p>
             </div>

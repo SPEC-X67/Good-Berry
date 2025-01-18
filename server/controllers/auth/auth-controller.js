@@ -324,6 +324,13 @@ const forgetPassword = async (req, res) => {
             { expiresIn: "5m" }
         );
 
+        // Store the token in user document
+        user.resetPasswordToken = {
+            token: resetToken,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+        };
+        await user.save();
+
         const resetLink = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
         SendResetPasswordLink(user.email, resetLink);
 
@@ -347,7 +354,7 @@ const resetPassword = async (req, res) => {
     if(password.length < 8){
         return res.json({
             success: false,
-            message: "Password must 8 characters",
+            message: "Password must be 8 characters",
         });
     }
 
@@ -356,7 +363,7 @@ const resetPassword = async (req, res) => {
             return res.json({
                 success: false,
                 message: "Token is required",
-            });
+            });         
         }
 
         const decoded = jwt.verify(token, "This the thing i love");
@@ -369,8 +376,30 @@ const resetPassword = async (req, res) => {
             });
         }
 
+        // Check if token exists and matches
+        if (!user.resetPasswordToken || user.resetPasswordToken.token !== token) {
+            return res.json({
+                success: false,
+                message: "Invalid or expired reset token",
+            });
+        }
+
+        // Check if token has expired
+        if (new Date() > user.resetPasswordToken.expiresAt) {
+            // Clear the expired token
+            user.resetPasswordToken = undefined;
+            await user.save();
+            
+            return res.json({
+                success: false,
+                message: "Reset token has expired",
+            });
+        }
+
         const hashPassword = await bcrypt.hash(password, 12);
         user.password = hashPassword;
+        // Clear the used token
+        user.resetPasswordToken = undefined;
         await user.save();
 
         res.status(200).json({

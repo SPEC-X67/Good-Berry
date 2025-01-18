@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const Cart = require('../../models/Cart');
 const Product = require('../../models/Product');
+const Variant = require('../../models/Variant')
 
 const cartController = {
-  // Get cart items for a user
+  // Get cart items
   getCart: async (req, res) => {
     console.log(req.user);
     try {
@@ -38,6 +39,20 @@ const cartController = {
         return res.status(404).json({ error: 'Product not found' });
       }
 
+      const variant = await Variant.findOne({ productId: productId, title : flavor });
+      console.log("Varient",variant);
+      
+      if (!variant) {
+        return res.status(400).json({ 
+          message: `Product variant not found for product ID: ${productId}` 
+        });
+      }
+
+      const packSize = variant.packSizePricing.find(
+        pack => pack.size === packageSize
+      );
+        
+
       let cart = await Cart.findOne({ userId });
 
       if (!cart) {
@@ -46,6 +61,7 @@ const cartController = {
           items: []
         });
       }
+
 
       const existingItemIndex = cart.items.findIndex(
         item => item.productId.toString() === productId &&

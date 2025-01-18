@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, Filter, ChevronRight, ChevronLeft, Loader } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,8 @@ function AdminOrders() {
   const dispatch = useDispatch();
   const { orders, isLoading, error, currentPage, totalPages } = useSelector((state) => state.adminOrder);
   const searchInputRef = useRef(null);
+
+  console.log(orders);
   
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -62,10 +64,6 @@ function AdminOrders() {
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
   };
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading orders...</div>;
-  }
 
   if (error) {
     return <div className="flex items-center justify-center h-screen">Error fetching orders: {error}</div>;
@@ -116,30 +114,46 @@ function AdminOrders() {
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {orders.map(order => (
-                <TableRow key={order._id}>
-                  <TableCell className="font-medium">#{order.orderId}</TableCell>
-                  <TableCell>{order.userId.username}</TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>₹{order.total.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate(`/admin/orders/${order.orderId}`)}
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            {
+              isLoading ? (
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center align-middle">
+                      <div className="flex justify-center items-center space-x-2 h-[100px]">
+                        <Loader className="h-4 w-4 animate-spin" />
+                        <span>Loading...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              ) : (
+                <TableBody>
+                  {orders.map(order => (
+                    <TableRow key={order._id}>
+                      <TableCell className="font-medium">#{order.orderId}</TableCell>
+                      <TableCell>{order?.userId?.username || order?.addressId?.name}</TableCell>
+                      <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>₹{order.total.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => navigate(`/admin/orders/${order.orderId}`)}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              )
+            }
+            
           </Table>
         </CardContent>
       </Card>

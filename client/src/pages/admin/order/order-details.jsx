@@ -198,10 +198,10 @@ function OrderDetails() {
                     value={editingItem.item.status}
                     onValueChange={(value) => {
                       if (validateStatusTransition(editingItem.item.status, value)) {
-                        setEditingItem({
-                          ...editingItem,
-                          item: { ...editingItem.item, status: value }
-                        });
+                        setEditingItem((prev) => ({
+                          ...prev,
+                          item: { ...prev.item, status: value }
+                        }));
                       }
                     }}
                   >

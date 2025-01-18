@@ -18,7 +18,7 @@ import { useEffect } from "react";
 import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/Listing/products";
 import { Skeleton } from "@/components/ui/skeleton";
-import CustomersPage from "./pages/admin/Customers/customers";
+import CustomersPage from "./pages/admin/customers";
 import ProductForm from "./pages/admin/ProductsCategorys/product-form";
 import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
@@ -30,6 +30,7 @@ import OrderView from "./pages/shop/cart/view-order";
 import OrderDetails from "./pages/admin/order/order-details";
 import ResetPassword from "./pages/auth/reset-password";
 import SearchProduct from "./pages/shop/Listing/search-product";
+import CouponManagement from "./pages/admin/coupon";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -126,15 +127,13 @@ function App() {
             <Route path="add" element={<ProductForm />} />
             <Route path="edit/:id" element={<ProductForm />} />
           </Route>
-
           <Route path="categorys" element={<AdminCategorys />} />
-          
           <Route path="orders" >
             <Route index element={<AdminOrders />} />
             <Route path=":orderId" element={<OrderDetails />} />
           </Route>
-
           <Route path="features" element={<AdminFeatures />} />
+          <Route path="coupons" element={<CouponManagement />} />
         </Route>
 
         {/* Catch-All Route */}

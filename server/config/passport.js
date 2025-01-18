@@ -13,6 +13,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log(profile.displayName);
         const existingUser = await User.findOne({ email: profile.emails[0].value });
         
         if (existingUser) {
@@ -28,9 +29,8 @@ passport.use(
         const newUser = await User.create({
           googleId: profile.id,
           email: profile.emails[0].value,
-          name: profile.displayName,
-          provider: 'google',
-          emailVerified: true
+          username : profile.displayName,
+          isVerified: true
         });
 
         return done(null, newUser);

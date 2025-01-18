@@ -173,6 +173,8 @@ const googleAuth = async (req, res) => {
             return res.redirect('http://localhost:5173/auth/login?error=blocked_user');
         }
 
+        console.log(req.user)
+
         const token = jwt.sign(
             {
                 id: req.user._id,

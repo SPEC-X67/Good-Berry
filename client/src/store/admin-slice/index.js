@@ -90,19 +90,6 @@ export const addCategory = createAsyncThunk(
   }
 );
 
-export const deleteCategory = createAsyncThunk(
-  "admin/deleteCategory",
-  async (id) => {
-    const response = await axios.delete(
-      `${api}/categories/${id}`,
-      {
-        withCredentials: true,
-      }
-    );
-    return response.data;
-  }
-)
-
 export const addProduct = createAsyncThunk(
   "admin/addProduct",
   async (formData) => {
@@ -219,9 +206,6 @@ const adminSlice = createSlice({
         } else {
           console.error("Failed to add category:", action.payload?.message || "Unknown error");
         }
-      })
-      .addCase(deleteCategory.fulfilled, (state, action) => {
-        state.categories = state.categories.filter((cat) => cat._id !== action.payload.categoryId);
       })
       .addCase(updateUserStatus.fulfilled, (state, action) => {
         const { id, isBlocked } = action.payload;

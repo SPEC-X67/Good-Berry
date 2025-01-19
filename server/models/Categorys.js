@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
     name: String,
     status: String,
     image: String,
+    offerPercentage: { type: Number, default: 0 } // New field for offer percentage
   });
   
   const Category = mongoose.model("Category", categorySchema);

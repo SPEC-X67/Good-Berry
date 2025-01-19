@@ -1,9 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
-import { deleteCategory, getAllCategories } from "@/store/admin-slice";
+import { getAllCategories } from "@/store/admin-slice";
+import { addCategoryOffer, removeCategoryOffer } from "@/store/admin-slice/offer-slice";
 import { Switch } from "@/components/ui/switch";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, PlusCircle, Trash } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,29 +23,32 @@ import EditCategoryModal from "./edit-category";
 import AddCategoryModal from "./add-category";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 function Categorys() {
-  const { categories,  totalPages, currentPage } = useSelector((state) => state.admin);
+  const { categories, totalPages, currentPage } = useSelector((state) => state.admin);
   const dispatch = useDispatch();
 
-  
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [itemsPerPage] = useState(5);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
+  const [isRemoveOfferDialogOpen, setIsRemoveOfferDialogOpen] = useState(false);
+  const [offerCategory, setOfferCategory] = useState(null);
+  const [offerPercentage, setOfferPercentage] = useState('');
 
   const loadCategories = useCallback(
-      (page = 1) => {
-        dispatch(
-          getAllCategories({
-            page,
-            limit: itemsPerPage,
-          })
-        );
-      },
-      [dispatch, itemsPerPage]
-    );
+    (page = 1) => {
+      dispatch(
+        getAllCategories({
+          page,
+          limit: itemsPerPage,
+        })
+      );
+    },
+    [dispatch, itemsPerPage]
+  );
 
   const handlePageChange = (newPage) => {
     loadCategories(newPage);
@@ -54,29 +58,52 @@ function Categorys() {
     loadCategories(1);
   }, [loadCategories]);
 
-
   const handleEditClick = (category) => {
     setSelectedCategory(category);
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteClick = (category) => {
-    setCategoryToDelete(category);
-    setIsDeleteDialogOpen(true);
+  const handleAddOffer = (category) => {
+    setOfferCategory(category);
+    setIsOfferDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
-    const data = await dispatch(deleteCategory(categoryToDelete._id));
-    setIsDeleteDialogOpen(false);
-    console.log(data.payload);
+  const confirmAddOffer = async () => {
+    if (offerPercentage) {
+      const data = await dispatch(addCategoryOffer({ categoryId: offerCategory._id, offerPercentage: parseInt(offerPercentage) }));
+      if (data.payload.success) {
+        toast({ title: "Success", description: data.payload.message });
+        loadCategories(currentPage);
+      } else {
+        toast({
+          title: "Error",
+          description: data.payload.message || "Failed to add offer",
+          variant: "destructive",
+        });
+      }
+      setIsOfferDialogOpen(false);
+      setOfferPercentage('');
+    }
+  };
+
+  const handleRemoveOffer = (category) => {
+    setOfferCategory(category);
+    setIsRemoveOfferDialogOpen(true);
+  };
+
+  const confirmRemoveOffer = async () => {
+    const data = await dispatch(removeCategoryOffer({ categoryId: offerCategory._id }));
     if (data.payload.success) {
-      toast({ title: data.payload.message });
+      toast({ title: "Success", description: data.payload.message });
+      loadCategories(currentPage);
     } else {
       toast({
-        title: data.payload.message || "Failed to delete category",
+        title: "Error",
+        description: data.payload.message || "Failed to remove offer",
         variant: "destructive",
       });
     }
+    setIsRemoveOfferDialogOpen(false);
   };
 
   return (
@@ -87,16 +114,14 @@ function Categorys() {
           <AddCategoryModal />
         </div>
       </div>
-      <div
-        className="border rounded-lg mx-4 mb-4"
-        style={{ height: "450px" }}
-      >
+      <div className="border rounded-lg mx-4 mb-4" style={{ height: "450px" }}>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>S.No</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>List/Unlist</TableHead>
+              <TableHead>Offer</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -105,17 +130,24 @@ function Categorys() {
               <TableRow key={category.id}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                <div className="flex items-center gap-3">
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="h-12 w-12 rounded-lg border p-1"
-                      />
-                      <span>{category.name}</span>
-                </div>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="h-12 w-12 rounded-lg border p-1"
+                    />
+                    <span>{category.name}</span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Switch checked={category.status === "Active"} />
+                </TableCell>
+                <TableCell>
+                  {category.offerPercentage > 0 ? (
+                    <Badge className="bg-green-100 text-green-800">{category.offerPercentage}%</Badge>
+                  ) : (
+                    <Badge className="bg-gray-100 text-gray-800">No Offer</Badge>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -131,14 +163,23 @@ function Categorys() {
                           handleEditClick(category);
                         }}
                       >
-                        Edit
+                        <Pencil className="h-4 w-4" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => handleDeleteClick(category)}
-                      >
-                        Remove
-                      </DropdownMenuItem>
+                      {category.offerPercentage > 0 ? (
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleRemoveOffer(category)}
+                        >
+                         <Trash className="h-4 w-4" /> Remove Offer
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          className="text-green-600"
+                          onClick={() => handleAddOffer(category)}
+                        >
+                          <PlusCircle className="h-4 w-4"/> Add Offer
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -147,9 +188,8 @@ function Categorys() {
           </TableBody>
         </Table>
       </div>
-      {
-        totalPages > 1 && (
-          <div className="flex items-center justify-end mt-5 mr-4 gap-4">
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end mt-5 mr-4 gap-4">
           <Button
             variant="outline"
             size="sm"
@@ -172,8 +212,7 @@ function Categorys() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        )
-      }
+      )}
 
       {isEditModalOpen && (
         <EditCategoryModal
@@ -181,21 +220,56 @@ function Categorys() {
           onClose={() => setIsEditModalOpen(false)}
         />
       )}
-      {isDeleteDialogOpen && (
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      {isOfferDialogOpen && (
+        <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="mb-3">Are you sure you want remove this category?</DialogTitle>
+              <DialogTitle>Add Offer</DialogTitle>
               <DialogDescription>
-              This action cannot be undone. This will permanently remove your category for this item.
+                Enter the offer percentage you want to add to this category.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="offerPercentage" className="text-right">Offer Percentage</label>
+                <Input
+                  id="offerPercentage"
+                  value={offerPercentage}
+                  onChange={(e) => setOfferPercentage(e.target.value)}
+                  className="col-span-3"
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsOfferDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmAddOffer}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {isRemoveOfferDialogOpen && (
+        <Dialog open={isRemoveOfferDialogOpen} onOpenChange={setIsRemoveOfferDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Offer</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove the offer from this category? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-                No, keep it
+              <Button variant="outline" onClick={() => setIsRemoveOfferDialogOpen(false)}>
+                Cancel
               </Button>
-              <Button onClick={confirmDelete}>
-                Yes, remove
+              <Button onClick={confirmRemoveOffer}>
+                Remove
               </Button>
             </DialogFooter>
           </DialogContent>

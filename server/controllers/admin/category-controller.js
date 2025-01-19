@@ -3,7 +3,7 @@ const Category = require('../../models/Categorys.js');
 // Add Category
 const addCategory = async (req, res) => {
   try {
-    const { name, status, image } = req.body;
+    const { name, status, image, offerPercentage } = req.body;
 
     const existingCategory = await Category.findOne({ name: { $regex: `^${name.trim()}$`, $options: 'i' } });
 
@@ -11,7 +11,7 @@ const addCategory = async (req, res) => {
       return res.json({ success: false, message: 'Category already exists' });
     }
 
-    const category = await Category.create({ name, status, image });
+    const category = await Category.create({ name, status, image, offerPercentage });
     return res.status(201).json({ success: true, message: 'Category created successfully', category });
 
   } catch (error) {
@@ -48,7 +48,7 @@ const getAllCategories = async (req, res) => {
 // Update the category
 const updateCategory = async (req, res) => {
   try {
-    const { name, status, image } = req.body;
+    const { name, status, image, offerPercentage } = req.body;
     const { id: categoryId } = req.params;
 
     console.log(req.body);
@@ -66,7 +66,7 @@ const updateCategory = async (req, res) => {
 
     const updatedCategory = await Category.findByIdAndUpdate(
       categoryId,
-      { name, status, image },
+      { name, status, image, offerPercentage },
       { new: true }
     );
 
@@ -86,22 +86,8 @@ const updateCategory = async (req, res) => {
   }
 };
 
-
-
-// Delete a category
-const deleteCategory = async (req, res) => {
-  try {
-    const categoryId = req.params.id;
-    const category = await Category.deleteOne({ _id: categoryId });
-    res.status(200).json({ success : true, message: 'Category deleted successfully', categoryId });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
 module.exports = {
   addCategory,
   getAllCategories,
-  updateCategory,
-  deleteCategory
+  updateCategory
 };

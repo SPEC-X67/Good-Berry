@@ -4,6 +4,7 @@ const categoryController = require('../controllers/admin/category-controller');
 const userController = require('../controllers/admin/user-controller');
 const productController = require('../controllers/admin/product-controller');
 const orderController = require('../controllers/admin/order-controller');
+const offerController = require('../controllers/admin/offer-controller');
 
 // Customer
 router.get('/users', userController.getAllUsers);
@@ -20,7 +21,10 @@ router.patch('/products/:id', productController.unListProduct);
 router.post('/categories', categoryController.addCategory);
 router.get('/categories', categoryController.getAllCategories);
 router.put('/categories/:id', categoryController.updateCategory);
-router.delete('/categories/:id', categoryController.deleteCategory);
+
+// Offer
+router.post('/category/offer', offerController.addCategoryOffer);
+router.post('/category/offer/remove', offerController.removeCategoryOffer);
 
 // Order
 router.get('/orders', orderController.getAllOrders);

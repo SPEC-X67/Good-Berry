@@ -38,7 +38,7 @@ const EditCategoryModal = ({ category, onClose }) => {
 
       if (data.success) {
         toast({ title: data.message });
-        onClose(); // Close modal after successful update
+        onClose(); 
       } else {
         toast({
           title: data.message || "Failed to update category",

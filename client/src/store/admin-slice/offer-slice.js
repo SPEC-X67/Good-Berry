@@ -27,6 +27,30 @@ export const removeCategoryOffer = createAsyncThunk(
   }
 );
 
+export const addProductOffer = createAsyncThunk(
+  'offer/addProductOffer',
+  async ({ productId, offerPercentage }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${api}/products/${productId}/offer`, { offerPercentage }, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const removeProductOffer = createAsyncThunk(
+  'offer/removeProductOffer',
+  async ({ productId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${api}/products/${productId}/offer`, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const offerSlice = createSlice({
   name: 'offer',
   initialState: {
@@ -55,6 +79,28 @@ const offerSlice = createSlice({
         state.error = null;
       })
       .addCase(removeCategoryOffer.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(addProductOffer.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(addProductOffer.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(addProductOffer.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(removeProductOffer.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(removeProductOffer.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(removeProductOffer.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

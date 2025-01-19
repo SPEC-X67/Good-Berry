@@ -26,6 +26,10 @@ router.put('/categories/:id', categoryController.updateCategory);
 router.post('/category/offer', offerController.addCategoryOffer);
 router.post('/category/offer/remove', offerController.removeCategoryOffer);
 
+// Product Offer
+router.post('/products/:id/offer', offerController.addProductOffer);
+router.delete('/products/:id/offer', offerController.removeProductOffer);
+
 // Order
 router.get('/orders', orderController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);

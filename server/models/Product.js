@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false },
   category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
   unListed: { type: Boolean, default: false },
+  offerPercentage: { type: Number, default: 0 }, // New field for offer percentage
 },
 { timestamps: true });
 

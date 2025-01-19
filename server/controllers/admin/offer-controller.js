@@ -1,4 +1,5 @@
 const Category = require('../../models/Categorys.js');
+const Product = require('../../models/Product');
 
 // Add Offer to Category
 const addCategoryOffer = async (req, res) => {
@@ -42,7 +43,52 @@ const removeCategoryOffer = async (req, res) => {
   }
 };
 
+const addProductOffer = async (req, res) => {
+  const { id } = req.params;
+  const { offerPercentage } = req.body;
+
+  try {
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { offerPercentage },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Offer added successfully", product });
+  } catch (error) {
+    console.error("Error adding offer:", error);
+    res.status(500).json({ success: false, message: "Failed to add offer", error: error.message });
+  }
+};
+
+const removeProductOffer = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { offerPercentage: 0 },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Offer removed successfully", product });
+  } catch (error) {
+    console.error("Error removing offer:", error);
+    res.status(500).json({ success: false, message: "Failed to remove offer", error: error.message });
+  }
+};
+
 module.exports = {
   addCategoryOffer,
-  removeCategoryOffer
+  removeCategoryOffer,
+  addProductOffer,
+  removeProductOffer
 };

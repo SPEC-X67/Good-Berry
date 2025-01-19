@@ -5,7 +5,7 @@ const { default: mongoose } = require('mongoose');
 
 // Add product handler
 const addProduct = async (req, res) => {
-  const { name, description, isFeatured, category, variants } = req.body;
+  const { name, description, isFeatured, category, variants, offerPercentage } = req.body;
   try {
     if (!name || !description || !category) {
       return res.json({ message: "Name, description, and category are required." });
@@ -15,7 +15,7 @@ const addProduct = async (req, res) => {
       return res.json({ message: "At least one variant is required." });
     }
 
-    const newProduct = new Product({ name, description, isFeatured, category });
+    const newProduct = new Product({ name, description, isFeatured, category, offerPercentage });
     const savedProduct = await newProduct.save();
 
     const savedVariants = await Promise.all(
@@ -27,6 +27,18 @@ const addProduct = async (req, res) => {
           images: variant.images,
           selectedPackSizes: variant.selectedPackSizes,
           packSizePricing: variant.packSizePricing
+        });
+
+        // Calculate sale price based on the best offer
+        const product = await Product.findById(savedProduct._id).populate('category');
+        const productOffer = product.offerPercentage || 0;
+        const categoryOffer = product.category.offerPercentage || 0;
+        const bestOffer = Math.max(productOffer, categoryOffer);
+
+        newVariant.packSizePricing = newVariant.packSizePricing.map(pack => {
+          const discount = (pack.price * bestOffer) / 100;
+          pack.salePrice = pack.price - discount;
+          return pack;
         });
 
         return await newVariant.save();
@@ -76,7 +88,7 @@ const getAllProducts = async (req, res) => {
           category: category ? { name: category.name, status: category.status } : { name: "Unknown", status: "Unknown" },
           variants,
           image: variants[0]?.images[0] || '',
-          salePrice: variants[0]?.packSizePricing[0]?.salePrice || 0,
+          price: variants[0]?.packSizePricing[0]?.price || 0,
           totalStock,
           variantCount: variants.length,
         };
@@ -138,6 +150,7 @@ const updateProduct = async (req, res) => {
     isFeatured,
     category,
     variants,
+    offerPercentage,
   } = req.body;
 
   try {
@@ -155,7 +168,7 @@ const updateProduct = async (req, res) => {
 
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { name, description, isFeatured, category },
+      { name, description, isFeatured, category, offerPercentage },
       { new: true }
     );
 
@@ -174,6 +187,18 @@ const updateProduct = async (req, res) => {
           images: variant.images,
           selectedPackSizes: variant.selectedPackSizes,
           packSizePricing: variant.packSizePricing,
+        });
+
+        // Calculate sale price based on the best offer
+        const product = await Product.findById(updatedProduct._id).populate('category');
+        const productOffer = product.offerPercentage || 0;
+        const categoryOffer = product.category.offerPercentage || 0;
+        const bestOffer = Math.max(productOffer, categoryOffer);
+
+        newVariant.packSizePricing = newVariant.packSizePricing.map(pack => {
+          const discount = (pack.price * bestOffer) / 100;
+          pack.salePrice = pack.price - discount;
+          return pack;
         });
 
         return await newVariant.save();

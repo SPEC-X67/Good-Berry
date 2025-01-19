@@ -87,7 +87,7 @@ function ShoppingHome() {
                 title={product.name}
                 name={product.firstVariant.title}
                 category={product.categoryName}
-                price={product.firstVariant.price}
+                price={product.firstVariant.salePrice || product.firstVariant.price}
                 imageUrl={product.firstVariant.images}
               />
             ))}

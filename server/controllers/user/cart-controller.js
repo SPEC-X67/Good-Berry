@@ -26,7 +26,7 @@ const cartController = {
     try {
       const userId = req.user.id;
       console.log(req.body)
-      const { productId, quantity, packageSize, flavor, name, image, price } = req.body;
+      const { productId, quantity, packageSize, flavor, name, image, price, salePrice } = req.body;
 
       if (!productId || !quantity || !packageSize) {
         return res.status(400).json({
@@ -80,6 +80,7 @@ const cartController = {
           name,
           image,
           price,
+          salePrice
         });
       }
 

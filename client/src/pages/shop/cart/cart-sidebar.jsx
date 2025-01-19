@@ -14,6 +14,8 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
   const { items, loading } = useSelector((state) => state.cart);
 
   console.log(items);
+
+  console.log(items);
   const [animationClass, setAnimationClass] = useState("");
 
   useEffect(() => {
@@ -50,9 +52,11 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
   
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
     return {
       subtotal,
-      total: subtotal
+      discount : discount,
+      total: subtotal - discount
     };
   };
 
@@ -68,7 +72,7 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     );
   }
 
-  const { subtotal, total } = calculateTotals();
+  const { subtotal, discount, total } = calculateTotals();
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
@@ -169,8 +173,12 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span>Discount</span>
+                <span>-₹{discount.toFixed(2)}</span>
+              </div>
               <div className="flex justify-between font-medium">
-                <span>Subtotal</span>
+                <span>Total</span>
                 <span>₹{total.toFixed(2)}</span>
               </div>
             </div>

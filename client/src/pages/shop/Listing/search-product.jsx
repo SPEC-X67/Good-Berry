@@ -1,27 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Loader2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useDispatch } from 'react-redux';
-import { getProducts } from '@/store/shop-slice';
-import { useNavigate } from 'react-router-dom';
+import { useDispatch } from "react-redux";
+import { getProducts } from "@/store/shop-slice";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const ITEMS_PER_PAGE = 12;
 
 export default function SearchProduct() {
   const dispatch = useDispatch();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortOption, setSortOption] = useState('featured');
+  const [sortOption, setSortOption] = useState("featured");
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState({
     totalItems: 0,
     totalPages: 0,
     start: 0,
-    end: 0
+    end: 0,
   });
 
   const navigate = useNavigate();
@@ -37,17 +44,19 @@ export default function SearchProduct() {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const response = await dispatch(getProducts({
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-        sort: sortOption,
-        search: searchTerm
-      })).unwrap();
+      const response = await dispatch(
+        getProducts({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          sort: sortOption,
+          search: searchTerm,
+        })
+      ).unwrap();
 
       setProducts(response.data);
       setPagination(response.pagination);
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      console.error("Failed to fetch products:", error);
     } finally {
       setIsLoading(false);
     }
@@ -60,14 +69,14 @@ export default function SearchProduct() {
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="container mx-auto p-4 lg:p-10">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Search Products</h1>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
           <Input
             type="text"
@@ -76,7 +85,7 @@ export default function SearchProduct() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full sm:w-64"
           />
-          
+
           <Select value={sortOption} onValueChange={handleSortChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Sort by" />
@@ -101,7 +110,10 @@ export default function SearchProduct() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {products.map((product) => (
               <Card key={product._id} className="flex flex-col h-full">
-                <CardContent className="flex-grow cursor-pointer" onClick={ () => navigate(`/shop/product/${product._id}`)}>
+                <CardContent
+                  className="flex-grow cursor-pointer"
+                  onClick={() => navigate(`/shop/product/${product._id}`)}
+                >
                   <div className="aspect-square relative my-4">
                     <img
                       src={product.firstVariant?.images || "/placeholder.svg"}
@@ -109,12 +121,12 @@ export default function SearchProduct() {
                       className="object-cover w-full h-full rounded-md"
                     />
                     {product.isNew && (
-                      <span className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-sm">
-                        New
-                      </span>
+                      <Badge className="absolute text-center left-2 top-2 bg-[#438e44] w-12 h-12">
+                        {product.isNew && "New"}
+                      </Badge>
                     )}
                   </div>
-                  <p className='font-semibold'>{product.name}</p>
+                  <p className="font-semibold">{product.name}</p>
                   <p className="text-sm text-gray-600 line-clamp-3">
                     {product.description}
                   </p>
@@ -122,6 +134,9 @@ export default function SearchProduct() {
                 <CardFooter className="flex justify-between items-center">
                   <p className="text-lg font-bold">
                     ${product.firstVariant?.salePrice.toFixed(2)}
+                  </p>
+                  <p className="text-sm gray-600">
+                    {product.firstVarient?.price.toFixed(2)}
                   </p>
                 </CardFooter>
               </Card>

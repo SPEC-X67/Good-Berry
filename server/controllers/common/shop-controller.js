@@ -61,6 +61,7 @@ const getProductDetails = async (req, res) => {
           name: 1,
           description: 1,
           'firstVariant.salePrice': { $arrayElemAt: ['$firstVariant.packSizePricing.salePrice', 0] },
+          'firstVariant.price': { $arrayElemAt: ['$firstVariant.packSizePricing.price', 0] },
           'firstVariant.images': { $arrayElemAt: ['$firstVariant.images', 0] },
         },
       },
@@ -79,13 +80,13 @@ const getProductDetails = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
+    const {
+      page = 1,
+      limit = 10,
       sort = 'featured',
-      search = '' 
+      search = ''
     } = req.query;
-    
+
     const skip = (page - 1) * limit;
 
     const sortConfigurations = {
@@ -168,7 +169,7 @@ const getAllProducts = async (req, res) => {
           averageRating: { $avg: "$reviews.rating" }
         },
       },
-      ...searchPipeline, 
+      ...searchPipeline,
       {
         $project: {
           _id: 1,
@@ -177,6 +178,7 @@ const getAllProducts = async (req, res) => {
           categoryName: 1,
           "firstVariant.title": 1,
           "firstVariant.salePrice": { $arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0] },
+          "firstVariant.price": { $arrayElemAt: ["$firstVariant.packSizePricing.price", 0] },
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] },
           isNew: 1,
           featured: 1,
@@ -222,12 +224,12 @@ const getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Server Error",
-      error: error.message 
+      error: error.message
     });
   }
 };
 
-    module.exports = { getProductDetails, getAllProducts };
+module.exports = { getProductDetails, getAllProducts };

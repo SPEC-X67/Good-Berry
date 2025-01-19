@@ -228,7 +228,7 @@ export default function ProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="px-5">
-                    ₹{product.salePrice || 0}
+                    ₹{product.price || 0}
                   </TableCell>
                   <TableCell className="px-5">
                     {product.variantCount || 0}

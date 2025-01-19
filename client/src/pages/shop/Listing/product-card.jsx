@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Heart, Search } from "lucide-react";
 
 export default function ProductCard({ product, id}) {
+  console.log("Test ting shamnd",product);
   return (
     <Link to={`/shop/product/${id}`}>
     <div className="group relative bg-white rounded-lg text-center">
@@ -43,6 +44,7 @@ export default function ProductCard({ product, id}) {
           <p className="mt-1 text-sm text-gray-500">{product.categoryName}</p>
           <div className="mt-1 text-sm font-medium text-[#8CC63F]">
             <span>₹{product.firstVariant.salePrice.toFixed(2)}</span>
+            <span>₹{product.firstVariant?.price?.toFixed(2)}</span>
           </div>
       </div>
     </div>

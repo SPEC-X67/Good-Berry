@@ -138,7 +138,8 @@ export default function ProductPage() {
       flavor: flavor.title,
       packageSize,
       quantity,
-      price: currentPrice.salePrice,
+      price: currentPrice.price,
+      salePrice: currentPrice.salePrice,
       image: selectedImage
     };
     

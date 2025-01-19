@@ -23,6 +23,9 @@ const CartItemSchema = new mongoose.Schema({
   },
   image: {
     type: String,
+  },
+  salePrice: {
+    type: Number,
   }
 });
 

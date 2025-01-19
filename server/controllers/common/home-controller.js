@@ -49,7 +49,7 @@ const getFeatured = async (req, res) => {
           categoryName: "$categoryDetails.name",
           "firstVariant.title": 1,
           "firstVariant.description": 1,
-          "firstVariant.price": { $arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0] },
+          "firstVariant.price": { $arrayElemAt: ["$firstVariant.packSizePricing.price", 0] },
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] }, 
         },
       },

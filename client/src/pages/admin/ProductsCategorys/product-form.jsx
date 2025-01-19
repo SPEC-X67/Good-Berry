@@ -273,16 +273,15 @@ export default function ProductForm() {
       // Validate prices for each selected pack size
       for (const size of variant.selectedPackSizes) {
         const pricing = variant.packSizePricing.find((p) => p.size === size);
-        if (!pricing || !pricing.price || !pricing.salePrice || !pricing.quantity) {
+        if (!pricing || !pricing.price || !pricing.quantity) {
           toast({
-            title: `Please set price, sale price, and quantity for ${size} in variant ${i + 1}`,
+            title: `Please set price and quantity for ${size} in variant ${i + 1}`,
             variant: "destructive",
           });
           return;
         }
 
         const price = parseFloat(pricing.price);
-        const salePrice = parseFloat(pricing.salePrice);
         const quantity = parseInt(pricing.quantity);
 
         if (quantity < 0) {
@@ -293,19 +292,9 @@ export default function ProductForm() {
           return;
         }
 
-        if (price < 0 || salePrice < 0 ) {
+        if (price < 0) {
           toast({
-            title: "Prices should be greater than 0",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (salePrice > price) {
-          toast({
-            title: `Sale price should be less than price for ${size} in variant ${
-              i + 1
-            }`,
+            title: "Price should be greater than 0",
             variant: "destructive",
           });
           return;
@@ -402,6 +391,7 @@ export default function ProductForm() {
                     )
                   }
                   className="mt-1"
+                  disabled
                 />
               </div>
 

@@ -47,6 +47,8 @@ export default function ProductsPage() {
   const { products, isLoading, totalPages, currentPage } = useSelector(
     (state) => state.admin
   );
+
+  console.log("test Shamnad tee",products)
   const searchInputRef = useRef(null);
   const { toast } = useToast();
 
@@ -204,7 +206,7 @@ export default function ProductsPage() {
               <TableRow>
                 <TableHead className="w-[50px]">ID</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Sale Price</TableHead>
+                <TableHead>Price</TableHead>
                 <TableHead>Variants</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Categories</TableHead>

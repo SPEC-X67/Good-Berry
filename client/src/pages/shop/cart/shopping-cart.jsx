@@ -18,8 +18,13 @@ export default function ShoppingCart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  console.log("Shamnd tesss", items);
+  
+
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (item?.price * item?.quantity), 0)
+    const discount = newSubtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+    setDiscount(discount)
     setSubtotal(newSubtotal)
     setTotal(newSubtotal - discount)
   }, [items, discount])
@@ -61,8 +66,8 @@ export default function ShoppingCart() {
           ) : (
             items.map((item) => (
               <Card key={item.productId} className="w-full border-none border-b">
-                <CardContent className="flex flex-wrap items-center justify-between p-4 cursor-pointer" onClick={() => navigate(`/shop/product/${item.productId}`)}>
-                  <div className="flex items-center gap-4">
+                <CardContent className="flex flex-wrap items-center justify-between p-4 cursor-pointer">
+                  <div className="flex items-center gap-4" onClick={() => navigate(`/shop/product/${item.productId}`)}>
                     <img
                       src={item?.image}
                       alt={item?.name}
@@ -70,7 +75,7 @@ export default function ShoppingCart() {
                     height={80}
                     className="rounded-lg"
                   />
-                  <div>
+                  <div onClick={() => navigate(`/shop/product/${item.productId}`)}>
                     <h3 className="font-medium">{item?.name}</h3>
                     <p className="text-sm text-muted-foreground">{item?.flavor} - {item.packageSize}</p>
                   </div>

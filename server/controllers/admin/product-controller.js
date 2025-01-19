@@ -1,11 +1,12 @@
 const Variant = require('../../models/Variant');
 const Product = require('../../models/Product');
 const Category = require('../../models/Categorys');
+const Cart = require('../../models/Cart');
 const { default: mongoose } = require('mongoose');
 
 // Add product handler
 const addProduct = async (req, res) => {
-  const { name, description, isFeatured, category, variants, offerPercentage } = req.body;
+  const { name, description, isFeatured, category, variants } = req.body;
   try {
     if (!name || !description || !category) {
       return res.json({ message: "Name, description, and category are required." });
@@ -15,7 +16,7 @@ const addProduct = async (req, res) => {
       return res.json({ message: "At least one variant is required." });
     }
 
-    const newProduct = new Product({ name, description, isFeatured, category, offerPercentage });
+    const newProduct = new Product({ name, description, isFeatured, category });
     const savedProduct = await newProduct.save();
 
     const savedVariants = await Promise.all(
@@ -27,18 +28,6 @@ const addProduct = async (req, res) => {
           images: variant.images,
           selectedPackSizes: variant.selectedPackSizes,
           packSizePricing: variant.packSizePricing
-        });
-
-        // Calculate sale price based on the best offer
-        const product = await Product.findById(savedProduct._id).populate('category');
-        const productOffer = product.offerPercentage || 0;
-        const categoryOffer = product.category.offerPercentage || 0;
-        const bestOffer = Math.max(productOffer, categoryOffer);
-
-        newVariant.packSizePricing = newVariant.packSizePricing.map(pack => {
-          const discount = (pack.price * bestOffer) / 100;
-          pack.salePrice = pack.price - discount;
-          return pack;
         });
 
         return await newVariant.save();
@@ -150,7 +139,6 @@ const updateProduct = async (req, res) => {
     isFeatured,
     category,
     variants,
-    offerPercentage,
   } = req.body;
 
   try {
@@ -168,7 +156,7 @@ const updateProduct = async (req, res) => {
 
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { name, description, isFeatured, category, offerPercentage },
+      { name, description, isFeatured, category },
       { new: true }
     );
 
@@ -189,21 +177,27 @@ const updateProduct = async (req, res) => {
           packSizePricing: variant.packSizePricing,
         });
 
-        // Calculate sale price based on the best offer
-        const product = await Product.findById(updatedProduct._id).populate('category');
-        const productOffer = product.offerPercentage || 0;
-        const categoryOffer = product.category.offerPercentage || 0;
-        const bestOffer = Math.max(productOffer, categoryOffer);
-
-        newVariant.packSizePricing = newVariant.packSizePricing.map(pack => {
-          const discount = (pack.price * bestOffer) / 100;
-          pack.salePrice = pack.price - discount;
-          return pack;
-        });
-
         return await newVariant.save();
       })
     );
+
+    // Update cart items for all users
+    const carts = await Cart.find({ "items.productId": id });
+    for (const cart of carts) {
+      cart.items.forEach(item => {
+        if (item.productId.toString() === id) {
+          const variant = updatedVariants.find(v => v.title === item.flavor);
+          if (variant) {
+            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+            if (pack) {
+              item.price = pack.price;
+              item.salePrice = pack.salePrice;
+            }
+          }
+        }
+      });
+      await cart.save();
+    }
 
     res.json({
       success: true,

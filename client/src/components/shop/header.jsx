@@ -14,6 +14,9 @@ function HomeHeader() {
     const navigate = useNavigate();
 
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+    const total = subtotal - discount;
+
     const [isCartOpen, setIsCartOpen] = useState(false);
 
     useEffect(() => {
@@ -72,7 +75,7 @@ function HomeHeader() {
                 {items.length}
               </span>
             </Button>
-            <span className={`text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>₹{subtotal.toFixed(2)}</span>
+            <span className={`text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>₹{total.toFixed(2)}</span>
           </div>
         </div>
           <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />

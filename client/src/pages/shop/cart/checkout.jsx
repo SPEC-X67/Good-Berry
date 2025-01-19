@@ -54,6 +54,7 @@ export default function CheckoutPage() {
   const { isLoading } = useSelector(state => state.order)
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
 
   const {
     register,
@@ -163,6 +164,8 @@ export default function CheckoutPage() {
       addressId: selectedAddress,
       shippingMethod: selectedShippingDetails,
       paymentMethod: selectedPayment,
+      discount: discount,
+      coupon: null,
       items: items
     };
 
@@ -216,8 +219,9 @@ export default function CheckoutPage() {
   const summary = {
     subtotal: subtotal, 
     coupon: coupon,
+    discount: discount,
     shipping: selectedShippingDetails?.price || 0,
-    total: subtotal + (-coupon) + (selectedShippingDetails?.price || 0) 
+    total: subtotal + (-coupon) + (selectedShippingDetails?.price - discount || 0) 
   };
 
   return (
@@ -549,6 +553,10 @@ export default function CheckoutPage() {
                         <div className="flex justify-between text-sm font-semibold">
                           <span>Subtotal</span>
                           <span>₹{summary.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Discount</span>
+                          <span>-₹{summary.discount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Coupon</span>

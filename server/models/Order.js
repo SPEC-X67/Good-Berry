@@ -62,6 +62,7 @@ const OrderSchema = new mongoose.Schema({
   },
   subtotal: Number,
   shippingCost: Number,
+  couponDiscount: Number,
   discount: Number,
   total: Number,
   createdAt: {

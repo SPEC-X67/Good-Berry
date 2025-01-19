@@ -125,7 +125,7 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, navigate }) 
           <div className="flex items-center gap-4 mt-2">
             <p className="text-sm">Quantity: {item.quantity}</p>
             <p className="text-sm font-medium">
-              Price: <span className="text-[#92c949]">${(item.price * item.quantity).toFixed(2)}</span>
+              Price: <span className="text-[#92c949]">₹{(item.price * item.quantity).toFixed(2)}</span>
             </p>
           </div>
         </div>
@@ -172,22 +172,22 @@ const OrderSummary = ({ order }) => (
       <div className="space-y-2">
         <p className="flex justify-between">
           <span className="text-gray-600">Subtotal:</span>
-          <span>${order.subtotal?.toFixed(2)}</span>
+          <span>₹{order.subtotal?.toFixed(2)}</span>
         </p>
         <p className="flex justify-between">
           <span className="text-gray-600">Shipping:</span>
-          <span>${order.shippingCost?.toFixed(2)}</span>
+          <span>₹{order.shippingCost?.toFixed(2)}</span>
         </p>
         {order.discount > 0 && (
           <p className="flex justify-between text-[#92c949]">
             <span>Discount:</span>
-            <span>-${order.discount?.toFixed(2)}</span>
+            <span>-₹{order.discount?.toFixed(2)}</span>
           </p>
         )}
         <Separator className="my-2" />
         <p className="flex justify-between font-semibold">
           <span>Total:</span>
-          <span className="text-[#92c949]">${order.total?.toFixed(2)}</span>
+          <span className="text-[#92c949]">₹{order.total?.toFixed(2)}</span>
         </p>
       </div>
     </div>

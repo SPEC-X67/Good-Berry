@@ -10,6 +10,8 @@ function ShopHeader() {
     const user = useSelector(state => state.auth.user)
     const items = useSelector(state => state.cart.items)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+    const total = subtotal - discount;
     const [isCartOpen, setIsCartOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -61,7 +63,7 @@ function ShopHeader() {
                 {items.length}
               </span>
             </Button>
-            <span className="text-sm font-bold text-black">₹{subtotal.toFixed(2)}</span>
+            <span className="text-sm font-bold text-black">₹{total.toFixed(2)}</span>
           </div>
         </div>
         <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />

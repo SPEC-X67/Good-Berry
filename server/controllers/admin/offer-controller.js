@@ -1,6 +1,7 @@
 const Category = require('../../models/Categorys.js');
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
+const Cart = require('../../models/Cart');
 
 // Add Offer to Category
 const addCategoryOffer = async (req, res) => {
@@ -34,6 +35,25 @@ const addCategoryOffer = async (req, res) => {
         await variant.save();
       }));
     }));
+
+    // Update cart items for all users
+    const carts = await Cart.find({ "items.productId": { $in: products.map(p => p._id) } });
+    for (const cart of carts) {
+      cart.items.forEach(item => {
+        const product = products.find(p => p._id.toString() === item.productId.toString());
+        if (product) {
+          const variant = product.variants.find(v => v.title === item.flavor);
+          if (variant) {
+            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+            if (pack) {
+              item.price = pack.price;
+              item.salePrice = pack.salePrice;
+            }
+          }
+        }
+      });
+      await cart.save();
+    }
 
     res.status(200).json({ success: true, message: 'Offer added successfully' });
   } catch (error) {
@@ -75,6 +95,25 @@ const removeCategoryOffer = async (req, res) => {
       }));
     }));
 
+    // Update cart items for all users
+    const carts = await Cart.find({ "items.productId": { $in: products.map(p => p._id) } });
+    for (const cart of carts) {
+      cart.items.forEach(item => {
+        const product = products.find(p => p._id.toString() === item.productId.toString());
+        if (product) {
+          const variant = product.variants.find(v => v.title === item.flavor);
+          if (variant) {
+            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+            if (pack) {
+              item.price = pack.price;
+              item.salePrice = pack.salePrice;
+            }
+          }
+        }
+      });
+      await cart.save();
+    }
+
     res.status(200).json({ success: true, message: 'Offer removed successfully' });
   } catch (error) {
     console.error('Error removing offer:', error.message);
@@ -113,6 +152,24 @@ const addProductOffer = async (req, res) => {
       await variant.save();
     }));
 
+    // Update cart items for all users
+    const carts = await Cart.find({ "items.productId": id });
+    for (const cart of carts) {
+      cart.items.forEach(item => {
+        if (item.productId.toString() === id) {
+          const variant = variants.find(v => v.title === item.flavor);
+          if (variant) {
+            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+            if (pack) {
+              item.price = pack.price;
+              item.salePrice = pack.salePrice;
+            }
+          }
+        }
+      });
+      await cart.save();
+    }
+
     res.status(200).json({ success: true, message: "Offer added successfully", product });
   } catch (error) {
     console.error("Error adding offer:", error);
@@ -149,6 +206,24 @@ const removeProductOffer = async (req, res) => {
 
       await variant.save();
     }));
+
+    // Update cart items for all users
+    const carts = await Cart.find({ "items.productId": id });
+    for (const cart of carts) {
+      cart.items.forEach(item => {
+        if (item.productId.toString() === id) {
+          const variant = variants.find(v => v.title === item.flavor);
+          if (variant) {
+            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+            if (pack) {
+              item.price = pack.price;
+              item.salePrice = pack.salePrice;
+            }
+          }
+        }
+      });
+      await cart.save();
+    }
 
     res.status(200).json({ success: true, message: "Offer removed successfully", product });
   } catch (error) {

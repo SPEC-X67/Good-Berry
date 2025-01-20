@@ -44,15 +44,27 @@ export default function ShopPage() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getProducts({ page: currentPage, limit: 3, sort }));
-  }, [dispatch, currentPage, sort]);
+    dispatch(getProducts({ 
+      page: currentPage, 
+      limit: 10, 
+      sort,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1]
+    }));
+  }, [dispatch, currentPage, sort])
 
   const { products, pagination } = useSelector((state) => state.shop);
 
   const handlePriceFilter = () => {
-    console.log("Filtering by price range:", priceRange);
+    dispatch(getProducts({ 
+      page: currentPage, 
+      limit: 10, 
+      sort, 
+      search: '', 
+      minPrice: priceRange[0], 
+      maxPrice: priceRange[1] 
+    }));
   };
-
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex-1">

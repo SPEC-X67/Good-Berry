@@ -53,7 +53,7 @@ export function PriceFilter({ value, onValueChange, onFilter }) {
       </Slider.Root>
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-600">
-          Price: ${value[0]} — ${value[1]}
+          Price: ₹{value[0]} — ₹{value[1]}
         </span>
         <Button 
           variant="outline" 

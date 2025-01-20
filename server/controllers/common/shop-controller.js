@@ -84,8 +84,12 @@ const getAllProducts = async (req, res) => {
       page = 1,
       limit = 10,
       sort = 'featured',
-      search = ''
+      search = '',
+      minPrice = 0,
+      maxPrice = 1000000
     } = req.query;
+
+    console.log(req.query);
 
     const skip = (page - 1) * limit;
 
@@ -170,6 +174,15 @@ const getAllProducts = async (req, res) => {
         },
       },
       ...searchPipeline,
+      // Add price filtering stage after getting the firstVariant
+      {
+        $match: {
+          $and: [
+            { "firstVariant.packSizePricing.salePrice": { $gte: parseFloat(minPrice) } },
+            { "firstVariant.packSizePricing.salePrice": { $lte: parseFloat(maxPrice) } }
+          ]
+        }
+      },
       {
         $project: {
           _id: 1,
@@ -204,8 +217,30 @@ const getAllProducts = async (req, res) => {
       }
     };
 
+    // Update totalCount pipeline to include price filtering
     const totalCount = await Product.aggregate([
       matchStage,
+      {
+        $lookup: {
+          from: "variants",
+          localField: "_id",
+          foreignField: "productId",
+          as: "variants",
+        },
+      },
+      {
+        $addFields: {
+          firstVariant: { $arrayElemAt: ["$variants", 0] },
+        },
+      },
+      {
+        $match: {
+          $and: [
+            { "firstVariant.packSizePricing.salePrice": { $gte: parseFloat(minPrice) } },
+            { "firstVariant.packSizePricing.salePrice": { $lte: parseFloat(maxPrice) } }
+          ]
+        }
+      },
       { $count: "total" }
     ]).then(result => (result[0]?.total || 0));
 
@@ -232,4 +267,21 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-module.exports = { getProductDetails, getAllProducts };
+
+
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ status: 'Active' }).select('name');
+    res.status(200).json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+module.exports = { getProductDetails, getAllProducts, getCategories };

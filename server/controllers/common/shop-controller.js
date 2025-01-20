@@ -86,12 +86,13 @@ const getAllProducts = async (req, res) => {
       sort = 'featured',
       search = '',
       minPrice = 0,
-      maxPrice = 1000000
+      maxPrice = 1000000,
+      categories = []
     } = req.query;
 
-    console.log(req.query);
-
     const skip = (page - 1) * limit;
+
+    const categoryArray = typeof categories === 'string' ? categories.split(',') : categories;
 
     const sortConfigurations = {
       'price-asc': { 'firstVariant.salePrice': 1 },
@@ -117,10 +118,17 @@ const getAllProducts = async (req, res) => {
       }
     ] : [];
 
+    const categoryFilter = categoryArray.length > 0 ? {
+      category: { 
+        $in: categoryArray.map(cat => new mongoose.Types.ObjectId(cat))
+      }
+    } : {};
+
     const products = await Product.aggregate([
       {
         $match: {
           unListed: false,
+          ...categoryFilter
         },
       },
       {
@@ -170,11 +178,11 @@ const getAllProducts = async (req, res) => {
       {
         $addFields: {
           categoryName: { $arrayElemAt: ["$categoryDetails.name", 0] },
-          averageRating: { $avg: "$reviews.rating" }
+          averageRating: { $avg: "$reviews.rating" },
+          inStock: { $gt: ["$firstVariant.packSizePricing.quantity", 0] }
         },
       },
       ...searchPipeline,
-      // Add price filtering stage after getting the firstVariant
       {
         $match: {
           $and: [
@@ -193,10 +201,12 @@ const getAllProducts = async (req, res) => {
           "firstVariant.salePrice": { $arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0] },
           "firstVariant.price": { $arrayElemAt: ["$firstVariant.packSizePricing.price", 0] },
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] },
+          "firstVariant.packSizePricing.quantity": 1,
           isNew: 1,
           featured: 1,
           averageRating: 1,
-          createdAt: 1
+          createdAt: 1,
+          inStock: 1
         },
       },
       sortStage,
@@ -207,6 +217,7 @@ const getAllProducts = async (req, res) => {
     const matchStage = {
       $match: {
         unListed: false,
+        ...categoryFilter,
         ...(search && {
           $or: [
             { name: { $regex: search, $options: 'i' } },
@@ -217,7 +228,6 @@ const getAllProducts = async (req, res) => {
       }
     };
 
-    // Update totalCount pipeline to include price filtering
     const totalCount = await Product.aggregate([
       matchStage,
       {
@@ -267,21 +277,54 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-
-
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ status: 'Active' }).select('name');
+    const categories = await Category.aggregate([
+      {
+        $match: {
+          status: 'Active'
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: 'category',
+          as: 'products'
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          image: 1,
+          count: {
+            $size: {
+              $filter: {
+                input: '$products',
+                as: 'product',
+                cond: { $eq: ['$$product.unListed', false] }
+              }
+            }
+          }
+        }
+      },
+      {
+        $sort: {
+          name: 1
+        }
+      }
+    ]);
+
     res.status(200).json({
       success: true,
       data: categories
     });
   } catch (error) {
+    console.error('Error fetching categories:', error);
     res.status(500).json({
       success: false,
       error: error.message
     });
   }
 };
-
 module.exports = { getProductDetails, getAllProducts, getCategories };

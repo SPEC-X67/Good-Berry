@@ -13,6 +13,6 @@ router.get('/featured', homeController.getFeatured);
 router.get('/products', shopController.getAllProducts);
 router.get('/products/:id', shopController.getProductDetails);
 
-router.get('/categories');
+router.get('/categories', shopController.getCategories);
 
 module.exports = router;

@@ -21,7 +21,7 @@ import { FiGrid } from "react-icons/fi";
 import { BiSolidGrid } from "react-icons/bi";
 import { TfiLayoutGrid4Alt } from "react-icons/tfi";
 import { useDispatch, useSelector } from "react-redux";
-import { getProducts } from "@/store/shop-slice";
+import { getProducts, getCategories } from "@/store/shop-slice";
 
 const sortOptions = [
   { value: 'featured', label: 'Featured' },
@@ -43,17 +43,28 @@ export default function ShopPage() {
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const dispatch = useDispatch();
 
+  const { products, pagination, categories } = useSelector((state) => state.shop);
+
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      setSelectedCategories(categories.map(category => category._id));
+    }
+  }, [categories]);
+
   useEffect(() => {
     dispatch(getProducts({ 
       page: currentPage, 
       limit: 10, 
       sort,
       minPrice: priceRange[0],
-      maxPrice: priceRange[1]
+      maxPrice: priceRange[1],
+      categories: selectedCategories,
     }));
-  }, [dispatch, currentPage, sort])
-
-  const { products, pagination } = useSelector((state) => state.shop);
+  }, [dispatch, currentPage, sort, priceRange, selectedCategories]);
 
   const handlePriceFilter = () => {
     dispatch(getProducts({ 
@@ -62,9 +73,11 @@ export default function ShopPage() {
       sort, 
       search: '', 
       minPrice: priceRange[0], 
-      maxPrice: priceRange[1] 
+      maxPrice: priceRange[1],
+      categories: selectedCategories,
     }));
   };
+  
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex-1">

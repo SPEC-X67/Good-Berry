@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useDispatch } from "react-redux";
-import { getProducts } from "@/store/shop-slice";
+import { useDispatch, useSelector } from "react-redux";
+import { getProducts, getCategories } from "@/store/shop-slice";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,8 +30,20 @@ export default function SearchProduct() {
     start: 0,
     end: 0,
   });
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   const navigate = useNavigate();
+  const { categories } = useSelector((state) => state.shop);
+
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      setSelectedCategories(categories.map(category => category._id));
+    }
+  }, [categories]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -39,7 +51,7 @@ export default function SearchProduct() {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, currentPage, sortOption]);
+  }, [searchTerm, currentPage, sortOption, selectedCategories]);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -50,6 +62,9 @@ export default function SearchProduct() {
           limit: ITEMS_PER_PAGE,
           sort: sortOption,
           search: searchTerm,
+          minPrice: 0,
+          maxPrice: 100000,
+          categories: selectedCategories,
         })
       ).unwrap();
 

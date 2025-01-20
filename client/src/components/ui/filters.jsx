@@ -1,4 +1,4 @@
-import { IceCream, Coffee, BarcodeIcon as Jar, Droplet, Apple, Check, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import * as Slider from '@radix-ui/react-slider'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,15 +10,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { useDispatch, useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { getCategories } from '@/store/shop-slice'
 
-// Filter Data
-const categories = [
-  { id: 'ice-cream', name: 'Ice Cream', count: 14, icon: <IceCream className="w-5 h-5 text-[#8CC63F]" /> },
-  { id: 'fruit-juice', name: 'Fruit Juice', count: 35, icon: <Droplet className="w-5 h-5 text-[#8CC63F]" /> },
-  { id: 'fruit-jam', name: 'Fruit Jam', count: 25, icon: <Jar className="w-5 h-5 text-[#8CC63F]" /> },
-  { id: 'fruit-tea', name: 'Fruit Tea', count: 18, icon: <Coffee className="w-5 h-5 text-[#8CC63F]" /> },
-  { id: 'snacks', name: 'Snacks', count: 28, icon: <Apple className="w-5 h-5 text-[#8CC63F]" /> },
-]
 
 const flavors = [
   { id: 'strawberry', name: 'Strawberry', count: 14, color: '#FF4D4D' },
@@ -35,6 +30,7 @@ const statuses = [
 
 // Filter Components
 export function PriceFilter({ value, onValueChange, onFilter }) {
+  
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">FILTER BY PRICE</h3>
@@ -69,22 +65,28 @@ export function PriceFilter({ value, onValueChange, onFilter }) {
 }
 
 export function CategoryFilter({ selectedCategories, onCategoryChange }) {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
+  const { categories } = useSelector(state => state.shop);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">FILTER BY CATEGORY</h3>
       <div className="space-y-3">
         {categories.map((category) => (
           <button
-            key={category.id}
+            key={category._id}
             className="flex w-full items-center justify-between group"
-            onClick={() => onCategoryChange(category.id)}
+            onClick={() => onCategoryChange(category._id)}
           >
             <div className="flex items-center gap-2">
-              {category.icon}
+              <img src={category.image} className='w-6 h-6' />
               <span className="text-gray-600 group-hover:text-gray-900">{category.name}</span>
             </div>
             <span className={`text-sm ${
-              selectedCategories.includes(category.id) 
+              selectedCategories.includes(category._id) 
                 ? 'bg-[#8CC63F] text-white' 
                 : 'bg-gray-100 text-gray-600'
             } px-2 py-0.5 rounded-full`}>
@@ -94,7 +96,7 @@ export function CategoryFilter({ selectedCategories, onCategoryChange }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function FlavorFilter({ selectedFlavors, onFlavorChange }) {

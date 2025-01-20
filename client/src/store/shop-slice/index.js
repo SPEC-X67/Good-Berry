@@ -3,12 +3,13 @@ import axios from "axios";
 
 const initialState = {
     products: [],
+    categories : [],
     featuredProds: [],
     pagination : {},
     product : {},
     recomentedProds : [],
     pflavors: [],
-    wishlist: [], // Add wishlist to initial state
+    wishlist: [], 
 };
 
 const api = "http://localhost:5000/api";
@@ -28,10 +29,10 @@ export const featuredProducts = createAsyncThunk(
 
 export const getProducts = createAsyncThunk(
     "shop/getProducts",
-    async ({ page, limit, sort = 'featured', search = '', minPrice, maxPrice}) => {
+    async ({ page, limit, sort = 'featured', search = '', minPrice, maxPrice, categories}) => {
       try {
         const response = await axios.get(
-          `${api}/products?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}`
+          `${api}/products?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}`
         );
         return response.data;
       } catch (error) {
@@ -84,6 +85,14 @@ export const removeFromWishlist = createAsyncThunk(
     }
 );
 
+export const getCategories = createAsyncThunk(
+    "shop/getCategories",
+    async () => {
+      const response = await axios.get(`${api}/categories`, { withCredentials: true });
+      return response.data;
+    }
+  );
+
 const shopSlice = createSlice({
     name: "shop",
     initialState,
@@ -121,7 +130,11 @@ const shopSlice = createSlice({
         })
         .addCase(removeFromWishlist.fulfilled, (state, action) => {
             state.wishlist = state.wishlist.filter(item => item._id !== action.meta.arg);
-        });
+        })
+
+        .addCase(getCategories.fulfilled, (state, action) => {
+            state.categories = action.payload.data;
+        })
     },
 });
 

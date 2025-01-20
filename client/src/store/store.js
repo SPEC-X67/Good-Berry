@@ -19,7 +19,8 @@ const store = configureStore({
     order: orderReducer,
     adminOrder: adminOrderReducer,
     offer: offerReducer,
-    coupons : couponReducer
+    coupons : couponReducer,
+    
   }
 });
 

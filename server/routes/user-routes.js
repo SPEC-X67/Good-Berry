@@ -4,6 +4,7 @@ const cartController = require('../controllers/user/cart-controller');
 const accountController = require('../controllers/user/account-controller');
 const addressController = require('../controllers/user/address-controller');
 const orderController = require('../controllers/common/order-controller');
+const wishlistController = require('../controllers/user/wishlist-controller');
 const auth = require('../middleware/auth');
 
 router.use(auth);
@@ -35,5 +36,10 @@ router.post('/order', orderController.createOrder);
 router.get('/order', orderController.getOrders); 
 router.get('/order/:id', orderController.getOrderById);
 router.put('/order/:id/cancel', orderController.cancelOrder);
+
+// Wishlist
+router.get('/wishlist', wishlistController.getWishlist);
+router.post('/wishlist', wishlistController.addToWishlist);
+router.delete('/wishlist/:productId', wishlistController.removeFromWishlist);
 
 module.exports = router;

@@ -31,6 +31,7 @@ import OrderDetails from "./pages/admin/order/order-details";
 import ResetPassword from "./pages/auth/reset-password";
 import SearchProduct from "./pages/shop/Listing/search-product";
 import CouponManagement from "./pages/admin/coupon";
+import SalesReportPage from "./pages/admin/sales-report";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -134,6 +135,7 @@ function App() {
           </Route>
           <Route path="features" element={<AdminFeatures />} />
           <Route path="coupons" element={<CouponManagement />} />
+          <Route path="sales-report" element={<SalesReportPage />} />
         </Route>
 
         {/* Catch-All Route */}

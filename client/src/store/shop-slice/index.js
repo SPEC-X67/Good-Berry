@@ -8,6 +8,7 @@ const initialState = {
     product : {},
     recomentedProds : [],
     pflavors: [],
+    wishlist: [], // Add wishlist to initial state
 };
 
 const api = "http://localhost:5000/api";
@@ -47,7 +48,41 @@ export const getSingleProduct = createAsyncThunk(
     }
 )
 
+export const getWishlist = createAsyncThunk(
+    "wishlist/getWishlist",
+    async (_, thunkAPI) => {
+        try {
+            const response = await axios.get(`${api}/user/wishlist`, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return thunkAPI.rejectWithValue({ error: error.message });
+        }
+    }
+);
 
+export const addToWishlist = createAsyncThunk(
+    "wishlist/addToWishlist",
+    async (productId, thunkAPI) => {
+        try {
+            const response = await axios.post(`${api}/user/wishlist`, { productId }, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return thunkAPI.rejectWithValue({ error: error.message });
+        }
+    }
+);
+
+export const removeFromWishlist = createAsyncThunk(
+    "wishlist/removeFromWishlist",
+    async (productId, thunkAPI) => {
+        try {
+            const response = await axios.delete(`${api}/user/wishlist/${productId}`, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return thunkAPI.rejectWithValue({ error: error.message });
+        }
+    }
+);
 
 const shopSlice = createSlice({
     name: "shop",
@@ -78,6 +113,15 @@ const shopSlice = createSlice({
             state.recomentedProds = action.payload.recommendedProducts;
             state.pflavors = action.payload.variantsFormatted;
         })
+        .addCase(getWishlist.fulfilled, (state, action) => {
+            state.wishlist = action.payload.data.products;
+        })
+        .addCase(addToWishlist.fulfilled, (state, action) => {
+            state.wishlist.push(action.payload.data.products);
+        })
+        .addCase(removeFromWishlist.fulfilled, (state, action) => {
+            state.wishlist = state.wishlist.filter(item => item._id !== action.meta.arg);
+        });
     },
 });
 

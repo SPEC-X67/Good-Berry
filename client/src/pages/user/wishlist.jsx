@@ -1,49 +1,32 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingBag, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getWishlist, removeFromWishlist } from "@/store/shop-slice";
 
 const WishlistPage = () => {
-  const wishlistItems = [
-    {
-      "id": 1,
-      "name": "Chocolate Fudge Ice Cream",
-      "price": 199.99,
-      "image": "/api/placeholder/200/200",
-      "inStock": true
-    },
-    {
-      "id": 2,
-      "name": "Orange Delight Juice",
-      "price": 299.99,
-      "image": "/api/placeholder/200/200",
-      "inStock": true
-    },
-    {
-      "id": 3,
-      "name": "Strawberry Spread Jam",
-      "price": 79.99,
-      "image": "/api/placeholder/200/200",
-      "inStock": false
-    },
-    {
-      "id": 4,
-      "name": "Cashew Crunch Dry Fruits",
-      "price": 149.99,
-      "image": "/api/placeholder/200/200",
-      "inStock": true
-    }
-  ]  
+  const dispatch = useDispatch();
+  const { wishlist } = useSelector((state) => state.shop);
+
+  useEffect(() => {
+    dispatch(getWishlist());
+  }, [dispatch]);
+
+  const handleRemove = (productId) => {
+    dispatch(removeFromWishlist(productId));
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>My Wishlist ({wishlistItems.length} items)</CardTitle>
+          <CardTitle>My Wishlist ({wishlist.length} items)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wishlistItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
+            {wishlist.map((item) => (
+              <Card key={item._id} className="overflow-hidden">
                 <img 
                   src={item.image} 
                   alt={item.name}
@@ -68,6 +51,7 @@ const WishlistPage = () => {
                     <Button 
                       variant="outline" 
                       size="icon"
+                      onClick={() => handleRemove(item._id)}
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>

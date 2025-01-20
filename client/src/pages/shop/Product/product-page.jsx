@@ -25,6 +25,7 @@ import ZoomImage from "@/components/ui/zoom-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import CartSidebar from "../cart/cart-sidebar";
 import { addToCart } from "@/store/shop-slice/cart-slice";
+import { addToWishlist } from "@/store/shop-slice";
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -154,6 +155,10 @@ export default function ProductPage() {
       setIsAddingToCart(false);
       console.error("Error adding to cart:", error);
     }
+  };
+
+  const handleAddToWishlist = () => {
+    dispatch(addToWishlist(product._id));
   };
 
   const handleCopyLink = async () => {
@@ -380,10 +385,13 @@ export default function ProductPage() {
               </Button>
             </div>
 
-            <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Button 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              onClick={handleAddToWishlist}
+            >
               <Heart className="h-4 w-4" />
               Add to wishlist
-            </button>
+            </Button>
 
             <div className="flex items-center gap-2">
               <div className="flex">

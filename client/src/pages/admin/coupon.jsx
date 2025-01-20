@@ -1,47 +1,116 @@
-"use client"
-
-import { useState } from "react"
-import { Plus, Search, MoreHorizontal } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useForm, Controller } from "react-hook-form";
+import { Plus, Search, MoreHorizontal } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { DatePickerWithRange } from "@/components/ui/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-// Dummy data
-const initialCoupons = [
-  { id: "CPN250118003", code: "SUMMER10", discount: 10, startDate: "2023-06-01", endDate: "2023-08-31", usageLimit: 100, minimumAmount: 50, used: 45, status: "active" },
-  { id: "CPN250118002", code: "WELCOME20", discount: 20, startDate: "2023-01-01", endDate: "2023-12-31", usageLimit: 500, minimumAmount: 100, used: 230, status: "active" },
-  { id: "CPN250118001", code: "FLASH50", discount: 50, startDate: "2023-07-15", endDate: "2023-07-16", usageLimit: 50, minimumAmount: 200, used: 50, status: "expired" },
-]
+} from "@/components/ui/dropdown-menu";
+import { fetchCoupons, addCoupon, updateCoupon, deleteCoupon } from "@/store/admin-slice/coupon-slice";
+import { useToast } from "@/hooks/use-toast";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function CouponManagement() {
-  const [coupons, setCoupons] = useState(initialCoupons)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingCoupon, setEditingCoupon] = useState(null)
+  const dispatch = useDispatch();
+  const { coupons, totalPages, currentPage } = useSelector(state => state.coupons);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    dispatch(fetchCoupons({ page: 1, search, status: statusFilter }));
+  }, [dispatch, search, statusFilter]);
 
   const handleAddCoupon = (newCoupon) => {
-    setCoupons([...coupons, { ...newCoupon, id: `CPN${Date.now()}`, used: 0 }])
-    setIsDialogOpen(false)
-  }
+    dispatch(addCoupon(newCoupon))
+      .then(() => {
+        toast({
+          title: "Success",
+          description: "Coupon added successfully"
+        });
+        setIsDialogOpen(false);
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      });
+  };
 
   const handleEditCoupon = (editedCoupon) => {
-    setCoupons(coupons.map(coupon => coupon.id === editedCoupon.id ? editedCoupon : coupon))
-    setIsDialogOpen(false)
-    setEditingCoupon(null)
-  }
+    dispatch(updateCoupon({ id: editedCoupon._id, couponData: editedCoupon }))
+      .then(() => {
+        toast({
+          title: "Success",
+          description: "Coupon updated successfully",
+        });
+        setIsDialogOpen(false);
+        setEditingCoupon(null);
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      });
+  };
 
   const handleDeleteCoupon = (id) => {
-    setCoupons(coupons.filter(coupon => coupon.id !== id))
-  }
+    dispatch(deleteCoupon(id))
+      .then(() => {
+        toast({
+          title: "Success",
+          description: "Coupon deleted successfully"
+        });
+        setIsRemoveDialogOpen(false);
+        setSelectedCoupon(null);
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      });
+  };
+
+  if (!coupons?.length) return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">No Coupons Found</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setEditingCoupon(null)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Coupon
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Coupon</DialogTitle>
+            </DialogHeader>
+            <CouponForm onSubmit={handleAddCoupon} />
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -53,9 +122,11 @@ export default function CouponManagement() {
             <Input 
               placeholder="Search by Coupon ID or Code" 
               className="pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
@@ -78,7 +149,7 @@ export default function CouponManagement() {
               </DialogHeader>
               <CouponForm 
                 onSubmit={editingCoupon ? handleEditCoupon : handleAddCoupon} 
-                initialData={editingCoupon} 
+                initialData={editingCoupon}
               />
             </DialogContent>
           </Dialog>
@@ -87,14 +158,16 @@ export default function CouponManagement() {
 
       <div className="grid gap-4">
         {coupons.map((coupon) => (
-          <div key={coupon.id} className="bg-white rounded-lg shadow-sm border p-6">
+          <div key={coupon._id} className="bg-white rounded-lg shadow-sm border p-6">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
               <div className="md:col-span-2">
-                <div className="font-medium text-sm text-gray-500">Coupon ID</div>
-                <div className="font-medium">{coupon.id}</div>
+                <div className="font-medium text-sm text-gray-500">Coupon Code</div>
+                <div className="font-medium">{coupon.code}</div>
                 <div className="mt-2">
-                  <div className="font-medium text-sm text-gray-500">Code</div>
-                  <div>{coupon.code}</div>
+                  <div className="font-medium text-sm text-gray-500">Valid Period</div>
+                  <div className="text-sm">
+                    {format(new Date(coupon.startDate), "LLL dd, y")} - {format(new Date(coupon.endDate), "LLL dd, y")}
+                  </div>
                 </div>
               </div>
               <div>
@@ -127,15 +200,18 @@ export default function CouponManagement() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={() => {
-                        setEditingCoupon(coupon)
-                        setIsDialogOpen(true)
+                        setEditingCoupon(coupon);
+                        setIsDialogOpen(true);
                       }}
                     >
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-red-600"
-                      onClick={() => handleDeleteCoupon(coupon.id)}
+                      onClick={() => {
+                        setIsRemoveDialogOpen(true);
+                        setSelectedCoupon(coupon._id);
+                      }}
                     >
                       Delete
                     </DropdownMenuItem>
@@ -147,97 +223,193 @@ export default function CouponManagement() {
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <Button variant="outline" disabled>
+      {totalPages > 1 && <div className="mt-4 flex items-center justify-between max-w-[300px]">
+        <Button 
+          variant="outline" 
+          disabled={currentPage === 1}
+          onClick={() => dispatch(fetchCoupons({ page: currentPage - 1, search, status: statusFilter }))}
+        >
           Previous
         </Button>
-        <div className="text-sm text-gray-500">Page 1 of 1</div>
-        <Button variant="outline" disabled>
+        <div className="text-sm text-gray-500">Page {currentPage} of {totalPages}</div>
+        <Button 
+          variant="outline" 
+          disabled={currentPage === totalPages}
+          onClick={() => dispatch(fetchCoupons({ page: currentPage + 1, search, status: statusFilter }))}
+        >
           Next
         </Button>
-      </div>
+      </div>}
+
+      {selectedCoupon && (
+        <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="mb-3">Confirm Action</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove this coupon?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
+                No, keep it
+              </Button>
+              <Button variant="destructive" onClick={() => handleDeleteCoupon(selectedCoupon)}>
+                Yes, Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
-  )
+  );
 }
 
 function CouponForm({ onSubmit, initialData }) {
-  const [formData, setFormData] = useState(initialData || {
-    code: "",
-    discount: "",
-    startDate: "",
-    endDate: "",
-    usageLimit: "",
-    minimumAmount: "",
-    status: "active"
-  })
+  const { register, handleSubmit, control, formState: { errors, isValid } } = useForm({
+    defaultValues: initialData ? {
+      ...initialData,
+      dateRange: initialData.startDate && initialData.endDate ? {
+        from: new Date(initialData.startDate),
+        to: new Date(initialData.endDate)
+      } : {
+        from: undefined,
+        to: undefined
+      }
+    } : {
+      code: "",
+      discount: "",
+      dateRange: {
+        from: undefined,
+        to: undefined
+      },
+      usageLimit: "",
+      minimumAmount: "",
+      status: "active"
+    },
+    mode: "onChange"
+  });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
+  const onSubmitForm = (data) => {
+    const formattedData = {
+      ...data,
+      startDate: data.dateRange?.from ? new Date(data.dateRange.from).toISOString().split('T')[0] : null,
+      endDate: data.dateRange?.to ? new Date(data.dateRange.to).toISOString().split('T')[0] : null
+    };
+    
+    delete formattedData.dateRange;
+    
+    if (initialData) {
+      formattedData._id = initialData._id;
+    }
+    
+    onSubmit(formattedData);
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
       <div>
         <Label htmlFor="code">Coupon Code</Label>
-        <Input id="code" name="code" value={formData.code} onChange={handleChange} required className="mt-1" />
+        <Input 
+          id="code" 
+          {...register("code", { required: "Coupon code is required" })} 
+          className="mt-1" 
+        />
+        {errors.code && <span className="text-red-600 text-sm">{errors.code.message}</span>}
       </div>
-      <div className="flex gap-3 w-full">
-      <div className="w-full">
-        <Label htmlFor="discount">Discount Amount ($)</Label>
-        <Input id="discount" name="discount" type="number" step="0.01" value={formData.discount} onChange={handleChange} required className="mt-1" />
-      </div>
-      <div className="w-full">
-        <Label htmlFor="status">Status</Label>
-        <Select name="status" value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-          <SelectTrigger className="mt-1">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="expired">Expired</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      </div>
+      
       <div className="flex gap-3 w-full">
         <div className="w-full">
-        <Label htmlFor="startDate">Start Date</Label>
-        <DatePicker 
-          id="startDate"
-          name="startDate"
-          value={formData.startDate}
-          onChange={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
-        />
+          <Label htmlFor="discount">Discount Amount ($)</Label>
+          <Input 
+            id="discount" 
+            type="number" 
+            step="0.01" 
+            {...register("discount", { 
+              required: "Discount amount is required",
+              min: { value: 0, message: "Discount must be positive" }
+            })} 
+            className="mt-1" 
+          />
+          {errors.discount && <span className="text-red-600 text-sm">{errors.discount.message}</span>}
         </div>
         <div className="w-full">
-        <Label htmlFor="endDate">End Date</Label>
-        <DatePicker 
-          id="endDate"
-          name="endDate"
-          value={formData.endDate}
-          onChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
-        />
+          <Label htmlFor="status">Status</Label>
+          <Controller
+            name="status"
+            control={control}
+            rules={{ required: "Status is required" }}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value} defaultValue={"active"}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.status && <span className="text-red-600 text-sm">{errors.status.message}</span>}
         </div>
       </div>
-      <div className="flex gap-3 w-full">
-      <div className="w-full">
-        <Label htmlFor="usageLimit">Usage Limit</Label>
-        <Input id="usageLimit" name="usageLimit" type="number" value={formData.usageLimit} onChange={handleChange} required className="mt-1" />
-      </div>
-      <div className="w-full">
-        <Label htmlFor="minimumAmount">Minimum Amount ($)</Label>
-        <Input id="minimumAmount" name="minimumAmount" type="number" step="0.01" value={formData.minimumAmount} onChange={handleChange} required className="mt-1" />
-      </div>
-      </div>
-      <Button type="submit" className="w-full">{initialData ? "Update Coupon" : "Add Coupon"}</Button>
-    </form>
-  )
-}
 
+      <div className="w-full">
+        <Label htmlFor="dateRange">Valid Period</Label>
+        <Controller
+          name="dateRange"
+          control={control}
+          rules={{ required: "Date range is required" }}
+          render={({ field }) => (
+            <DatePickerWithRange 
+              value={field.value}
+              onValueChange={field.onChange}
+              className="mt-1"
+            />
+          )}
+        />
+        {errors.dateRange && <span className="text-red-600 text-sm">{errors.dateRange.message}</span>}
+      </div>
+
+      <div className="flex gap-3 w-full">
+        <div className="w-full">
+          <Label htmlFor="usageLimit">Usage Limit</Label>
+          <Input 
+            id="usageLimit" 
+            type="number" 
+            {...register("usageLimit", { 
+              required: "Usage limit is required",
+              min: { value: 1, message: "Usage limit must be at least 1" }
+            })} 
+            className="mt-1" 
+          />
+          {errors.usageLimit && <span className="text-red-600 text-sm">{errors.usageLimit.message}</span>}
+        </div>
+        <div className="w-full">
+          <Label htmlFor="minimumAmount">Minimum Amount ($)</Label>
+          <Input 
+            id="minimumAmount" 
+            type="number" 
+            step="0.01" 
+            {...register("minimumAmount", { 
+              required: "Minimum amount is required",
+              min: { value: 0, message: "Minimum amount cannot be negative" }
+            })} 
+            className="mt-1" 
+          />
+          {errors.minimumAmount && <span className="text-red-600 text-sm">{errors.minimumAmount.message}</span>}
+        </div>
+      </div>
+
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={!isValid}
+      >
+        {initialData ? "Update Coupon" : "Add Coupon"}
+      </Button>
+    </form>
+  );
+}

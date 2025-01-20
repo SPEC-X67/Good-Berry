@@ -5,6 +5,7 @@ const userController = require('../controllers/admin/user-controller');
 const productController = require('../controllers/admin/product-controller');
 const orderController = require('../controllers/admin/order-controller');
 const offerController = require('../controllers/admin/offer-controller');
+const couponController = require('../controllers/admin/coupon-controller');
 
 // Customer
 router.get('/users', userController.getAllUsers);
@@ -29,6 +30,12 @@ router.post('/category/offer/remove', offerController.removeCategoryOffer);
 // Product Offer
 router.post('/products/:id/offer', offerController.addProductOffer);
 router.delete('/products/:id/offer', offerController.removeProductOffer);
+
+// Coupon
+router.get('/coupons', couponController.getAllCoupons);
+router.post('/coupons', couponController.addCoupon);
+router.put('/coupons/:id', couponController.updateCoupon);
+router.delete('/coupons/:id', couponController.deleteCoupon);
 
 // Order
 router.get('/orders', orderController.getAllOrders);

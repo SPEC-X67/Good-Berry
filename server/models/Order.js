@@ -63,6 +63,11 @@ const OrderSchema = new mongoose.Schema({
   subtotal: Number,
   shippingCost: Number,
   couponDiscount: Number,
+  couponId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Coupon',
+    required: true
+  },
   discount: Number,
   total: Number,
   createdAt: {

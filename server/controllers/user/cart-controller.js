@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const Cart = require('../../models/Cart');
 const Product = require('../../models/Product');
-const Variant = require('../../models/Variant')
+const Variant = require('../../models/Variant');
+const Coupon = require('../../models/Coupon');
 
 const cartController = {
   // Get cart items
@@ -14,6 +15,9 @@ const cartController = {
       if (!cart) {
         return res.json([]);
       }
+
+      // const coupon = await Coupon.findOne({ _id: cart.couponId });
+
       res.json(cart.items);
     } catch (error) {
       console.error('Get cart error:', error);

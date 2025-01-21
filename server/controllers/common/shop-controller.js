@@ -87,12 +87,13 @@ const getAllProducts = async (req, res) => {
       search = '',
       minPrice = 0,
       maxPrice = 1000000,
-      categories = []
+      categories = ['']
     } = req.query;
 
     const skip = (page - 1) * limit;
 
     const categoryArray = typeof categories === 'string' ? categories.split(',') : categories;
+    const validCategoryIds = categoryArray.filter(cat => cat).map(cat => new mongoose.Types.ObjectId(cat));
 
     const sortConfigurations = {
       'price-asc': { 'firstVariant.salePrice': 1 },
@@ -118,9 +119,9 @@ const getAllProducts = async (req, res) => {
       }
     ] : [];
 
-    const categoryFilter = categoryArray.length > 0 ? {
+    const categoryFilter = validCategoryIds.length > 0 ? {
       category: { 
-        $in: categoryArray.map(cat => new mongoose.Types.ObjectId(cat))
+        $in: validCategoryIds
       }
     } : {};
 

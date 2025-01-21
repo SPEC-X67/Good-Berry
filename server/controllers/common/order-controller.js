@@ -10,7 +10,9 @@ const orderController = {
         addressId, 
         shippingMethod, 
         paymentMethod,
-        discount
+        discount,
+        coupon,
+        couponId
       } = req.body;
       
       if (!addressId || !shippingMethod || !paymentMethod) {
@@ -86,6 +88,8 @@ const orderController = {
         subtotal,
         shippingCost,
         discount,
+        couponDiscount: coupon || 0,
+        couponId: couponId || null,
         total,
       });
   

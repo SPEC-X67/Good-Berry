@@ -5,7 +5,7 @@ const userController = require('../controllers/admin/user-controller');
 const productController = require('../controllers/admin/product-controller');
 const orderController = require('../controllers/admin/order-controller');
 const offerController = require('../controllers/admin/offer-controller');
-const couponController = require('../controllers/admin/coupon-controller');
+const couponController = require('../controllers/common/coupon-controller');
 
 // Customer
 router.get('/users', userController.getAllUsers);

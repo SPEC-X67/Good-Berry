@@ -165,7 +165,6 @@ export default function CheckoutPage() {
       shippingMethod: selectedShippingDetails,
       paymentMethod: selectedPayment,
       discount: discount,
-      coupon: null,
       items: items
     };
 
@@ -214,14 +213,15 @@ export default function CheckoutPage() {
     },
   ];
 
+  const couponDiscount = 0;
+
   const selectedShippingDetails = shippingMethods.find(method => method.id === selectedShipping);
-  const coupon = 0; 
   const summary = {
     subtotal: subtotal, 
-    coupon: coupon,
+    coupon: couponDiscount,
     discount: discount,
     shipping: selectedShippingDetails?.price || 0,
-    total: subtotal + (-coupon) + (selectedShippingDetails?.price - discount || 0) 
+    total: subtotal + (-couponDiscount) + (selectedShippingDetails?.price - discount || 0) 
   };
 
   return (

@@ -5,6 +5,7 @@ const accountController = require('../controllers/user/account-controller');
 const addressController = require('../controllers/user/address-controller');
 const orderController = require('../controllers/common/order-controller');
 const wishlistController = require('../controllers/user/wishlist-controller');
+const couponController = require('../controllers/common/coupon-controller');
 const auth = require('../middleware/auth');
 
 router.use(auth);
@@ -36,6 +37,10 @@ router.post('/order', orderController.createOrder);
 router.get('/order', orderController.getOrders); 
 router.get('/order/:id', orderController.getOrderById);
 router.put('/order/:id/cancel', orderController.cancelOrder);
+
+// Coupons
+router.get('/coupons', couponController.getAllCoupons);
+router.post('/apply-coupon', couponController.applyCoupon);
 
 // Wishlist
 router.get('/wishlist', wishlistController.getWishlist);

@@ -93,6 +93,18 @@ export const getCategories = createAsyncThunk(
     }
   );
 
+export const applyCoupon = createAsyncThunk(
+  "shop/applyCoupon",
+  async ({ code, subtotal }, thunkAPI) => {
+    try {
+      const response = await axios.post(`${api}/user/apply-coupon`, { code, subtotal }, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue({ error: error.message });
+    }
+  }
+);
+
 const shopSlice = createSlice({
     name: "shop",
     initialState,
@@ -135,6 +147,9 @@ const shopSlice = createSlice({
         .addCase(getCategories.fulfilled, (state, action) => {
             state.categories = action.payload.data;
         })
+        .addCase(applyCoupon.fulfilled, (state, action) => {
+            state.coupon = action.payload;
+        });
     },
 });
 

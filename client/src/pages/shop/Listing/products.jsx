@@ -64,7 +64,7 @@ export default function ShopPage() {
       maxPrice: priceRange[1],
       categories: selectedCategories,
     }));
-  }, [dispatch, currentPage, sort, priceRange, selectedCategories]);
+  }, [dispatch, currentPage, sort, selectedCategories]);
 
   const handlePriceFilter = () => {
     dispatch(getProducts({ 

@@ -7,16 +7,21 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useDispatch, useSelector } from 'react-redux'
 import { removeFromCart, updateCartItemQuantity } from '@/store/shop-slice/cart-slice'
+import { applyCoupon } from '@/store/shop-slice'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ShoppingCart() {
   const [couponCode, setCouponCode] = useState('')
-  const [discount, setDiscount] = useState(0)
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponId, setCouponId] = useState(null)
   const [subtotal, setSubtotal] = useState(0)
+  const [discount, setDiscount] = useState(0)
   const [total, setTotal] = useState(0)
   const { items } = useSelector(state => state.cart)
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   console.log("Shamnd tesss", items);
   
@@ -26,8 +31,8 @@ export default function ShoppingCart() {
     const discount = newSubtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
     setDiscount(discount)
     setSubtotal(newSubtotal)
-    setTotal(newSubtotal - discount)
-  }, [items, discount])
+    setTotal(newSubtotal - discount - couponDiscount)
+  }, [items, discount, couponDiscount])
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
@@ -50,10 +55,23 @@ export default function ShoppingCart() {
     }));
   };
 
-  const applyCoupon = () => {
-    setDiscount(0)
-    setCouponCode('')
-  }
+  const handleApplyCoupon = async () => {
+    try {
+      const response = await dispatch(applyCoupon({ code: couponCode, subtotal })).unwrap();
+      setCouponDiscount(response.discount);
+      setCouponId(response.couponId);
+      toast({
+        title: 'Coupon applied successfully',
+        description: `You saved ₹${response.discount}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error applying coupon',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto p-6 md:px-12">
@@ -132,7 +150,7 @@ export default function ShoppingCart() {
                 <Button
                   variant="outline"
                   className="text-[#8AB446]"
-                  onClick={applyCoupon}
+                  onClick={handleApplyCoupon}
                 >
                   Apply
                 </Button>
@@ -148,6 +166,11 @@ export default function ShoppingCart() {
               <div className="flex justify-between text-muted-foreground">
                 <span>Discount</span>
                 <span>-₹{discount?.toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between text-muted-foreground">
+                <span>Coupon</span>
+                <span>-₹{couponDiscount?.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between font-medium pt-4 border-t">

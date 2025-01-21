@@ -7,14 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useDispatch, useSelector } from 'react-redux'
 import { removeFromCart, updateCartItemQuantity } from '@/store/shop-slice/cart-slice'
-import { applyCoupon } from '@/store/shop-slice'
+import { applyCoupon, checkCoupon } from '@/store/shop-slice'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 
 export default function ShoppingCart() {
   const [couponCode, setCouponCode] = useState('')
-  const [couponDiscount, setCouponDiscount] = useState(0)
-  const [couponId, setCouponId] = useState(null)
   const [subtotal, setSubtotal] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [total, setTotal] = useState(0)
@@ -22,9 +20,9 @@ export default function ShoppingCart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { coupon } = useSelector(state => state.shop);
 
-  console.log("Shamnd tesss", items);
-  
+  const couponDiscount = coupon?.discount || 0; 
 
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (item?.price * item?.quantity), 0)
@@ -32,6 +30,7 @@ export default function ShoppingCart() {
     setDiscount(discount)
     setSubtotal(newSubtotal)
     setTotal(newSubtotal - discount - couponDiscount)
+    dispatch(checkCoupon({code : couponCode, total}));
   }, [items, discount, couponDiscount])
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
@@ -57,16 +56,22 @@ export default function ShoppingCart() {
 
   const handleApplyCoupon = async () => {
     try {
-      const response = await dispatch(applyCoupon({ code: couponCode, subtotal })).unwrap();
-      setCouponDiscount(response.discount);
-      setCouponId(response.couponId);
-      toast({
-        title: 'Coupon applied successfully',
-        description: `You saved ₹${response.discount}`,
-      });
+      const response = await dispatch(applyCoupon({ code: couponCode, total })).unwrap();
+      if(response.success) {
+        toast({
+          title: `Coupon applied successfully`,
+          description: response.message
+        });
+      } else  {
+        toast({
+          title: `Error applying coupon`,
+          description: response.message,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
-        title: 'Error applying coupon',
+        title: `Error applying coupon`,
         description: error.message,
         variant: 'destructive',
       });
@@ -168,10 +173,10 @@ export default function ShoppingCart() {
                 <span>-₹{discount?.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between text-muted-foreground">
+              {coupon.discount &&<div className="flex justify-between text-muted-foreground">
                 <span>Coupon</span>
                 <span>-₹{couponDiscount?.toFixed(2)}</span>
-              </div>
+              </div>}
               
               <div className="flex justify-between font-medium pt-4 border-t">
                 <span>Total</span>

@@ -41,6 +41,7 @@ router.put('/order/:id/cancel', orderController.cancelOrder);
 // Coupons
 router.get('/coupons', couponController.getAllCoupons);
 router.post('/apply-coupon', couponController.applyCoupon);
+router.post('/check-coupon', couponController.checkCoupon);
 
 // Wishlist
 router.get('/wishlist', wishlistController.getWishlist);

@@ -10,6 +10,7 @@ const initialState = {
     recomentedProds : [],
     pflavors: [],
     wishlist: [], 
+    coupon: {},
 };
 
 const api = "http://localhost:5000/api";
@@ -95,9 +96,21 @@ export const getCategories = createAsyncThunk(
 
 export const applyCoupon = createAsyncThunk(
   "shop/applyCoupon",
-  async ({ code, subtotal }, thunkAPI) => {
+  async ({ code, total }, thunkAPI) => {
     try {
-      const response = await axios.post(`${api}/user/apply-coupon`, { code, subtotal }, { withCredentials: true });
+      const response = await axios.post(`${api}/user/apply-coupon`, { code, total }, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue({ error: error.message });
+    }
+  }
+);
+
+export const checkCoupon = createAsyncThunk(
+  "shop/checkCoupon",
+  async ({ code, total }, thunkAPI) => {
+    try {
+      const response = await axios.post(`${api}/user/check-coupon`, { code, total }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
@@ -149,7 +162,10 @@ const shopSlice = createSlice({
         })
         .addCase(applyCoupon.fulfilled, (state, action) => {
             state.coupon = action.payload;
-        });
+        })
+        .addCase(checkCoupon.fulfilled, (state, action) => {
+            state.coupon = action.payload;
+        })
     },
 });
 

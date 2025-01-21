@@ -8,11 +8,11 @@ const couponController = {
       const { page = 1, limit = 10, search = '' } = req.query;
       const searchQuery = search
         ? {
-            $or: [
-              { code: { $regex: search, $options: 'i' } },
-              { status: { $regex: search, $options: 'i' } },
-            ],
-          }
+          $or: [
+            { code: { $regex: search, $options: 'i' } },
+            { status: { $regex: search, $options: 'i' } },
+          ],
+        }
         : {};
 
       const coupons = await Coupon.find(searchQuery)
@@ -120,16 +120,23 @@ const couponController = {
 
   applyCoupon: async (req, res) => {
     try {
-      const { code, subtotal } = req.body;
+      const { code, total } = req.body;
       const userId = req.user.id;
       console.log(userId)
 
       const coupon = await Coupon.findOne({ code, status: 'active' });
 
+      if (!coupon) {
+        return res.json({
+          success: false,
+          message: 'Invalid or expired coupon code',
+        });
+      }
+
       const cart = await Cart.findOne({ userId });
 
       if (!cart) {
-        return res.status(400).json({
+        return res.json({
           success: false,
           message: 'Cart not found',
         });
@@ -140,22 +147,15 @@ const couponController = {
 
       console.log(coupon)
 
-      if (!coupon) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid or expired coupon code',
-        });
-      }
-
       if (coupon.startDate > new Date() || coupon.endDate < new Date()) {
-        return res.status(400).json({
+        return res.json({
           success: false,
           message: 'Coupon is not valid at this time',
         });
       }
 
       if (coupon.usageLimit <= coupon.used) {
-        return res.status(400).json({
+        return res.json({
           success: false,
           message: 'Coupon usage limit has been reached',
         });
@@ -163,16 +163,16 @@ const couponController = {
 
       const existingOrder = await Order.findOne({ userId, couponId: coupon._id });
       if (existingOrder) {
-        return res.status(400).json({
+        return res.json({
           success: false,
           message: 'You have already used this coupon',
         });
       }
 
-      if (subtotal < coupon.minimumAmount) {
-        return res.status(400).json({
+      if (total < coupon.minimumAmount) {
+        return res.json({
           success: false,
-          message: `Minimum order amount to use this coupon is ₹${coupon.minimumAmount}`,
+          message: `This coupon is only valid for order amounts of ₹${coupon.minimumAmount} or more.`,
         });
       }
 
@@ -181,7 +181,7 @@ const couponController = {
 
       res.status(200).json({
         success: true,
-        message: 'Coupon applied successfully',
+        message: `Coupon applied (${coupon.code} - ${coupon.discount} off)`,
         discount: coupon.discount,
         couponId: coupon._id,
       });
@@ -194,6 +194,30 @@ const couponController = {
       });
     }
   },
+
+  checkCoupon: async (req, res) => {
+    try {
+      const { code, total } = req.body;
+      console.log(code, total)
+      const coupon = await Coupon.findOne({ code });
+      if (!coupon) return res.json({});
+
+      if(coupon.startDate > new Date() || coupon.endDate < new Date())  return res.json({});
+
+      if (coupon.usageLimit <= coupon.used) return res.json({})
+
+      if (total < coupon.minimumAmount) return res.json({});
+
+      res.json({
+        success: true,
+        message: 'Coupon found',
+        discount: coupon.discount,
+        couponId: coupon._id,
+      });
+    } catch (error) {
+      console.error('Error checking coupon:', error);
+    }
+  }
 };
 
-module.exports = couponController;
+  module.exports = couponController;

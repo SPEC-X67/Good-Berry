@@ -33,23 +33,23 @@ const accountController = {
         console.log(req.body);
 
         if(!newPassword || !currentPassword) {
-            return res.status(400).json({ message: 'Missing required fields' });
+            return res.json({ sussess: false, message: 'Missing required fields' });
         }
         try {
             const user = await User.findById(req.user.id);
             if (!user) {
-                return res.status(404).json({ message: 'User not found' });
+                return res.json({ sussess: false, message: 'User not found' });
             }
 
             
             const passwordMatch = await bcrypt.compare(currentPassword, user.password);
             if (!passwordMatch) {
-                return res.status(400).json({ message: 'Current password is incorrect' });
+                return res.json({ sussess: false, message: 'Current password is incorrect' });
             }
             
             const checkOld = await bcrypt.compare(newPassword, user.password);
             if(checkOld) {
-                return res.status(400).json({ message: 'New password cannot be same as old password' });
+                return res.json({ sussess: false, message: 'New password cannot be same as old password' });
             }
 
             const hashedPassword = await bcrypt.hash(newPassword, 12);

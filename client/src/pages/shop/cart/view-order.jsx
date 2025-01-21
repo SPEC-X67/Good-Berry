@@ -178,6 +178,12 @@ const OrderSummary = ({ order }) => (
           <span className="text-gray-600">Shipping:</span>
           <span>₹{order.shippingCost?.toFixed(2)}</span>
         </p>
+        {order.couponDiscount > 0 && (
+          <p className="flex justify-between text-[#92c949]">
+            <span>Coupon:</span>
+            <span>-₹{order.couponDiscount?.toFixed(2)}</span>
+          </p>
+        )}
         {order.discount > 0 && (
           <p className="flex justify-between text-[#92c949]">
             <span>Discount:</span>
@@ -422,6 +428,7 @@ OrderSummary.propTypes = {
     subtotal: PropTypes.number,
     shippingCost: PropTypes.number,
     discount: PropTypes.number,
+    couponDiscount: PropTypes.number,
     total: PropTypes.number.isRequired,
     addressId: PropTypes.shape({
       name: PropTypes.string.isRequired,

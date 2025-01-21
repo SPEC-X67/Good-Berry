@@ -30,8 +30,13 @@ export default function ShoppingCart() {
     setDiscount(discount)
     setSubtotal(newSubtotal)
     setTotal(newSubtotal - discount - couponDiscount)
-    dispatch(checkCoupon({code : couponCode, total}));
   }, [items, discount, couponDiscount])
+
+  useEffect(() => {
+    if (couponCode) {
+      dispatch(checkCoupon({ code: couponCode, total }));
+    }
+  }, [dispatch, total]);
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
@@ -151,11 +156,13 @@ export default function ShoppingCart() {
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   className="uppercase"
+                  disabled={coupon.discount}
                 />
                 <Button
                   variant="outline"
                   className="text-[#8AB446]"
                   onClick={handleApplyCoupon}
+                  disabled={!couponCode || coupon.discount}
                 >
                   Apply
                 </Button>

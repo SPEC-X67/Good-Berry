@@ -12,7 +12,6 @@ const orderController = {
         paymentMethod,
         discount,
         coupon,
-        couponId
       } = req.body;
       
       if (!addressId || !shippingMethod || !paymentMethod) {
@@ -72,7 +71,7 @@ const orderController = {
   
       const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const shippingCost = shippingMethod.price || 0;
-      const total = subtotal + shippingCost - discount;
+      const total = subtotal + shippingCost - discount - coupon.discount;
   
       const order = new Order({
         userId: req.user.id,
@@ -88,8 +87,8 @@ const orderController = {
         subtotal,
         shippingCost,
         discount,
-        couponDiscount: coupon || 0,
-        couponId: couponId || null,
+        couponDiscount : coupon.discount,
+        couponId : coupon.couponId,
         total,
       });
   

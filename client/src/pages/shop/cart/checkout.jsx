@@ -53,8 +53,10 @@ export default function CheckoutPage() {
   const items = useSelector(state => state.cart.items)
   const { isLoading } = useSelector(state => state.order)
 
+  const { coupon } = useSelector(state => state.shop);
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+  console.log(coupon);
 
   const {
     register,
@@ -165,6 +167,10 @@ export default function CheckoutPage() {
       shippingMethod: selectedShippingDetails,
       paymentMethod: selectedPayment,
       discount: discount,
+      coupon: {
+        couponId: coupon?.couponId,
+        discount: coupon?.discount
+      },
       items: items
     };
 
@@ -213,7 +219,7 @@ export default function CheckoutPage() {
     },
   ];
 
-  const couponDiscount = 0;
+  const couponDiscount = coupon?.discount || 0;
 
   const selectedShippingDetails = shippingMethods.find(method => method.id === selectedShipping);
   const summary = {
@@ -558,10 +564,10 @@ export default function CheckoutPage() {
                           <span>Discount</span>
                           <span>-₹{summary.discount.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                       {coupon.discount && <div className="flex justify-between text-sm">
                           <span>Coupon</span>
                           <span>-₹{summary.coupon.toFixed(2)}</span>
-                        </div>
+                        </div>}
                         <div className="flex justify-between text-sm">
                           <span>Shipping & Handling</span>
                           <span>₹{summary.shipping.toFixed(2)}</span>

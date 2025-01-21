@@ -65,8 +65,7 @@ const OrderSchema = new mongoose.Schema({
   couponDiscount: Number,
   couponId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Coupon',
-    required: true
+    ref: 'Coupon'
   },
   discount: Number,
   total: Number,

@@ -1,7 +1,5 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { subDays, subWeeks, subMonths, subYears, format } from "date-fns"
+import { subDays, subWeeks, subMonths, subYears, format, startOfDay, endOfDay } from "date-fns"
 import { CalendarIcon, DollarSign, ShoppingCart, Tag, Percent } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -21,6 +19,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { useForm } from "react-hook-form"
+import axios from "axios"
+import jsPDF from "jspdf"
+import "jspdf-autotable"
+import * as XLSX from "xlsx"
 
 const SalesPeriod = {
   DAY: "day",
@@ -59,8 +61,8 @@ export default function SalesReportPage() {
     if (report) {
       const filtered = report.orders.filter(
         (order) =>
-          order.id.toLowerCase().includes(filterText.toLowerCase()) ||
-          order.customerName.toLowerCase().includes(filterText.toLowerCase()),
+          order.orderId.toLowerCase().includes(filterText.toLowerCase()) ||
+          order.userId.username.toLowerCase().includes(filterText.toLowerCase()),
       )
       setFilteredOrders(filtered)
       setCurrentPage(1)
@@ -70,9 +72,12 @@ export default function SalesReportPage() {
   const fetchReport = async () => {
     const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined
     const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined
-    const generatedReport = await generateSalesReport(period, startDate, endDate)
-    setReport(generatedReport)
-    setFilteredOrders(generatedReport.orders)
+    const response = await axios.get('http://localhost:5000/api/admin/sales-report', {
+      params: { period, startDate, endDate },
+      withCredentials: true
+    });
+    setReport(response.data)
+    setFilteredOrders(response.data.orders)
   }
 
   const handlePeriodChange = (newPeriod) => {
@@ -82,19 +87,18 @@ export default function SalesReportPage() {
 
     switch (newPeriod) {
       case SalesPeriod.DAY:
-        newDateRange = { from: subDays(today, 1), to: today }
+        newDateRange = { from: startOfDay(subDays(today, 1)), to: endOfDay(today) }
         break
       case SalesPeriod.WEEK:
-        newDateRange = { from: subWeeks(today, 1), to: today }
+        newDateRange = { from: startOfDay(subWeeks(today, 1)), to: endOfDay(today) }
         break
       case SalesPeriod.MONTH:
-        newDateRange = { from: subMonths(today, 1), to: today }
+        newDateRange = { from: startOfDay(subMonths(today, 1)), to: endOfDay(today) }
         break
       case SalesPeriod.YEAR:
-        newDateRange = { from: subYears(today, 1), to: today }
+        newDateRange = { from: startOfDay(subYears(today, 1)), to: endOfDay(today) }
         break
       case SalesPeriod.CUSTOM:
-        // Keep the current date range for custom
         newDateRange = dateRange
         break
     }
@@ -111,80 +115,103 @@ export default function SalesReportPage() {
   }
 
   const downloadReport = (format) => {
-    console.log(`Downloading report in ${format} format`)
-    // Implement actual download logic here
+    if (format === "pdf") {
+      downloadPDF()
+    } else if (format === "excel") {
+      downloadExcel()
+    }
+  }
+
+  const downloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Draw border
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0);
+      doc.text("Sales Report", pageWidth / 2, 35, { align: "center" });
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 40);
+    
+      doc.autoTable({
+        startY: 50,
+        headStyles: { fillColor: [0, 0, 0], textColor: 255 },
+        alternateRowStyles: { fillColor: [255, 255, 255] },
+        bodyStyles: { fontSize: 10, cellPadding: 3, textColor: 0 },
+        head: [["Order ID", "Date", "Customer Name", "Order Amount", "Discount Amount", "Coupon Discount"]],
+        body: filteredOrders.map(order => [
+          order.orderId,
+          formatDate(new Date(order.createdAt)),
+          order.userId?.username || "N/A",
+          order.total?.toFixed(2),
+          order.discount?.toFixed(2),
+          order.couponDiscount?.toFixed(2)
+        ]),
+      });
+    
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        headStyles: { fillColor: [0, 0, 0], textColor: 255 },
+        bodyStyles: { fontSize: 10, cellPadding: 3, textColor: 0 },
+        head: [["Metric", "Value"]],
+        body: [
+          ["Overall Sales Count", report.overallSalesCount],
+          ["Overall Order Count", report.overallOrderCount],
+          ["Overall Order Amount", report.overallOrderAmount.toFixed(2)],
+          ["Overall Discount", report.overallDiscount.toFixed(2)],
+          ["Overall Coupon Discount", report.overallCouponDiscount.toFixed(2)],
+        ],
+      });
+
+      doc.save("sales_report.pdf");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
+  };
+
+  const downloadExcel = () => {
+    const worksheetData = filteredOrders.map(order => ({
+      "Order ID": order.orderId,
+      "Date": formatDate(new Date(order.createdAt)),
+      "Customer Name": order.userId?.username,
+      "Order Amount": order.total?.toFixed(2),
+      "Discount Amount": order.discount?.toFixed(2),
+      "Coupon Discount": `${order.couponDiscount?.toFixed(2) || "0.00"}`
+    }))
+    worksheetData.push({})
+    worksheetData.push({
+      "Order ID": "Overall Sales Count",
+      "Date": report.overallSalesCount,
+      "Customer Name": "Overall Order Count",
+      "Order Amount": report.overallOrderCount,
+      "Discount Amount": "Overall Order Amount",
+      "Coupon Discount": `₹${report.overallOrderAmount.toFixed(2)}`
+    })
+    worksheetData.push({
+      "Order ID": "Overall Discount",
+      "Date": `₹${report.overallDiscount.toFixed(2)}`,
+      "Customer Name": "Overall Coupon Discount",
+      "Order Amount": `₹${report.overallCouponDiscount.toFixed(2)}`
+    })
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report")
+    XLSX.writeFile(workbook, "sales_report.xlsx")
   }
 
   const formatDate = (date) => {
     return format(date, "yyyy-MM-dd")
   }
 
-  // Mock function to generate sales report
-  const generateSalesReport = async (period, startDate, endDate) => {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-
-    const data = []
-    const orders = []
-    const currentDate = new Date(start)
-    let overallSalesCount = 0
-    let overallOrderCount = 0
-    let overallOrderAmount = 0
-    let overallDiscount = 0
-    let overallCouponDiscount = 0
-
-    while (currentDate <= end) {
-      const salesCount = Math.floor(Math.random() * 100)
-      const orderCount = Math.floor(Math.random() * 50)
-      const orderAmount = Math.floor(Math.random() * 10000)
-      const discountAmount = Math.floor(Math.random() * 500)
-      const couponDiscount = Math.floor(Math.random() * 300)
-
-      data.push({
-        date: formatDate(currentDate),
-        salesCount,
-        orderCount,
-        orderAmount,
-        discountAmount,
-        couponDiscount,
-      })
-
-      // Generate mock orders for this date
-      for (let i = 0; i < orderCount; i++) {
-        orders.push({
-          id: `ORD-${Math.random().toString(36).substr(2, 9)}`,
-          date: formatDate(currentDate),
-          customerName: `Customer ${Math.floor(Math.random() * 1000)}`,
-          amount: Math.floor(Math.random() * 1000),
-          discount: Math.floor(Math.random() * 50),
-          couponDiscount: Math.floor(Math.random() * 30),
-        })
-      }
-
-      overallSalesCount += salesCount
-      overallOrderCount += orderCount
-      overallOrderAmount += orderAmount
-      overallDiscount += discountAmount
-      overallCouponDiscount += couponDiscount
-
-      currentDate.setDate(currentDate.getDate() + 1)
-    }
-
-    return {
-      period,
-      startDate: formatDate(start),
-      endDate: formatDate(end),
-      data,
-      orders,
-      overallSalesCount,
-      overallOrderCount,
-      overallOrderAmount,
-      overallDiscount,
-      overallCouponDiscount,
-    }
-  }
-
-  // Pagination logic
   const indexOfLastOrder = currentPage * ordersPerPage
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder)
@@ -282,7 +309,7 @@ export default function SalesReportPage() {
                 <DollarSign className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-700">${report.overallOrderAmount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-green-700">₹{report.overallOrderAmount.toFixed(2)}</div>
                 <p className="text-xs text-green-600">{report.overallSalesCount} items sold</p>
               </CardContent>
             </Card>
@@ -301,7 +328,7 @@ export default function SalesReportPage() {
                 <Tag className="h-4 w-4 text-yellow-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-700">${report.overallDiscount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-yellow-700">₹{report.overallDiscount.toFixed(2)}</div>
               </CardContent>
             </Card>
             <Card className="bg-purple-100">
@@ -310,7 +337,7 @@ export default function SalesReportPage() {
                 <Percent className="h-4 w-4 text-purple-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-700">${report.overallCouponDiscount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-purple-700">₹{report.overallCouponDiscount.toFixed(2)}</div>
               </CardContent>
             </Card>
           </div>
@@ -319,7 +346,7 @@ export default function SalesReportPage() {
             <CardHeader>
               <CardTitle className="text-blue-600">Detailed Sales Report</CardTitle>
               <CardDescription>
-                {report.startDate} to {report.endDate}
+                {formatDate(report.startDate)} to {formatDate(report.endDate)}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -346,13 +373,13 @@ export default function SalesReportPage() {
                 </TableHeader>
                 <TableBody>
                   {currentOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{order.id}</TableCell>
-                      <TableCell>{order.date}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>${order.amount.toFixed(2)}</TableCell>
-                      <TableCell>${order.discount.toFixed(2)}</TableCell>
-                      <TableCell>${order.couponDiscount.toFixed(2)}</TableCell>
+                    <TableRow key={order.orderId}>
+                      <TableCell>{order.orderId}</TableCell>
+                      <TableCell>{formatDate(new Date(order.createdAt))}</TableCell>
+                      <TableCell>{order.userId?.username}</TableCell>
+                      <TableCell>₹{order.total?.toFixed(2)}</TableCell>
+                      <TableCell>₹{order.discount?.toFixed(2)}</TableCell>
+                      <TableCell>₹{order.couponDiscount?.toFixed(2) ||"0.00"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -363,19 +390,16 @@ export default function SalesReportPage() {
                     <PaginationItem>
                       <PaginationPrevious onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
                     </PaginationItem>
-                    {/* First page */}
                     {currentPage > 2 && (
                       <PaginationItem>
                         <PaginationLink onClick={() => paginate(1)}>1</PaginationLink>
                       </PaginationItem>
                     )}
-                    {/* Ellipsis after first page */}
                     {currentPage > 3 && (
                       <PaginationItem>
                         <PaginationEllipsis />
                       </PaginationItem>
                     )}
-                    {/* Current page and surrounding pages */}
                     {[...Array(totalPages)].map((_, index) => {
                       const pageNumber = index + 1
                       if (
@@ -393,13 +417,11 @@ export default function SalesReportPage() {
                       }
                       return null
                     })}
-                    {/* Ellipsis before last page */}
                     {currentPage < totalPages - 2 && (
                       <PaginationItem>
                         <PaginationEllipsis />
                       </PaginationItem>
                     )}
-                    {/* Last page */}
                     {currentPage < totalPages - 1 && (
                       <PaginationItem>
                         <PaginationLink onClick={() => paginate(totalPages)}>{totalPages}</PaginationLink>

@@ -6,6 +6,7 @@ const productController = require('../controllers/admin/product-controller');
 const orderController = require('../controllers/admin/order-controller');
 const offerController = require('../controllers/admin/offer-controller');
 const couponController = require('../controllers/common/coupon-controller');
+const salesReportController = require('../controllers/admin/sales-report-controller');
 
 // Customer
 router.get('/users', userController.getAllUsers);
@@ -41,5 +42,8 @@ router.delete('/coupons/:id', couponController.deleteCoupon);
 router.get('/orders', orderController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);
 router.patch('/orders/:orderId/items/:productId', orderController.updateOrderItemStatus);
+
+// Sales Report
+router.get('/sales-report', salesReportController.generateSalesReport);
 
 module.exports = router;

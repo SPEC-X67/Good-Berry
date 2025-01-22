@@ -1,5 +1,6 @@
 import logolight from '../../assets/images/logo-light.png';
 import logodark from '../../assets/images/logo-dark.png';
+import logo from '../../assets/images/logo.png';
 
 import blendjuice from '../../assets/images/left-img-apricot.png';
 
@@ -22,5 +23,6 @@ export {
     snacks,
     tea,
     categoryTitle,
-    categoryBg
+    categoryBg,
+    logo
 };

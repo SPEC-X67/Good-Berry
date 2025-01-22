@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+const Order = require("../../models/Order");
 const { SendVerificationCode, SendWelcomeMessage, SendResetPasswordLink } = require("../../middleware/email");
 
 //register
@@ -265,11 +266,11 @@ const logout = async (req, res) => {
 const set = async (req, res) => {
 
     try {
-        const users = await User.find({});
+        const order = await Order.find({});
         await Promise.all(
-            users.map(user => {
-                user.phone = null;
-                return user.save();
+            order.map(order => {
+                order.couponDiscount = 0;
+                return order.save();
             })
         );
 

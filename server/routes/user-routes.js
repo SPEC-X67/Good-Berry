@@ -39,6 +39,7 @@ router.post('/order', orderController.createOrder);
 router.get('/order', orderController.getOrders); 
 router.get('/order/:id', orderController.getOrderById);
 router.put('/order/:id/cancel', orderController.cancelOrder);
+router.put('/order/:id/return', orderController.returnOrderItem);
 
 // Coupons
 router.get('/coupons', couponController.getAllCoupons);

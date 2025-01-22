@@ -1,6 +1,7 @@
 const Order = require('../../models/Order');
 const Variant = require('../../models/Variant');
 const Product = require('../../models/Product')
+const Wallet = require('../../models/Wallet');
 
 const orderController = {
   getAllOrders: async (req, res) => {
@@ -9,6 +10,7 @@ const orderController = {
       const limit = parseInt(req.query.limit) || 10;
       const search = req.query.search;
       const status = req.query.status;
+      const returnRequests = req.query.returnRequests === 'true';
 
       let query = {};
 
@@ -23,6 +25,10 @@ const orderController = {
           { orderId: { $regex: search, $options: 'i' } },
           { 'userId.username': { $regex: search, $options: 'i' } }
         ];
+      }
+
+      if (returnRequests) {
+        query['items.returnRequest'] = true;
       }
 
       const orders = await Order.find(query)
@@ -105,6 +111,13 @@ const orderController = {
             await variant.save();
           }
         }
+
+        if (order.paymentMethod === 'wallet' || order.paymentMethod === 'upi') {
+          const wallet = await Wallet.findOne({ userId: order.userId });
+          if (wallet) {
+            await wallet.refund(order.items[itemIndex].price * order.items[itemIndex].quantity, `Refund for cancelled item ${order.items[itemIndex].name}`);
+          }
+        }
       }
   
       const allCancelled = order.items.every(item => item.status === 'cancelled');
@@ -127,6 +140,111 @@ const orderController = {
     } catch (error) {
       console.error('Error updating order item status:', error);
       res.status(500).json({ message: 'Error updating order item status' });
+    }
+  },
+
+  approveReturnRequest: async (req, res) => {
+    try {
+      const { orderId, productId } = req.params;
+  
+      const order = await Order.findById(orderId)
+        .populate('userId', 'username')
+        .populate('addressId')
+        .populate('items.productId');
+  
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+  
+      const itemIndex = order.items.findIndex(
+        item => item.productId._id.toString() === productId
+      );
+  
+      if (itemIndex === -1) {
+        return res.status(404).json({ message: 'Order item not found' });
+      }
+  
+      const item = order.items[itemIndex];
+  
+      if (!item.returnRequest) {
+        return res.status(400).json({
+          message: 'No return request found for this item'
+        });
+      }
+  
+      const variant = await Variant.findOne({ productId: productId });
+      if (variant) {
+        const packSize = item.packageSize;
+        const packSizeIndex = variant.packSizePricing.findIndex(
+          p => p.size === packSize
+        );
+        if (packSizeIndex !== -1) {
+          variant.packSizePricing[packSizeIndex].quantity += item.quantity;
+          await variant.save();
+        }
+      }
+  
+      item.status = 'Returned';
+      item.returnRequest = false;
+  
+      if (order.paymentMethod === 'wallet' || order.paymentMethod === 'upi') {
+        const wallet = await Wallet.findOne({ userId: order.userId });
+        if (wallet) {
+          await wallet.refund(item.price * item.quantity, `Refund for returned item ${item.name}`);
+        }
+      }
+  
+      await order.save();
+  
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error approving return request',
+        error: error.message
+      });
+    }
+  },
+
+  rejectReturnRequest: async (req, res) => {
+    try {
+      const { orderId, productId } = req.params;
+  
+      const order = await Order.findById(orderId)
+        .populate('userId', 'username')
+        .populate('addressId')
+        .populate('items.productId');
+  
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+  
+      const itemIndex = order.items.findIndex(
+        item => item.productId._id.toString() === productId
+      );
+  
+      if (itemIndex === -1) {
+        return res.status(404).json({ message: 'Order item not found' });
+      }
+  
+      const item = order.items[itemIndex];
+  
+      if (!item.returnRequest) {
+        return res.status(400).json({
+          message: 'No return request found for this item'
+        });
+      }
+  
+      item.status = 'delivered';
+      item.returnRequest = false;
+  
+      await order.save();
+  
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error rejecting return request',
+        error: error.message
+      });
     }
   }
 }

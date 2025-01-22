@@ -32,6 +32,10 @@ const OrderItemSchema = new mongoose.Schema({
   returnReason: {
     type: String,
     default: ''
+  },
+  returnRequest: {
+    type: Boolean,
+    default: false
   }
 });
 

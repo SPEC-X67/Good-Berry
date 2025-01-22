@@ -42,6 +42,8 @@ router.delete('/coupons/:id', couponController.deleteCoupon);
 router.get('/orders', orderController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);
 router.patch('/orders/:orderId/items/:productId', orderController.updateOrderItemStatus);
+router.put('/orders/:orderId/items/:productId/approve-return', orderController.approveReturnRequest);
+router.put('/orders/:orderId/items/:productId/reject-return', orderController.rejectReturnRequest);
 
 // Sales Report
 router.get('/sales-report', salesReportController.generateSalesReport);

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrderById, updateOrderItemStatus } from '@/store/admin-slice/order-slice';
+import { fetchOrderById, updateOrderItemStatus, approveReturnRequest, rejectReturnRequest } from '@/store/admin-slice/order-slice';
 
 function OrderDetails() {
   const { orderId } = useParams();
@@ -28,6 +28,7 @@ function OrderDetails() {
       case 'shipped': return 'bg-purple-100 text-purple-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'returned': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
@@ -35,9 +36,28 @@ function OrderDetails() {
   const handleUpdateItem = async (orderId, productId, updates) => {
     try {
       await dispatch(updateOrderItemStatus({ orderId, productId, updates })).unwrap();
+      dispatch(fetchOrderById(orderId));
       setEditingItem(null);
     } catch (error) {
       console.error('Failed to update item status:', error);
+    }
+  };
+
+  const handleApproveReturn = async (orderId, productId) => {
+    try {
+      await dispatch(approveReturnRequest({ orderId, productId })).unwrap();
+      dispatch(fetchOrderById(orderId));
+    } catch (error) {
+      console.error('Failed to approve return request:', error);
+    }
+  };
+
+  const handleRejectReturn = async (orderId, productId) => {
+    try {
+      await dispatch(rejectReturnRequest({ orderId, productId })).unwrap();
+      dispatch(fetchOrderById(orderId));
+    } catch (error) {
+      console.error('Failed to reject return request:', error);
     }
   };
 
@@ -138,17 +158,36 @@ function OrderDetails() {
                     <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setEditingItem({ 
-                        orderId: orderDetails._id, 
-                        item: { ...item }
-                      })}
-                      disabled={item.status === 'delivered' || item.status === 'cancelled'}
-                    >
-                      <Edit className="w-4 h-4 mr-1" /> Edit Status
-                    </Button>
+                    {item.status !== 'delivered' && item.status !== 'cancelled' && item.status !== 'Return Requested' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setEditingItem({ 
+                          orderId: orderDetails._id, 
+                          item: { ...item }
+                        })}
+                      >
+                        <Edit className="w-4 h-4 mr-1" /> Edit Status
+                      </Button>
+                    )}
+                    {item.status === 'Return Requested' && (
+                      <div className='flex flex-col gap-1'>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleApproveReturn(orderDetails._id, item.productId)}
+                        >
+                          Approve
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleRejectReturn(orderDetails._id, item.productId)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

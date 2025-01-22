@@ -46,6 +46,38 @@ export const updateOrderItemStatus = createAsyncThunk(
   }
 );
 
+export const approveReturnRequest = createAsyncThunk(
+  'adminOrder/approveReturnRequest',
+  async ({ orderId, productId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${api}/orders/${orderId}/items/${productId}/approve-return`,
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const rejectReturnRequest = createAsyncThunk(
+  'adminOrder/rejectReturnRequest',
+  async ({ orderId, productId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${api}/orders/${orderId}/items/${productId}/reject-return`,
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const adminOrderSlice = createSlice({
   name: 'adminOrder',
   initialState: {
@@ -94,6 +126,30 @@ const adminOrderSlice = createSlice({
         state.error = null;
       })
       .addCase(updateOrderItemStatus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(approveReturnRequest.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(approveReturnRequest.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderDetails = action.payload;
+        state.error = null;
+      })
+      .addCase(approveReturnRequest.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(rejectReturnRequest.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(rejectReturnRequest.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderDetails = action.payload;
+        state.error = null;
+      })
+      .addCase(rejectReturnRequest.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

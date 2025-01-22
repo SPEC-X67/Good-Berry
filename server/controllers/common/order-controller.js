@@ -2,6 +2,7 @@ const Order = require('../../models/Order');
 const Cart = require('../../models/Cart');
 const Address = require('../../models/Address');
 const Variant = require('../../models/Variant')
+const Wallet = require('../../models/Wallet');
 
 const orderController = {  
   createOrder : async (req, res) => {
@@ -48,9 +49,6 @@ const orderController = {
           pack => pack.size === cartItem.packageSize
         );
 
-
-        console.log("Packsize",packSize)
-        console.log("Item Pakesize", cartItem.packageSize)
 
 
         if (!packSize) {
@@ -191,7 +189,7 @@ const orderController = {
         return res.status(404).json({ message: 'Item not found in order' });
       }
 
-      if (item.status !== 'processing') {
+      if (item.status !== 'processing' && item.status !== 'delivered') {
         return res.status(400).json({
           message: `Item cannot be cancelled in ${item.status} status`
         });
@@ -237,10 +235,65 @@ const orderController = {
 
       await order.save();
 
+      if (order.paymentMethod === 'wallet' || order.paymentMethod === 'upi') {
+        const wallet = await Wallet.findOne({ userId: req.user.id });
+        if (wallet) {
+          await wallet.refund(item.price * item.quantity, `Refund for cancelled item ${item.name}`);
+        }
+      }
+
       res.json(order);
     } catch (error) {
       res.status(500).json({
         message: 'Error cancelling item',
+        error: error.message
+      });
+    }
+  },
+
+  returnOrderItem: async (req, res) => {
+    try {
+      const { itemId, reason } = req.body;
+
+      if (!reason) {
+        return res.status(400).json({ message: 'Return reason is required' });
+      }
+
+      const order = await Order.findOne({
+        orderId: req.params.id,
+        userId: req.user.id
+      }).populate('addressId');
+
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      const item = order.items.id(itemId);
+      if (!item) {
+        return res.status(404).json({ message: 'Item not found in order' });
+      }
+
+      if (item.status !== 'delivered') {
+        return res.status(400).json({
+          message: `Item cannot be returned in ${item.status} status`
+        });
+      }
+
+      item.returnRequest = true;
+      item.returnReason = reason;
+      item.status = 'Return Requested';
+      item.return = {
+        reason,
+        message: '',
+        date: new Date()
+      };
+
+      await order.save();
+
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error requesting return',
         error: error.message
       });
     }

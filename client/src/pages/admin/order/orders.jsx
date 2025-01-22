@@ -21,13 +21,12 @@ function AdminOrders() {
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-
   const loadOrders = useCallback((page = 1) => {
     dispatch(fetchAllOrders({ 
       page, 
       limit: 5, 
       search: debouncedSearch, 
-      status: statusFilter 
+      status: statusFilter,
     }));
   }, [dispatch, debouncedSearch, statusFilter]);
 
@@ -61,8 +60,13 @@ function AdminOrders() {
       case 'shipped': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
       case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-200';
+      case 'Return Requested': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
+  };
+
+  const hasReturnRequest = (items) => {
+    return items.some(item => item.returnRequest);
   };
 
   if (error) {
@@ -134,6 +138,11 @@ function AdminOrders() {
                       <TableCell>{order?.userId?.username || order?.addressId?.name}</TableCell>
                       <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
+                        {hasReturnRequest(order.items) && (
+                          <Badge className="bg-yellow-100 mb-1 text-yellow-800 hover:bg-yellow-200">
+                            Return rq
+                          </Badge>
+                        )} <br />
                         <Badge className={getStatusColor(order.status)}>
                           {order.status}
                         </Badge>

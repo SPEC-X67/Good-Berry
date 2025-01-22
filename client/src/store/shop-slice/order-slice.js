@@ -59,6 +59,22 @@ export const cancelOrderItem = createAsyncThunk(
   }
 );
 
+export const returnOrderItem = createAsyncThunk(
+  'order/returnOrderItem',
+  async ({ orderId, itemId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${api}/order/${orderId}/return`,
+        { itemId, reason },
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'order',
   initialState: {
@@ -124,6 +140,21 @@ const orderSlice = createSlice({
         }
       })
       .addCase(cancelOrderItem.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(returnOrderItem.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(returnOrderItem.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.order = action.payload;
+        const index = state.orders.findIndex(order => order.orderId === action.payload.orderId);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        }
+      })
+      .addCase(returnOrderItem.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

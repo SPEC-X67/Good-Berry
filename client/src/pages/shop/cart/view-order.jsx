@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchOrderById, cancelOrderItem } from "@/store/shop-slice/order-slice";
+import { fetchOrderById, cancelOrderItem, returnOrderItem } from "@/store/shop-slice/order-slice";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,7 +82,46 @@ const CancellationDialog = ({ onCancel, cancelReason, setCancelReason, item }) =
   </AlertDialog>
 );
 
-const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, navigate }) => {
+const ReturnDialog = ({ onReturn, returnReason, setReturnReason, item }) => (
+  <AlertDialog>
+    <AlertDialogTrigger asChild>
+      <Button variant="outline" size="sm">
+        Return Item
+      </Button>
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Return Order Item</AlertDialogTitle>
+        <AlertDialogDescription>
+          Are you sure you want to return {item.name} ({item.packageSize}
+          {item.flavor && `, ${item.flavor}`})? This action cannot be undone.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="space-y-2">
+          <h4 className="font-medium">Reason for Return</h4>
+          <textarea
+            className="w-full min-h-[100px] p-3 border rounded-md"
+            placeholder="Please provide a reason for return..."
+            value={returnReason}
+            onChange={(e) => setReturnReason(e.target.value)}
+          />
+        </div>
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Keep Item</AlertDialogCancel>
+        <AlertDialogAction
+          onClick={() => onReturn(item._id)}
+          disabled={!returnReason.trim()}
+        >
+          Return Item
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
+
+const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, onReturn, returnReason, setReturnReason, navigate }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "processing":
@@ -160,6 +199,14 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, navigate }) 
             item={item}
           />
         )}
+        {item.status === "delivered" && (
+          <ReturnDialog
+            onReturn={onReturn}
+            returnReason={returnReason}
+            setReturnReason={setReturnReason}
+            item={item}
+          />
+        )}
       </div>
     </div>
   );
@@ -218,6 +265,7 @@ export default function OrderView() {
   const { toast } = useToast();
   const { order, isLoading, error } = useSelector((state) => state.order);
   const [cancelReason, setCancelReason] = useState("");
+  const [returnReason, setReturnReason] = useState("");
 
   useEffect(() => {
     dispatch(fetchOrderById(id));
@@ -249,6 +297,37 @@ export default function OrderView() {
       toast({
         title: "Error",
         description: error.message || "Failed to cancel item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReturn = async (itemId) => {
+    if (!returnReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for return",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(returnOrderItem({ 
+        orderId: id, 
+        itemId, 
+        reason: returnReason 
+      })).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Item has been returned successfully",
+      });
+      setReturnReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to return item",
         variant: "destructive",
       });
     }
@@ -339,6 +418,9 @@ export default function OrderView() {
                 onCancel={handleCancel}
                 cancelReason={cancelReason}
                 setCancelReason={setCancelReason}
+                onReturn={handleReturn}
+                returnReason={returnReason}
+                setReturnReason={setReturnReason}
                 navigate={navigate}
               />
             ))}
@@ -404,6 +486,18 @@ CancellationDialog.propTypes = {
   }).isRequired,
 };
 
+ReturnDialog.propTypes = {
+  onReturn: PropTypes.func.isRequired,
+  returnReason: PropTypes.string.isRequired,
+  setReturnReason: PropTypes.func.isRequired,
+  item: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    packageSize: PropTypes.string.isRequired,
+    flavor: PropTypes.string,
+    _id: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
 OrderItem.propTypes = {
   item: PropTypes.shape({
     _id: PropTypes.string.isRequired,
@@ -420,6 +514,9 @@ OrderItem.propTypes = {
   onCancel: PropTypes.func.isRequired,
   cancelReason: PropTypes.string.isRequired,
   setCancelReason: PropTypes.func.isRequired,
+  onReturn: PropTypes.func.isRequired,
+  returnReason: PropTypes.string.isRequired,
+  setReturnReason: PropTypes.func.isRequired,
   navigate: PropTypes.func.isRequired,
 };
 

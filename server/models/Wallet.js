@@ -33,4 +33,15 @@ const WalletSchema = new mongoose.Schema({
   transactions: [WalletTransactionSchema]
 });
 
+WalletSchema.methods.refund = async function(amount, description) {
+  this.balance += amount;
+  this.transactions.push({
+    type: 'credit',
+    amount,
+    description,
+    date: new Date()
+  });
+  await this.save();
+};
+
 module.exports = mongoose.model('Wallet', WalletSchema);

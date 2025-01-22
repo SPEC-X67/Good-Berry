@@ -1,0 +1,81 @@
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+const Order = require('../../models/Order');
+
+const razorpay = new Razorpay({
+  key_id: 'rzp_test_CS2mGJMpuRbxFh',
+  key_secret: 'ynzmcDHi1oGOaTulB3WW4mRs'
+});
+
+const paymentController = {
+  createRazorpayOrder: async (req, res) => {
+    try {
+      const order = await Order.findById(req.body.orderId);
+      if (!order) {                                   
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      const options = {
+        amount: Math.round(order.total * 100), 
+        currency: "INR",
+        receipt: order.orderId,
+      };
+
+      const razorpayOrder = await razorpay.orders.create(options);
+
+      res.json({
+        orderId: razorpayOrder.id,
+        currency: razorpayOrder.currency,
+        amount: razorpayOrder.amount,
+      });
+    } catch (error) {
+      console.error('Error creating Razorpay order:', error);
+      res.status(500).json({ message: 'Error creating payment order', error: error.message });
+    }
+  },
+
+  verifyPayment: async (req, res) => {
+    try {
+      const {
+        orderCreationId,
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature,
+        orderData
+      } = req.body;
+
+      const shasum = crypto.createHmac('sha256', "ynzmcDHi1oGOaTulB3WW4mRs");
+      shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+      const digest = shasum.digest('hex');
+
+      if (digest !== razorpaySignature) {
+        console.log('Transaction not legitimate:', req.body);
+        return res.status(400).json({ message: 'Transaction not legitimate!' });
+      }
+
+      const order = await Order.findById(orderData._id);
+      if (!order) {
+        console.log('Order not found:', orderData._id);
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      order.razorpay = {
+        orderId: razorpayOrderId,
+        paymentId: razorpayPaymentId,
+        signature: razorpaySignature
+      };
+      order.paymentStatus = 'paid';
+      await order.save();
+
+      res.json({
+        message: 'Payment verified successfully',
+        orderId: order.orderId
+      });
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      res.status(500).json({ message: 'Error verifying payment', error: error.message });
+    }
+  }
+};
+
+module.exports = paymentController;

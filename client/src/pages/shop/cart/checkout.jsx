@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { createOrder } from '@/store/shop-slice/order-slice';
 import { clearCart } from "@/store/shop-slice/cart-slice";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Street address is required'),
@@ -45,6 +46,7 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = useState("free");
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
   const navigate = useNavigate();
@@ -161,7 +163,121 @@ export default function CheckoutPage() {
     else if (activeStep === "payment") setActiveStep("shipping");
   };
 
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+ const handleRazorpayPayment = async () => {
+  try {
+    setLoading(true);
+    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    
+
+    if (!res) {
+      toast({
+        title: 'Razorpay SDK failed to load',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const orderData = {
+      addressId: selectedAddress,
+      shippingMethod: selectedShippingDetails,
+      paymentMethod: selectedPayment,
+      discount: discount,
+      coupon: {
+        couponId: coupon?.couponId,
+        discount: coupon?.discount
+      },
+      items: items,
+      subtotal: summary.subtotal,
+      shippingCost: summary.shipping,
+      couponDiscount: summary.coupon,
+      total: summary.total
+    };
+
+    const order = await dispatch(createOrder(orderData)).unwrap();
+
+    const razorpayOrder = await axios.post('http://localhost:5000/api/user/create-razorpay-order', {
+      orderId: order._id
+    }, {
+      withCredentials: true
+    });
+
+    const options = {
+      key: 'rzp_test_CS2mGJMpuRbxFh', // Your Razorpay key
+      amount: razorpayOrder.data.amount,
+      currency: razorpayOrder.data.currency,
+      name: "Good Berry",
+      description: `Order ${order.orderId}`,
+      order_id: razorpayOrder.data.orderId,
+      handler: async function (response) {
+        try {
+          const { data } = await axios.post('http://localhost:5000/api/user/verify-payment', {
+            orderCreationId: razorpayOrder.data.orderId,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+            orderData: order
+          }, {
+            withCredentials: true
+          });
+          
+          setPaymentSuccess(true);
+          dispatch(clearCart());
+          
+          toast({
+            title: 'Payment successful',
+            description: `Order ID: ${data.orderId}`,
+          });
+        } catch (error) {
+          console.error("Error verifying payment:", error);
+          toast({
+            title: 'Payment verification failed',
+            description: error.response?.data?.message || 'Please contact support',
+            variant: 'destructive',
+          });
+        }
+      },
+      prefill: {
+        name: selectedAddressDetails?.name,
+        email: "", 
+        contact: selectedAddressDetails?.mobile,
+      },
+      notes: {
+        address: "Good Berry Store Order"
+      },
+      theme: {
+        color: "#8AB446"
+      }
+    };
+
+    const paymentObject = new window.Razorpay(options);
+    paymentObject.open();
+    setLoading(false);
+  } catch (error) {
+    console.error("Error initiating Razorpay payment:", error);
+    toast({
+      title: 'Error initiating payment',
+      description: error.message || 'Please try again',
+      variant: 'destructive',
+    });
+  }
+};
+
   const handlePay = () => {
+
+    if(selectedPayment === "upi") {
+      setLoading(true);
+      return handleRazorpayPayment() 
+    }
     const orderData = {
       addressId: selectedAddress,
       shippingMethod: selectedShippingDetails,
@@ -592,7 +708,7 @@ export default function CheckoutPage() {
                       >
                         {[
                           { id: "cod", name: "Cash on Delivery", disabled: false },
-                          { id: "upi", name: "Pay with UPI", disabled: true },
+                          { id: "upi", name: "Pay with UPI", disabled: false },
                           { id: "card", name: "Credit/Debit", disabled: true },
                         ].map((payment) => (
                           <Card
@@ -625,7 +741,7 @@ export default function CheckoutPage() {
                        variant="default"
                        disabled={summary.total === 0}
                        onClick={handlePay}>
-                        {isLoading ? (
+                        {isLoading || loading ? (
                           <>
                             <Loader2 className="animate-spin" />
                             Processing...

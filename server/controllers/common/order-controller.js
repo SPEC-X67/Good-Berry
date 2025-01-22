@@ -71,7 +71,8 @@ const orderController = {
   
       const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const shippingCost = shippingMethod.price || 0;
-      const total = subtotal + shippingCost - discount - coupon.discount;
+      const couponDiscount = coupon?.discount || 0;
+      const total = subtotal + shippingCost - discount - couponDiscount;
   
       const order = new Order({
         userId: req.user.id,
@@ -84,12 +85,12 @@ const orderController = {
           message: '',
           date: null
         },
-        subtotal,
+        subtotal: Number(subtotal),
         shippingCost,
-        discount,
-        couponDiscount : coupon.discount,
-        couponId : coupon.couponId,
-        total,
+        discount: Number(discount),
+        couponDiscount: Number(couponDiscount),
+        couponId: coupon?.couponId,
+        total: Number(total),
       });
   
       await order.save();
@@ -118,7 +119,7 @@ const orderController = {
       let query = { userId: req.user.id}; 
 
       if(status === 'all') {
-        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled'] };
+        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled', 'pending', 'paid'] };
       } else if (status) {
         query.status = status;
       }

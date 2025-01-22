@@ -53,12 +53,19 @@ const OrderSchema = new mongoose.Schema({
     name: String,
     price: Number
   },
-  paymentMethod: {
+  paymentMethod: String,
+  paymentStatus: {
     type: String,
+    default: 'pending'
   },
   status: {
-    type: String,
+    type: String, 
     default: 'processing'
+  },
+  razorpay: {
+    orderId: String,
+    paymentId: String,
+    signature: String
   },
   subtotal: Number,
   shippingCost: Number,

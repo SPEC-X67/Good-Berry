@@ -6,6 +6,7 @@ const addressController = require('../controllers/user/address-controller');
 const orderController = require('../controllers/common/order-controller');
 const wishlistController = require('../controllers/user/wishlist-controller');
 const couponController = require('../controllers/common/coupon-controller');
+const paymentController = require('../controllers/common/payment-controller');
 const auth = require('../middleware/auth');
 
 router.use(auth);
@@ -42,6 +43,10 @@ router.put('/order/:id/cancel', orderController.cancelOrder);
 router.get('/coupons', couponController.getAllCoupons);
 router.post('/apply-coupon', couponController.applyCoupon);
 router.post('/check-coupon', couponController.checkCoupon);
+
+// Payment 
+router.post('/create-razorpay-order', paymentController.createRazorpayOrder);
+router.post('/verify-payment', paymentController.verifyPayment);
 
 // Wishlist
 router.get('/wishlist', wishlistController.getWishlist);

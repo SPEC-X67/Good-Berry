@@ -24,38 +24,38 @@ function OrderDetails() {
 
   function getStatusColor(status) {
     switch (status) {
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'returned': return 'bg-yellow-100 text-yellow-800';
+      case 'processing': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case 'shipped': return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+      case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-200';
+      case 'returned': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
 
-  const handleUpdateItem = async (orderId, productId, updates) => {
+  const handleUpdateItem = async (orderId, productId, updates, id) => {
     try {
       await dispatch(updateOrderItemStatus({ orderId, productId, updates })).unwrap();
-      dispatch(fetchOrderById(orderId));
+      await dispatch(fetchOrderById(id));
       setEditingItem(null);
     } catch (error) {
       console.error('Failed to update item status:', error);
     }
   };
 
-  const handleApproveReturn = async (orderId, productId) => {
+  const handleApproveReturn = async (orderId, productId, id) => {
     try {
       await dispatch(approveReturnRequest({ orderId, productId })).unwrap();
-      dispatch(fetchOrderById(orderId));
+      await dispatch(fetchOrderById(id));
     } catch (error) {
       console.error('Failed to approve return request:', error);
     }
   };
 
-  const handleRejectReturn = async (orderId, productId) => {
+  const handleRejectReturn = async (orderId, productId, id) => {
     try {
       await dispatch(rejectReturnRequest({ orderId, productId })).unwrap();
-      dispatch(fetchOrderById(orderId));
+      await dispatch(fetchOrderById(id));
     } catch (error) {
       console.error('Failed to reject return request:', error);
     }
@@ -147,7 +147,7 @@ function OrderDetails() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orderDetails.items.map(item => (
+              {orderDetails?.items?.map(item => (
                 <TableRow key={item._id}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>{item.packageSize}</TableCell>
@@ -158,14 +158,14 @@ function OrderDetails() {
                     <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    {item.status !== 'delivered' && item.status !== 'cancelled' && item.status !== 'Return Requested' && (
+                    {item.status !== 'delivered' && item.status !== 'returned' && item.status !== 'cancelled' && item.status !== 'Return Requested' && (
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => setEditingItem({ 
+                        onClick={() => {setEditingItem({ 
                           orderId: orderDetails._id, 
                           item: { ...item }
-                        })}
+                        })}}
                       >
                         <Edit className="w-4 h-4 mr-1" /> Edit Status
                       </Button>
@@ -175,14 +175,15 @@ function OrderDetails() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleApproveReturn(orderDetails._id, item.productId)}
+                          onClick={() => {
+                            handleApproveReturn(orderDetails._id, item.productId, orderId)}}
                         >
                           Approve
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleRejectReturn(orderDetails._id, item.productId)}
+                          onClick={() => handleRejectReturn(orderDetails._id, item.productId, orderId)}
                         >
                           Reject
                         </Button>
@@ -193,7 +194,7 @@ function OrderDetails() {
               ))}
             </TableBody>
           </Table>
-            {orderDetails.items.some(item => item.status === 'cancelled') && (
+          {orderDetails?.items?.some(item => item.status === 'cancelled') && (
             <div className="mt-4 p-4 bg-red-50 rounded-md">
               <h3 className="font-bold text-red-800 mb-2">Cancelled Items:</h3>
               {orderDetails.items
@@ -201,6 +202,19 @@ function OrderDetails() {
                 .map(item => (
                   <p key={item._id} className="text-red-600">
                     {item.name}: {item.cancellationReason || 'No reason provided'}
+                  </p>
+                ))
+              }
+            </div>
+          )}
+          {orderDetails?.items?.some(item => item.status === 'returned') && (
+            <div className="mt-4 p-4 bg-yellow-50 rounded-md">
+              <h3 className="font-bold text-yellow-800 mb-2">Returned Items:</h3>
+              {orderDetails.items
+                .filter(item => item.status === 'returned')
+                .map(item => (
+                  <p key={item._id} className="text-yellow-600">
+                    {item.name}: {item.returnReason || 'No reason provided'}
                   </p>
                 ))
               }
@@ -227,7 +241,7 @@ function OrderDetails() {
                 if (editingItem.item.status === 'cancelled') {
                   updates.cancellationReason = editingItem.item.cancellationReason;
                 }
-                handleUpdateItem(editingItem.orderId, editingItem.item.productId, updates);
+                handleUpdateItem(editingItem.orderId, editingItem.item.productId, updates, orderId);
               }
             }}>
               <div className="grid gap-4 py-4">
@@ -282,7 +296,7 @@ function OrderDetails() {
 
       {/* Order total */}
       <div className="mt-6 text-right">
-        <p className="text-2xl font-bold">Total: ₹{orderDetails.total.toFixed(2)}</p>
+        <p className="text-2xl font-bold">Total: ₹{orderDetails?.total?.toFixed(2)}</p>
       </div>
     </div>
   );

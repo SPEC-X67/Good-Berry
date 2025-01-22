@@ -295,12 +295,9 @@ export default function CheckoutPage() {
   }
 };
 
-  const handlePay = () => {
-
-    if(selectedPayment === "upi") {
-      setLoading(true);
-      return handleRazorpayPayment() 
-    }
+const handleWalletPayment = async () => {
+  try {
+    setLoading(true);
     const orderData = {
       addressId: selectedAddress,
       shippingMethod: selectedShippingDetails,
@@ -310,23 +307,74 @@ export default function CheckoutPage() {
         couponId: coupon?.couponId,
         discount: coupon?.discount
       },
-      items: items
+      items: items,
+      subtotal: summary.subtotal,
+      shippingCost: summary.shipping,
+      couponDiscount: summary.coupon,
+      total: summary.total
     };
 
-    dispatch(createOrder(orderData))
-      .unwrap()
-      .then(() => {
-        setPaymentSuccess(true);
-        dispatch(clearCart());
-      })
-      .catch((error) => {
-        toast({
-          title: 'Error placing order',
-          description: error.message,
-          variant: 'destructive'
-        });
-      });
+    const order = await dispatch(createOrder(orderData)).unwrap();
+
+    const { data } = await axios.post('http://localhost:5000/api/user/wallet-payment', {
+      orderId: order._id
+    }, {
+      withCredentials: true
+    });
+
+    setPaymentSuccess(true);
+    dispatch(clearCart());
+
+    toast({
+      title: 'Payment successful',
+      description: `Order ID: ${data.orderId}`,
+    });
+  } catch (error) {
+    console.error("Error handling wallet payment:", error);
+    toast({
+      title: 'Payment failed',
+      description: error.response?.data?.message || 'Please contact support',
+      variant: 'destructive',
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handlePay = () => {
+  if (selectedPayment === "upi") {
+    setLoading(true);
+    return handleRazorpayPayment();
+  } else if (selectedPayment === "wallet") {
+    setLoading(true);
+    return handleWalletPayment();
+  }
+  const orderData = {
+    addressId: selectedAddress,
+    shippingMethod: selectedShippingDetails,
+    paymentMethod: selectedPayment,
+    discount: discount,
+    coupon: {
+      couponId: coupon?.couponId,
+      discount: coupon?.discount
+    },
+    items: items
   };
+
+  dispatch(createOrder(orderData))
+    .unwrap()
+    .then(() => {
+      setPaymentSuccess(true);
+      dispatch(clearCart());
+    })
+    .catch((error) => {
+      toast({
+        title: 'Error placing order',
+        description: error.message,
+        variant: 'destructive'
+      });
+    });
+};
 
   if (paymentSuccess) {
     return <OrderSuccess />;
@@ -732,7 +780,7 @@ export default function CheckoutPage() {
                         {[
                           { id: "cod", name: "Cash on Delivery", disabled: false },
                           { id: "upi", name: "Pay with UPI", disabled: false },
-                          { id: "card", name: "Credit/Debit", disabled: true },
+                          { id: "wallet", name: "Pay with Wallet", disabled: false },
                         ].map((payment) => (
                           <Card
                             key={payment.id}

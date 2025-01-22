@@ -561,7 +561,7 @@ export default function OrderView() {
                 <CreditCard className="h-5 w-5 text-gray-600" />
                 <p className="text-gray-600">
                   {order.paymentMethod === "cod" && "Cash on Delivery"}
-                  {order.paymentMethod === "card" && "Credit Card"}
+                  {order.paymentMethod === "wallet" && "Wallet Payment"}
                   {order.paymentMethod === "upi" && "UPI Payment"}
                 </p>
               </div>

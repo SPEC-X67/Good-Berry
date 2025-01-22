@@ -58,6 +58,7 @@ router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWi
 
 // Wallet
 router.get('/wallet', walletController.getWallet);
+router.post('/wallet-payment', walletController.handleWalletPayment);
 router.post('/wallet/add-money', walletController.addMoney);
 router.get('/wallet/transactions', walletController.getTransactions);
 

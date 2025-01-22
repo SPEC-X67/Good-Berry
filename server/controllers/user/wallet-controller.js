@@ -1,4 +1,5 @@
 const Wallet = require('../../models/Wallet');
+const Order = require('../../models/Order');
 
 const walletController = {
   getWallet: async (req, res) => {
@@ -52,7 +53,39 @@ const walletController = {
     } catch (error) {
       res.status(500).json({ message: 'Error fetching transactions', error: error.message });
     }
-  }
+  },
+
+  handleWalletPayment: async (req, res) => {
+      try {
+        const { orderId } = req.body;
+        const order = await Order.findById(orderId).populate('userId');
+        if (!order) {
+          return res.status(404).json({ message: 'Order not found' });
+        }
+  
+        const wallet = await Wallet.findOne({ userId: order.userId._id });
+        if (!wallet || wallet.balance < order.total) {
+          return res.status(400).json({ message: 'Insufficient wallet balance' });
+        }
+  
+        wallet.balance -= order.total;
+        wallet.transactions.push({
+          type: 'debit',
+          amount: order.total,
+          description: `Payment for order ${order.orderId}`
+        });
+        await wallet.save();
+  
+        order.paymentStatus = 'paid';
+        order.status = 'processing';
+        await order.save();
+  
+        res.json({ message: 'Payment successful', orderId: order.orderId });
+      } catch (error) {
+        console.error('Error handling wallet payment:', error);
+        res.status(500).json({ message: 'Error handling wallet payment', error: error.message });
+      }
+    }
 };
 
 module.exports = walletController;

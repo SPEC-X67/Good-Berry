@@ -1,6 +1,7 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Order = require('../../models/Order');
+const Wallet = require('../../models/Wallet');
 
 const razorpay = new Razorpay({
   key_id: 'rzp_test_CS2mGJMpuRbxFh',
@@ -104,7 +105,8 @@ const paymentController = {
       console.error('Error handling payment failure:', error);
       res.status(500).json({ message: 'Error handling payment failure', error: error.message });
     }
-  }
+  },
+
 };
 
 module.exports = paymentController;

@@ -14,6 +14,9 @@ const OrderItemSchema = new mongoose.Schema({
   price: {
     type: Number
   },
+  salePrice: {
+    type: Number
+  },
   quantity: {
     type: Number
   },

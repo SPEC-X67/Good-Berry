@@ -7,6 +7,7 @@ const orderController = require('../controllers/common/order-controller');
 const wishlistController = require('../controllers/user/wishlist-controller');
 const couponController = require('../controllers/common/coupon-controller');
 const paymentController = require('../controllers/common/payment-controller');
+const walletController = require('../controllers/user/wallet-controller');
 const auth = require('../middleware/auth');
 
 router.use(auth);
@@ -52,5 +53,10 @@ router.post('/verify-payment', paymentController.verifyPayment);
 router.get('/wishlist', wishlistController.getWishlist);
 router.post('/wishlist', wishlistController.addToWishlist);
 router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWishlist);
+
+// Wallet
+router.get('/wallet', walletController.getWallet);
+router.post('/wallet/add-money', walletController.addMoney);
+router.get('/wallet/transactions', walletController.getTransactions);
 
 module.exports = router;

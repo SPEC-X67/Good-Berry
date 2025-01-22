@@ -8,6 +8,7 @@ import orderReducer from './shop-slice/order-slice';
 import adminOrderReducer from './admin-slice/order-slice';
 import offerReducer from './admin-slice/offer-slice';
 import couponReducer from './admin-slice/coupon-slice';
+import walletReducer from './user-slice/wallet-slice';
 
 const store = configureStore({
   reducer: {
@@ -20,7 +21,7 @@ const store = configureStore({
     adminOrder: adminOrderReducer,
     offer: offerReducer,
     coupons : couponReducer,
-    
+    wallet : walletReducer
   }
 });
 

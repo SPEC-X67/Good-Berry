@@ -7,6 +7,7 @@ import {
   User,
   Wallet,
   LogOut,
+  Award,
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '@/store/auth-slice';
@@ -17,6 +18,7 @@ import AddressPage from './address';
 import AccountDetailPage from './account-detail'; 
 import WalletPage from './wallet';
 import MenuItem from './menu-item';
+import ReferAndEarn from './reffer';
 
 const handleLogout = (dispatch) => {
   dispatch(logoutUser());
@@ -33,6 +35,7 @@ const Account = () => {
     { icon: Key, text: 'Password', component: PasswordPage },
     { icon: User, text: 'Account Details', component: AccountDetailPage },
     { icon: Wallet, text: 'Wallet', component: WalletPage },
+    { icon: Award , text: 'Refer & Earn', component: ReferAndEarn },
     { icon: LogOut, text: 'Logout'},
   ];
 

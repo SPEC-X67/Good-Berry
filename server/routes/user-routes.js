@@ -51,6 +51,6 @@ router.post('/verify-payment', paymentController.verifyPayment);
 // Wishlist
 router.get('/wishlist', wishlistController.getWishlist);
 router.post('/wishlist', wishlistController.addToWishlist);
-router.delete('/wishlist/:productId', wishlistController.removeFromWishlist);
+router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWishlist);
 
 module.exports = router;

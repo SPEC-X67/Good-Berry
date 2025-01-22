@@ -52,7 +52,7 @@ function ShopHeader() {
               <Search className="h-5 w-5 text-black fw-bold" />
               <span className="sr-only">Search</span>
             </Button>
-            <Button variant="transparent" size="icon">
+            <Button variant="transparent" size="icon" onClick={() => navigate('/account')}>
               <Heart className="h-5 w-5 text-black fw-bold" />
               <span className="sr-only">Wishlist</span>
             </Button>

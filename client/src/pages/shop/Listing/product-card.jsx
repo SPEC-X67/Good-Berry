@@ -18,25 +18,10 @@ export default function ProductCard({ product, id}) {
         )}
         {/* Quick actions */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-          <div className="flex gap-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              className="h-10 w-10 rounded-full bg-white hover:bg-[#8CC63F] hover:text-white"
-            >
-              <Heart className="h-5 w-5" />
-              <span className="sr-only">Add to wishlist</span>
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="h-10 w-10 rounded-full bg-white hover:bg-[#8CC63F] hover:text-white"
-            >
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Quick view</span>
-            </Button>
-
-          </div>
+        <div className="flex bg-white items-center gap-2 p-2 rounded-full">
+        <Search className="h-5 w-5" />
+         Quick View
+        </div>
         </div>
       </div>
       <div className="p-4">

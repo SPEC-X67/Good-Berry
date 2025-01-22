@@ -64,7 +64,7 @@ function HomeHeader() {
               <Search className={`h-5 w-5 ${isScrolled ? 'text-black' : 'text-white'} fw-bold`} />
               <span className="sr-only">Search</span>
             </Button>
-            <Button variant="transparent" size="icon">
+            <Button variant="transparent" size="icon" onClick={() => navigate('/account')}>
               <Heart className={`h-5 w-5 ${isScrolled ? 'text-black' : 'text-white'} fw-bold`} />
               <span className="sr-only">Wishlist</span>
             </Button>

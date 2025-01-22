@@ -16,39 +16,37 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import ProductDetails from "./product-details";
 import RelatedProducts from "./related-products";
 import { useDispatch, useSelector } from "react-redux";
-import { getSingleProduct } from "@/store/shop-slice";
+import { getSingleProduct, getWishlist, addToWishlist, removeFromWishlist } from "@/store/shop-slice";
 import ZoomImage from "@/components/ui/zoom-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import CartSidebar from "../cart/cart-sidebar";
 import { addToCart } from "@/store/shop-slice/cart-slice";
-import { addToWishlist } from "@/store/shop-slice";
 
 export default function ProductPage() {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(getSingleProduct(id));
+    dispatch(getWishlist());
   }, [dispatch, id]);
 
-  const { product, pflavors, recomentedProds } = useSelector((state) => state.shop);
+  const { product, pflavors, recomentedProds, wishlist } = useSelector((state) => state.shop);
   const { user } = useSelector((state) => state.auth);
   
   const flavors = pflavors || {};
-
-  // Get available flavor keys
   const flavorKeys = Object.keys(flavors);
 
   const [selectedFlavor, setSelectedFlavor] = useState(flavorKeys[0] || "");
-
   const [selectedImage, setSelectedImage] = useState(
     flavorKeys.length > 0 ? flavors[selectedFlavor]?.images?.[0] : ""
   );
-
   const [quantity, setQuantity] = useState(1);
   const [packageSize, setPackageSize] = useState(
     flavorKeys.length > 0 &&
@@ -57,15 +55,11 @@ export default function ProductPage() {
       ? flavors[selectedFlavor].packageSizes[0]
       : ""
   );
-
   const [currentPrice, setCurrentPrice] = useState({
     price: 0,
     salePrice: 0,
   });
-
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const { toast } = useToast();
-
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -74,11 +68,14 @@ export default function ProductPage() {
 
   const calculateDiscount = (originalPrice, salePrice) => {
     if (!originalPrice || !salePrice) return 0;
-    return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+    const discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+    return discount > 0 ? discount : 0;
   };
 
   const calculateStockStatus = (flavor, packageSize) => {
-    if (!flavor || !flavor.packSizePricing) return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
+    if (!flavor || !flavor.packSizePricing) {
+      return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
+    }
     const pack = flavor.packSizePricing.find(p => p.size === packageSize);
     if (pack && pack.quantity > 0) {
       if (pack.quantity < 20) {
@@ -129,7 +126,7 @@ export default function ProductPage() {
     });
   };
 
-  const handleAddToCart = async() => {
+  const handleAddToCart = async () => {
     if (stockStatus.status === "OUT STOCK") return;
     setIsAddingToCart(true);
     const cartItem = {
@@ -149,16 +146,55 @@ export default function ProductPage() {
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
-    
+      toast({
+        title: "Success",
+        description: "Product added to cart successfully!",
+      });
       setTimeout(() => setAddedToCart(false), 2000);
-    } catch (error) {
+    } catch (err) {
       setIsAddingToCart(false);
-      console.error("Error adding to cart:", error);
+      toast({
+        variant: "destructive",
+        title: err,
+        description: "Failed to add product to cart. Please try again.",
+      });
     }
   };
 
-  const handleAddToWishlist = () => {
-    dispatch(addToWishlist(product._id));
+  const isInWishlist = flavor && wishlist.some(item => 
+    item.productId === product._id && item.variantId === flavor._id
+  );
+
+  const handleWishlistToggle = async () => {
+    if(!user){
+      toast({
+        title: "Please login to add to wishlist",
+        description: "You must be logged in to add items to your wishlist.",
+      })
+      return navigate("/auth/login");
+    }
+    try {
+      if (isInWishlist) {
+        await dispatch(removeFromWishlist({ productId: product._id, variantId: flavor._id }));
+        toast({
+          title: "Success",
+          description: "Product removed from wishlist",
+        });
+      } else {
+        await dispatch(addToWishlist({ productId: product._id, variantId: flavor._id }));
+        toast({
+          title: "Success",
+          description: "Product added to wishlist",
+        });
+      }
+      await dispatch(getWishlist());
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: error,
+        description: "Failed to update wishlist. Please try again.",
+      });
+    }
   };
 
   const handleCopyLink = async () => {
@@ -171,14 +207,15 @@ export default function ProductPage() {
     } catch (err) {
       toast({
         variant: "destructive",
-        description: "Failed to copy link. Please try again." + err,
+        title: err,
+        description: "Failed to copy link. Please try again.",
       });
     }
   };
 
   if (!flavor) {
     return (
-      <div className="flex flex-row space-x-3 flex justify-center items-center p-10 mt-10">
+      <div className="flex flex-row space-x-3 justify-center items-center p-10 mt-10">
         <div className="flex flex-row gap-4">
           <Skeleton className="h-[450px] w-[450px] rounded-xl" />
           <div className="flex flex-col gap-4">
@@ -234,14 +271,16 @@ export default function ProductPage() {
                 src={selectedImage}
                 className="object-contain p-4 w-full h-full"
               />
-              <div
-                className="absolute top-0 right-0 flex items-center justify-center mt-5 mr-5 rounded-full bg-[#83ac2b]"
-                style={{ width: "50px", height: "50px" }}
-              >
-                <span className="text-base text-white">
-                  -{discountPercentage}%
-                </span>
-              </div>
+              {discountPercentage > 0 && (
+                <div
+                  className="absolute top-0 right-0 flex items-center justify-center mt-5 mr-5 rounded-full bg-[#83ac2b]"
+                  style={{ width: "50px", height: "50px" }}
+                >
+                  <span className="text-base text-white">
+                    -{discountPercentage}%
+                  </span>
+                </div>
+              )}
               <button
                 className="absolute bottom-4 right-4 rounded-lg bg-white/80 p-2 shadow-lg backdrop-blur-sm transition-colors hover:bg-white"
                 onClick={() => {
@@ -281,7 +320,7 @@ export default function ProductPage() {
               <div>
                 <h1 className="text-3xl font-medium">{product.name}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {flavor.title.toUpperCase()} STYLE FLAVER
+                  {flavor.title.toUpperCase()} STYLE FLAVOR
                 </p>
               </div>
               <Button
@@ -298,9 +337,11 @@ export default function ProductPage() {
             <span className="text-2xl font-medium text-[#8CC63F]">
               ₹{currentPrice.salePrice?.toFixed(2)}
             </span>
-            <span className="text-sm text-muted-foreground line-through">
-              ₹{currentPrice.price?.toFixed(2)}
-            </span>
+            {currentPrice.price > currentPrice.salePrice && (
+              <span className="text-sm text-muted-foreground line-through">
+                ₹{currentPrice.price?.toFixed(2)}
+              </span>
+            )}
             <span className={`ml-4 text-sm ${stockStatus.color} border px-3 py-1 rounded-full`}>
               {stockStatus.status}
             </span>
@@ -328,7 +369,7 @@ export default function ProductPage() {
             </div>
 
             <div>
-              <div className="mb-2 text-sm font-medium">Package size :</div>
+              <div className="mb-2 text-sm font-medium">Package size:</div>
               <div className="flex gap-4">
                 {flavor.packageSizes.map((size) => (
                   <button
@@ -357,7 +398,7 @@ export default function ProductPage() {
                 </button>
                 <span className="w-12 text-center">{quantity}</span>
                 <button
-                  className="px-3 py-2 hover:bg-muted"
+                  className="px-3 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => setQuantity(quantity + 1)}
                   disabled={quantity >= (flavor?.packSizePricing.find(p => p.size === packageSize)?.quantity || 0)}
                 >
@@ -365,7 +406,7 @@ export default function ProductPage() {
                 </button>
               </div>
               <Button 
-                className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F]"
+                className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleAddToCart}
                 disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK"}
               >
@@ -386,11 +427,16 @@ export default function ProductPage() {
             </div>
 
             <Button 
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              onClick={handleAddToWishlist}
+              className="flex items-center gap-2 p-0 bg-transparent hover:bg-transparent text-sm text-black transition-colors"
+              onClick={handleWishlistToggle}
             >
-              <Heart className="h-4 w-4" />
-              Add to wishlist
+              <Heart 
+                className={cn(
+                  "h-4 w-4 transition-colors duration-200",
+                  isInWishlist ? "fill-red-500 text-red-500" : "text-gray-500"
+                )} 
+              />
+              {isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
             </Button>
 
             <div className="flex items-center gap-2">
@@ -415,8 +461,8 @@ export default function ProductPage() {
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">Category:</span>
               <Link
-                href="/category/ice-cream"
-                className="text-muted-foreground hover:text-foreground"
+                to="/category/ice-cream"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Ice Cream
               </Link>
@@ -426,7 +472,7 @@ export default function ProductPage() {
       </div>
 
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Share product</DialogTitle>
           </DialogHeader>
@@ -441,18 +487,17 @@ export default function ProductPage() {
                 </span>
               </div>
             </div>
+            <Button type="button" size="icon" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4" />
+            </Button>
           </div>
-          <Button type="button" size="icon" onClick={handleCopyLink}>
-            <Copy className="h-4 w-4" />
-          </Button>
         </DialogContent>
       </Dialog>
 
       <ProductDetails description={product.description} />
       <RelatedProducts products={recomentedProds} id={product._id} />
-
-      <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen}/>
-
+      
+      <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
     </div>
   );
 }

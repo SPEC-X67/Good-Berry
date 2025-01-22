@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { subDays, subWeeks, subMonths, subYears, format, startOfDay, endOfDay } from "date-fns"
-import { CalendarIcon, DollarSign, ShoppingCart, Tag, Percent } from "lucide-react"
+import { CalendarIcon, DollarSign, ShoppingCart, Tag, Percent, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -204,7 +204,7 @@ export default function SalesReportPage() {
 
   return (
     <div className="container mx-auto p-4 bg-gray-50">
-      <h1 className="text-2xl font-bold mb-4 text-blue-600">Sales Report</h1>
+      <h1 className="text-2xl font-bold mb-4 text-primary">Sales Report</h1>
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
           <FormField
@@ -327,7 +327,7 @@ export default function SalesReportPage() {
 
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle className="text-blue-600">Detailed Sales Report</CardTitle>
+              <CardTitle className="text-black">Detailed Sales Report</CardTitle>
               <CardDescription>
                 {formatDate(report.startDate)} to {formatDate(report.endDate)}
               </CardDescription>
@@ -346,12 +346,12 @@ export default function SalesReportPage() {
                 <TableCaption>Sales report for the selected period</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-blue-600">Order ID</TableHead>
-                    <TableHead className="text-blue-600">Date</TableHead>
-                    <TableHead className="text-blue-600">Customer Name</TableHead>
-                    <TableHead className="text-blue-600">Order Amount</TableHead>
-                    <TableHead className="text-blue-600">Discount Amount</TableHead>
-                    <TableHead className="text-blue-600">Coupon Discount</TableHead>
+                    <TableHead className="text-black">Order ID</TableHead>
+                    <TableHead className="text-black">Date</TableHead>
+                    <TableHead className="text-black">Customer Name</TableHead>
+                    <TableHead className="text-black">Order Amount</TableHead>
+                    <TableHead className="text-black">Discount Amount</TableHead>
+                    <TableHead className="text-black">Coupon Discount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -418,11 +418,11 @@ export default function SalesReportPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={() => downloadReport("pdf")} className="mr-2 bg-blue-500 hover:bg-blue-600">
-                Download PDF
+              <Button onClick={() => downloadReport("pdf")} className="mr-2" variant="outline">
+                <Download className="h-4 w-4" />Download PDF
               </Button>
-              <Button onClick={() => downloadReport("excel")} className="bg-green-500 hover:bg-green-600">
-                Download Excel
+              <Button onClick={() => downloadReport("excel")} variant="outline">
+              <Download className="h-4 w-4" />Download Excel
               </Button>
             </CardFooter>
           </Card>

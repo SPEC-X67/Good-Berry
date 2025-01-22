@@ -1,22 +1,40 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingBag, Trash2 } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getWishlist, removeFromWishlist } from "@/store/shop-slice";
+import { useNavigate } from "react-router-dom";
 
 const WishlistPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { wishlist } = useSelector((state) => state.shop);
 
   useEffect(() => {
     dispatch(getWishlist());
   }, [dispatch]);
 
-  const handleRemove = (productId) => {
-    dispatch(removeFromWishlist(productId));
+  const handleRemove = (productId, variantId) => {
+    dispatch(removeFromWishlist({ productId, variantId }));
   };
 
+  if (!wishlist || wishlist.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>My Wishlist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              No items in your wishlist yet.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       <Card>
@@ -24,39 +42,41 @@ const WishlistPage = () => {
           <CardTitle>My Wishlist ({wishlist.length} items)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {wishlist.map((item) => (
-              <Card key={item._id} className="overflow-hidden">
-                <img 
-                  src={item.image} 
-                  alt={item.name}
-                  className="w-full h-48 object-cover"
-                />
-                <CardContent className="p-4 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <p className="text-2xl font-bold">₹{item.price}</p>
-                    <p className={`text-sm ${item.inStock ? 'text-green-600' : 'text-red-600'}`}>
-                      {item.inStock ? 'In Stock' : 'Out of Stock'}
-                    </p>
+              <Card key={item.productId} className="flex flex-col h-full">
+                <CardContent
+                  className="flex-grow cursor-pointer pb-1"
+                  onClick={() => navigate(`/shop/product/${item.productId}`)}
+                >
+                  <div className="aspect-square relative my-4">
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      className="object-cover w-full h-full rounded-md"
+                    />
                   </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      className="flex-1"
-                      disabled={!item.inStock}
-                    >
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => handleRemove(item._id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
+                  <p className="font-semibold">{item.name}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {item.description}
+                  </p>
+                  <p className={`text-sm ${item.stockStatus === "OUT OF STOCK" ? "text-red-600" : item.stockStatus.includes("Limited Stock") ? "text-yellow-600" : "text-green-600"}`}>
+                    {item.stockStatus}
+                  </p>
                 </CardContent>
+                <CardFooter className="flex justify-between items-center">
+                  <div>
+                    <p className="text-lg font-bold">₹{item.salePrice.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600 line-through">₹{item.price.toFixed(2)}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => handleRemove(item.productId, item.variantId)}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </CardFooter>
               </Card>
             ))}
           </div>

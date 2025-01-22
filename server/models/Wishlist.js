@@ -7,8 +7,16 @@ const WishlistSchema = new mongoose.Schema({
         required: true
     },
     products: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
+        variantId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Variant",
+            required: true
+        }
     }]
 }, { timestamps: true });
 

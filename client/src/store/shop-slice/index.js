@@ -64,9 +64,9 @@ export const getWishlist = createAsyncThunk(
 
 export const addToWishlist = createAsyncThunk(
     "wishlist/addToWishlist",
-    async (productId, thunkAPI) => {
+    async ({productId, variantId}, thunkAPI) => {
         try {
-            const response = await axios.post(`${api}/user/wishlist`, { productId }, { withCredentials: true });
+            const response = await axios.post(`${api}/user/wishlist`, { productId, variantId }, { withCredentials: true });
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -76,9 +76,9 @@ export const addToWishlist = createAsyncThunk(
 
 export const removeFromWishlist = createAsyncThunk(
     "wishlist/removeFromWishlist",
-    async (productId, thunkAPI) => {
+    async ({ productId, variantId }, thunkAPI) => {
         try {
-            const response = await axios.delete(`${api}/user/wishlist/${productId}`, { withCredentials: true });
+            const response = await axios.delete(`${api}/user/wishlist/${productId}/${variantId}`, { withCredentials: true });
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -148,13 +148,13 @@ const shopSlice = createSlice({
             state.pflavors = action.payload.variantsFormatted;
         })
         .addCase(getWishlist.fulfilled, (state, action) => {
-            state.wishlist = action.payload.data.products;
+            state.wishlist = action.payload.data;
         })
         .addCase(addToWishlist.fulfilled, (state, action) => {
-            state.wishlist.push(action.payload.data.products);
+            state.wishlist.push(action.payload.data);
         })
         .addCase(removeFromWishlist.fulfilled, (state, action) => {
-            state.wishlist = state.wishlist.filter(item => item._id !== action.meta.arg);
+            state.wishlist = state.wishlist.filter(item => item.productId !== action.meta.arg.productId || item.variantId !== action.meta.arg.variantId);
         })
 
         .addCase(getCategories.fulfilled, (state, action) => {

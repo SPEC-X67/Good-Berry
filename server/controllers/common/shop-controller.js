@@ -30,6 +30,7 @@ const getProductDetails = async (req, res) => {
 
     const variantsFormatted = variants.reduce((acc, variant) => {
       acc[variant.title.toLowerCase().replace(/\s+/g, '')] = {
+        _id: variant._id,
         title: variant.title,
         description: variant.description,
         images: variant.images,

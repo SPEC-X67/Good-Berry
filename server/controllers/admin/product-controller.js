@@ -102,7 +102,6 @@ const getAllProducts = async (req, res) => {
 };
 
 
-// Get a single product with its variants
 const getProduct = async (req, res) => {
   const productId = req.params.id;
   try {

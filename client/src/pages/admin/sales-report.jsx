@@ -55,25 +55,13 @@ export default function SalesReportPage() {
 
   useEffect(() => {
     fetchReport()
-  }, [period, dateRange])
-
-  useEffect(() => {
-    if (report) {
-      const filtered = report.orders.filter(
-        (order) =>
-          order.orderId.toLowerCase().includes(filterText.toLowerCase()) ||
-          order.userId.username.toLowerCase().includes(filterText.toLowerCase()),
-      )
-      setFilteredOrders(filtered)
-      setCurrentPage(1)
-    }
-  }, [report, filterText])
+  }, [period, dateRange, currentPage, filterText])
 
   const fetchReport = async () => {
     const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined
     const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined
     const response = await axios.get('http://localhost:5000/api/admin/sales-report', {
-      params: { period, startDate, endDate },
+      params: { period, startDate, endDate, page: currentPage, limit: ordersPerPage, search: filterText },
       withCredentials: true
     });
     setReport(response.data)
@@ -212,11 +200,6 @@ export default function SalesReportPage() {
     return format(date, "yyyy-MM-dd")
   }
 
-  const indexOfLastOrder = currentPage * ordersPerPage
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder)
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber)
 
   return (
@@ -319,7 +302,7 @@ export default function SalesReportPage() {
                 <ShoppingCart className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-700">{filteredOrders.length}</div>
+                <div className="text-2xl font-bold text-blue-700">{report.overallOrderCount}</div>
               </CardContent>
             </Card>
             <Card className="bg-yellow-100">
@@ -372,7 +355,7 @@ export default function SalesReportPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentOrders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <TableRow key={order.orderId}>
                       <TableCell>{order.orderId}</TableCell>
                       <TableCell>{formatDate(new Date(order.createdAt))}</TableCell>
@@ -400,7 +383,7 @@ export default function SalesReportPage() {
                         <PaginationEllipsis />
                       </PaginationItem>
                     )}
-                    {[...Array(totalPages)].map((_, index) => {
+                    {[...Array(report.totalPages)].map((_, index) => {
                       const pageNumber = index + 1
                       if (
                         pageNumber === currentPage ||
@@ -417,18 +400,18 @@ export default function SalesReportPage() {
                       }
                       return null
                     })}
-                    {currentPage < totalPages - 2 && (
+                    {currentPage < report.totalPages - 2 && (
                       <PaginationItem>
                         <PaginationEllipsis />
                       </PaginationItem>
                     )}
-                    {currentPage < totalPages - 1 && (
+                    {currentPage < report.totalPages - 1 && (
                       <PaginationItem>
-                        <PaginationLink onClick={() => paginate(totalPages)}>{totalPages}</PaginationLink>
+                        <PaginationLink onClick={() => paginate(report.totalPages)}>{report.totalPages}</PaginationLink>
                       </PaginationItem>
                     )}
                     <PaginationItem>
-                      <PaginationNext onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
+                      <PaginationNext onClick={() => paginate(currentPage + 1)} disabled={currentPage === report.totalPages} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>

@@ -115,6 +115,11 @@ async function generateOrderId() {
 }
 
 OrderSchema.pre('save', async function(next) {
+  if (this.isModified('status') && this.status === 'failed') {
+    this.items.forEach(item => {
+      item.status = 'failed';
+    });
+  }
   if (!this.orderId) {
     this.orderId = await generateOrderId();
   }

@@ -65,6 +65,11 @@ const paymentController = {
         signature: razorpaySignature
       };
       order.paymentStatus = 'paid';
+      order.status = 'processing';
+
+      order.items.forEach(item => {
+        item.status = 'processing';
+      })
       await order.save();
 
       res.json({
@@ -74,6 +79,30 @@ const paymentController = {
     } catch (error) {
       console.error('Error verifying payment:', error);
       res.status(500).json({ message: 'Error verifying payment', error: error.message });
+    }
+  },
+
+  handlePaymentFailure: async (req, res) => {
+    try {
+      const { orderId } = req.body;
+
+      const order = await Order.findById(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      order.paymentStatus = 'failed';
+      order.status = 'failed'
+
+      order.items.forEach(item => {
+        item.status = 'failed';
+      })
+      await order.save();
+
+      res.json({ message: 'Payment status updated to failed' });
+    } catch (error) {
+      console.error('Error handling payment failure:', error);
+      res.status(500).json({ message: 'Error handling payment failure', error: error.message });
     }
   }
 };

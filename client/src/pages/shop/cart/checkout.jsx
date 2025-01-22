@@ -246,6 +246,29 @@ export default function CheckoutPage() {
           });
         }
       },
+      modal: {
+        ondismiss: async function () {
+          try {
+            await axios.post('http://localhost:5000/api/user/payment-failure', {
+              orderId: order._id
+            }, {
+              withCredentials: true
+            });
+            toast({
+              title: 'Payment cancelled',
+              description: 'Your payment was cancelled. Please try again.',
+              variant: 'destructive',
+            });
+          } catch (error) {
+            console.error("Error handling payment failure:", error);
+            toast({
+              title: 'Error handling payment failure',
+              description: error.message || 'Please contact support',
+              variant: 'destructive',
+            });
+          }
+        }
+      },
       prefill: {
         name: selectedAddressDetails?.name,
         email: "", 

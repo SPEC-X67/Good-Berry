@@ -19,6 +19,7 @@ import {
   RefreshCcw,
   Truck,
   ShoppingBag,
+  Info,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -34,6 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 const OrderStatusBadge = ({ status, icon }) => (
   <Badge variant={status === "cancelled" ? "destructive" : "outline"} className="mt-2">
@@ -132,6 +134,8 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, onReturn, re
         return <Package className="h-4 w-4" />;
       case "cancelled":
         return <AlertCircle className="h-4 w-4" />;
+      case "failed":
+        return <Info className="h-4 w-4" />;
       default:
         return <ShoppingBag className="h-4 w-4" />;
     }
@@ -333,6 +337,115 @@ export default function OrderView() {
     }
   };
 
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+  
+  const handleRepay = async () => {
+    try {
+      const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+      if (!res) {
+        toast({
+          title: 'Razorpay SDK failed to load',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const razorpayOrder = await axios.post('http://localhost:5000/api/user/create-razorpay-order', {
+        orderId: order._id
+      }, {
+        withCredentials: true
+      });
+
+      const options = {
+        key: 'rzp_test_CS2mGJMpuRbxFh', // Your Razorpay key
+        amount: razorpayOrder.data.amount,
+        currency: razorpayOrder.data.currency,
+        name: "Good Berry",
+        description: `Order ${order.orderId}`,
+        order_id: razorpayOrder.data.orderId,
+        handler: async function (response) {
+          try {
+            const { data } = await axios.post('http://localhost:5000/api/user/verify-payment', {
+              orderCreationId: razorpayOrder.data.orderId,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpaySignature: response.razorpay_signature,
+              orderData: order
+            }, {
+              withCredentials: true
+            });
+
+            toast({
+              title: 'Payment successful',
+              description: `Order ID: ${data.orderId}`,
+            });
+            dispatch(fetchOrderById(id)); 
+          } catch (error) {
+            console.error("Error verifying payment:", error);
+            toast({
+              title: 'Payment verification failed',
+              description: error.response?.data?.message || 'Please contact support',
+              variant: 'destructive',
+            });
+          }
+        },
+        modal: {
+          ondismiss: async function () {
+            try {
+              await axios.post('http://localhost:5000/api/user/payment-failure', {
+                orderId: order._id
+              }, {
+                withCredentials: true
+              });
+              toast({
+                title: 'Payment cancelled',
+                description: 'Your payment was cancelled. Please try again.',
+                variant: 'destructive',
+              });
+            } catch (error) {
+              console.error("Error handling payment failure:", error);
+              toast({
+                title: 'Error handling payment failure',
+                description: error.message || 'Please contact support',
+                variant: 'destructive',
+              });
+            }
+          }
+        },
+        prefill: {
+          name: order.addressId?.name,
+          email: "", 
+          contact: order.addressId?.mobile,
+        },
+        notes: {
+          address: "Good Berry Store Order"
+        },
+        theme: {
+          color: "#8AB446"
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      console.error("Error initiating Razorpay payment:", error);
+      toast({
+        title: 'Error initiating payment',
+        description: error.message || 'Please try again',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -402,10 +515,17 @@ export default function OrderView() {
                 {new Date(order.createdAt).toLocaleTimeString()}
               </p>
             </div>
-            <OrderStatusBadge 
-              status={order.status} 
-              icon={<Package className="h-4 w-4" />} 
-            />
+            {order.status === 'failed' ? (
+                <Button 
+                  variant="outline" 
+                  onClick={handleRepay}
+                >
+                  Repay
+                </Button>
+              ) : (<OrderStatusBadge 
+                status={order.status} 
+                icon={<Package className="h-4 w-4" />} 
+              />)}
           </div>
         </CardHeader>
 
@@ -445,6 +565,9 @@ export default function OrderView() {
                   {order.paymentMethod === "upi" && "UPI Payment"}
                 </p>
               </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Payment Status: <span className="font-medium">{order.paymentStatus}</span>
+              </p>
             </div>
             
             <div>

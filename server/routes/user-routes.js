@@ -49,6 +49,7 @@ router.post('/check-coupon', couponController.checkCoupon);
 // Payment 
 router.post('/create-razorpay-order', paymentController.createRazorpayOrder);
 router.post('/verify-payment', paymentController.verifyPayment);
+router.post('/payment-failure', paymentController.handlePaymentFailure);
 
 // Wishlist
 router.get('/wishlist', wishlistController.getWishlist);

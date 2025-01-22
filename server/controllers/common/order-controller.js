@@ -117,7 +117,7 @@ const orderController = {
       let query = { userId: req.user.id}; 
 
       if(status === 'all') {
-        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled', 'returned'] };
+        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled', 'returned', 'failed'] };
       } else if (status) {
         query.status = status;
       }

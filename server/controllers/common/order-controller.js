@@ -117,7 +117,7 @@ const orderController = {
       let query = { userId: req.user.id}; 
 
       if(status === 'all') {
-        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled', 'pending', 'paid'] };
+        query.status = { $in: ['processing', 'shipped', 'delivered', 'cancelled', 'returned'] };
       } else if (status) {
         query.status = status;
       }
@@ -233,12 +233,16 @@ const orderController = {
         order.status = 'delivered';
       } 
 
+      else if (order.items.every(item => item.status === 'returned')) {
+        order.status = 'returned';
+      }
+
       await order.save();
 
       if (order.paymentMethod === 'wallet' || order.paymentMethod === 'upi') {
         const wallet = await Wallet.findOne({ userId: req.user.id });
         if (wallet) {
-          await wallet.refund(item.price * item.quantity, `Refund for cancelled item ${item.name}`);
+          await wallet.refund(item.salePrice * item.quantity, `Refund for cancelled item ${item.name}`);
         }
       }
 

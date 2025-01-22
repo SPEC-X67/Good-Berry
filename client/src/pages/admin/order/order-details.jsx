@@ -104,12 +104,12 @@ function OrderDetails() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><ShoppingBag className="inline-block mr-2" /> <strong>Order ID:</strong> {orderDetails.orderId}</p>
-              <p><Calendar className="inline-block mr-2" /> <strong>Date:</strong> {new Date(orderDetails.createdAt).toLocaleDateString()}</p>
-              <p><CreditCard className="inline-block mr-2" /> <strong>Payment Method:</strong> {orderDetails.paymentMethod === "cod" && "Cash on Delivery"}
-                  {orderDetails.paymentMethod === "card" && "Credit Card"}
-                  {orderDetails.paymentMethod === "upi" && "UPI Payment"}</p>
-              <p><strong>Overall Status:</strong> <Badge className={getStatusColor(orderDetails.status)}>{orderDetails.status}</Badge></p>
+              <p><ShoppingBag className="inline-block mr-2" /> <strong>Order ID:</strong> {orderDetails?.orderId}</p>
+              <p><Calendar className="inline-block mr-2" /> <strong>Date:</strong> {new Date(orderDetails?.createdAt).toLocaleDateString()}</p>
+              <p><CreditCard className="inline-block mr-2" /> <strong>Payment Method:</strong> {orderDetails?.paymentMethod === "cod" && "Cash on Delivery"}
+                  {orderDetails?.paymentMethod === "card" && "Credit Card"}
+                  {orderDetails?.paymentMethod === "upi" && "UPI Payment"}</p>
+              <p><strong>Overall Status:</strong> <Badge className={getStatusColor(orderDetails?.status)}>{orderDetails?.status}</Badge></p>
             </div>
           </CardContent>
         </Card>
@@ -120,9 +120,9 @@ function OrderDetails() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><strong>Name:</strong> {orderDetails?.addressId?.name || orderDetails.userId.username}</p>
-              <p><MapPin className="inline-block mr-2" /> <strong>Address:</strong> {orderDetails.addressId.street}, {orderDetails.addressId.city}</p>
-              <p><Phone className="inline-block mr-2" /> <strong>Phone:</strong> {orderDetails.addressId.mobile}</p>
+              <p><strong>Name:</strong> {orderDetails?.addressId?.name || orderDetails?.userId?.username}</p>
+              <p><MapPin className="inline-block mr-2" /> <strong>Address:</strong> {orderDetails?.addressId?.street}, {orderDetails?.addressId?.city}</p>
+              <p><Phone className="inline-block mr-2" /> <strong>Phone:</strong> {orderDetails?.addressId?.mobile}</p>
             </div>
           </CardContent>
         </Card>

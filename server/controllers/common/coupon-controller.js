@@ -143,9 +143,8 @@ const couponController = {
       }
 
       cart.couponId = coupon._id;
+      
       await cart.save();
-
-      console.log(coupon)
 
       if (coupon.startDate > new Date() || coupon.endDate < new Date()) {
         return res.json({
@@ -176,7 +175,6 @@ const couponController = {
         });
       }
 
-      coupon.used += 1;
       await coupon.save();
 
       res.status(200).json({
@@ -198,7 +196,6 @@ const couponController = {
   checkCoupon: async (req, res) => {
     try {
       const { code, total } = req.body;
-      console.log(code, total)
       const coupon = await Coupon.findOne({ code });
       if (!coupon) return res.json({});
 

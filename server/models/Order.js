@@ -36,6 +36,9 @@ const OrderItemSchema = new mongoose.Schema({
   returnRequest: {
     type: Boolean,
     default: false
+  },
+  deliveredAt: {
+    type: Date
   }
 });
 
@@ -118,6 +121,11 @@ OrderSchema.pre('save', async function(next) {
   if (this.isModified('status') && this.status === 'failed') {
     this.items.forEach(item => {
       item.status = 'failed';
+    });
+  }
+  if (this.isModified('status') && this.status === 'delivered') {
+    this.items.forEach(item => {
+      item.deliveredAt = new Date();
     });
   }
   if (!this.orderId) {

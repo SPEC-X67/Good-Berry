@@ -1,8 +1,9 @@
 const Order = require('../../models/Order');
 const Cart = require('../../models/Cart');
 const Address = require('../../models/Address');
-const Variant = require('../../models/Variant')
+const Variant = require('../../models/Variant');
 const Wallet = require('../../models/Wallet');
+const Coupon = require('../../models/Coupon');
 
 const orderController = {  
   createOrder : async (req, res) => {
@@ -49,8 +50,6 @@ const orderController = {
           pack => pack.size === cartItem.packageSize
         );
 
-
-
         if (!packSize) {
           return res.status(400).json({ 
             message: `Pack size ${cartItem.packageSize} not found for this product` 
@@ -90,6 +89,14 @@ const orderController = {
         couponId: coupon?.couponId,
         total: Number(total),
       });
+
+      if (coupon?.couponId) {
+        const usedCoupon = await Coupon.findById(coupon.couponId);
+        if (usedCoupon) {
+          usedCoupon.used += 1;
+          await usedCoupon.save();
+        }
+      }
   
       await order.save();
   
@@ -170,90 +177,118 @@ const orderController = {
   cancelOrder: async (req, res) => {
     try {
       const { itemId, reason } = req.body;
-
+  
       if (!reason) {
         return res.status(400).json({ message: 'Cancellation reason is required' });
       }
-
+  
       const order = await Order.findOne({
         orderId: req.params.id,
-        userId: req.user.id
-      }).populate('addressId');
-
+        userId: req.user.id,
+      })
+        .populate('addressId')
+        .populate('couponId');
+  
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-
+  
       const item = order.items.id(itemId);
       if (!item) {
         return res.status(404).json({ message: 'Item not found in order' });
       }
-
+  
       if (item.status !== 'processing' && item.status !== 'delivered') {
         return res.status(400).json({
-          message: `Item cannot be cancelled in ${item.status} status`
+          message: `Item cannot be cancelled in ${item.status} status`,
         });
       }
-
-      const variant = await Variant.findOne({productId : item.productId, title : item.flavor});
-
-      console.log(variant)
+  
+      const variant = await Variant.findOne({
+        productId: item.productId,
+        title: item.flavor,
+      });
+  
       if (!variant) {
         return res.status(404).json({ message: 'Product variant not found' });
       }
-
-      const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
-
+  
+      const packSize = variant.packSizePricing.find(
+        (pack) => pack.size === item.packageSize
+      );
+  
       if (packSize) {
-        packSize.quantity += item.quantity; 
+        packSize.quantity += item.quantity;
         await variant.save();
       }
-
+  
       item.status = 'cancelled';
       item.cancellationReason = reason;
       item.cancellation = {
         reason,
         message: '',
-        date: new Date()
+        date: new Date(),
       };
+ 
+      const remainingItems = order.items.filter((i) => i.status !== 'cancelled');
+      order.discount = remainingItems.reduce(
+        (totalDiscount, i) =>
+          totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
+        0
+      );
 
-      if (order.items.every(item => item.status === 'cancelled')) {
-        order.status = 'cancelled';
-      }
-
-      else if (order.items.some(item => item.status === 'processing')) {
-        order.status = 'processing';
-      }
-
-      else if (order.items.some(item => item.status === 'shipped')) {
-        order.status = 'shipped';
-      } 
-
-      else if (order.items.some(item => item.status === 'delivered')) {
-        order.status = 'delivered';
-      } 
-
-      else if (order.items.every(item => item.status === 'returned')) {
-        order.status = 'returned';
-      }
-
-      await order.save();
-
-      if (order.paymentMethod === 'wallet' || order.paymentMethod === 'upi') {
-        const wallet = await Wallet.findOne({ userId: req.user.id });
-        if (wallet) {
-          await wallet.refund(item.salePrice * item.quantity, `Refund for cancelled item ${item.name}`);
+      if (order.couponId) {
+        const remainingTotal = remainingItems.reduce(
+          (sum, i) => sum + i.salePrice * i.quantity,
+          0
+        );
+  
+        if (remainingTotal < order.couponId.minimumAmount) {
+          order.couponId = null;
+          order.couponDiscount = 0;
         }
       }
+  
+      order.subtotal = remainingItems.reduce(
+        (sum, i) => sum + i.price * i.quantity,
+        0
+      );
+      order.total = order.subtotal - order.couponDiscount - order.discount;
+  
+      if (order.items.every((i) => i.status === 'cancelled')) {
+        order.status = 'cancelled';
+      } else if (order.items.some((i) => i.status === 'processing')) {
+        order.status = 'processing';
+      } else if (order.items.some((i) => i.status === 'shipped')) {
+        order.status = 'shipped';
+      } else if (order.items.some((i) => i.status === 'delivered')) {
+        order.status = 'delivered';
+      } else if (order.items.every((i) => i.status === 'returned')) {
+        order.status = 'returned';
+      }
+  
+      await order.save();
 
+      if (['wallet', 'upi'].includes(order.paymentMethod)) {
+        const wallet = await Wallet.findOne({ userId: req.user.id });
+        if (wallet) {
+          await wallet.refund(
+            item.salePrice * item.quantity,
+            `Refund for cancelled item ${item.name}`
+          );
+        }
+      }
+  
       res.json(order);
     } catch (error) {
       res.status(500).json({
         message: 'Error cancelling item',
-        error: error.message
+        error: error.message,
       });
     }
   },
+  
+  
 
   returnOrderItem: async (req, res) => {
     try {
@@ -280,6 +315,17 @@ const orderController = {
       if (item.status !== 'delivered') {
         return res.status(400).json({
           message: `Item cannot be returned in ${item.status} status`
+        });
+      }
+
+      const deliveredDate = new Date(item.deliveredAt);
+      const currentDate = new Date();
+      const diffTime = Math.abs(currentDate - deliveredDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 5) {
+        return res.status(400).json({
+          message: 'Return period has expired. You can only return items within 5 days of delivery.'
         });
       }
 

@@ -144,6 +144,14 @@ const orderController = {
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+
+      
+      order.discount = remainingItems.reduce(
+        (totalDiscount, i) =>
+          totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
+        0
+      );
+
       order.total = order.subtotal - order.couponDiscount - order.discount;
 
       const allCancelled = order.items.every((item) => item.status === 'cancelled');
@@ -243,6 +251,13 @@ const orderController = {
         (sum, i) => sum + i.price * i.quantity,
         0
       );
+
+      order.discount = remainingItems.reduce(
+        (totalDiscount, i) =>
+          totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
+        0
+      );
+      
       order.total = order.subtotal - order.couponDiscount - order.discount;
 
       if (['wallet', 'upi'].includes(order.paymentMethod)) {

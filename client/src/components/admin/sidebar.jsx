@@ -4,12 +4,12 @@ import {
   Users,
   Star,
   Settings,
-  Tag,
   Ticket,
   Image,
   ChartNoAxesCombined,
   Tags,
   BaggageClaim,
+  ScrollText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
@@ -59,10 +59,10 @@ const adminSidebarMenuItems = [
     icon: <Settings />,
   },
   {
-    id: "offers",
-    label: "Offers",
-    path: "/admin/offers",
-    icon: <Tag />,
+    id: "sales-report",
+    label: "Sales Report",
+    path: "/admin/sales-report",
+    icon: <ScrollText />,
   },
   {
     id: "coupons",

@@ -38,7 +38,8 @@ const salesReportController = {
         createdAt: {
           $gte: start,
           $lte: end
-        }
+        },
+        status: 'delivered' // Only include delivered orders
       };
 
       if (search) {

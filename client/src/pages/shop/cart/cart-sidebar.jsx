@@ -8,11 +8,13 @@ import { removeFromCart, updateCartItemQuantity } from "@/store/shop-slice/cart-
 import { checkQuantity } from "@/store/shop-slice/cart-slice";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items, loading: quantityLoading, quantity: availableQuantity } = useSelector((state) => state.cart);
+  const { toast } = useToast();
 
   const [animationClass, setAnimationClass] = useState("");
 
@@ -27,6 +29,14 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
     
+    if(newQuantity > 5) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: "You can only add a maximum of 5 items to the cart.",
+      });
+      return;
+    }
+
     if (newQuantity > 0) {
       await dispatch(checkQuantity({ productId, packageSize, flavor })).unwrap();
       if (newQuantity <= availableQuantity) {

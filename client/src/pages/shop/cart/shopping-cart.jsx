@@ -40,6 +40,13 @@ export default function ShoppingCart() {
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
+    if(newQuantity > 5) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: "You can only add a maximum of 5 items to the cart.",
+      });
+      return;
+    }
 
     if (newQuantity > 0) {
       await dispatch(checkQuantity({ productId, packageSize, flavor })).unwrap();

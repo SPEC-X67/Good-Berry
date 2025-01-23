@@ -176,6 +176,13 @@ export default function ProductPage() {
 
   const handleQuantityChange = async (action) => {
     const newQuantity = action === 'increase' ? quantity + 1 : quantity - 1;
+    if(newQuantity > 5) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: "You can only add a maximum of 5 items to the cart.",
+      });
+      return;
+    }
     await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
     if (newQuantity > 0) {
       if (newQuantity <= availableQuantity) {
@@ -436,7 +443,7 @@ export default function ProductPage() {
               <Button 
                 className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleAddToCart}
-                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK" || quantity > availableQuantity}
+                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK" || quantity > availableQuantity || quantity > 5}
               >
                 {isAddingToCart ? (
                   <div className="flex items-center gap-2">

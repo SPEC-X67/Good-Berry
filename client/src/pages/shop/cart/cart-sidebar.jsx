@@ -28,14 +28,14 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
     
     if (newQuantity > 0) {
-      await dispatch(checkQuantity({ productId, packageSize, flavor }));
+      await dispatch(checkQuantity({ productId, packageSize, flavor })).unwrap();
       if (newQuantity <= availableQuantity) {
         await dispatch(updateCartItemQuantity({
           itemId: productId,
           packageSize,
           flavor,
           quantity: newQuantity
-        }));
+        })).unwrap();
       }
     }
   };

@@ -3,6 +3,7 @@ import axios from "axios";
 
 const initialState = {
     products: [],
+    loading: false,
     categories : [],
     featuredProds: [],
     pagination : {},
@@ -137,12 +138,14 @@ const shopSlice = createSlice({
             state.recomentedProds = []; 
         })
         .addCase(getSingleProduct.pending, (state) => {
+            state.loading = true;
             state.product = null;
             state.pflavors = null;
             state.recomentedProds = null; 
         })
 
         .addCase(getSingleProduct.fulfilled, (state, action) => {
+            state.loading = false;
             state.product = action.payload.product;
             state.recomentedProds = action.payload.recommendedProducts;
             state.pflavors = action.payload.variantsFormatted;

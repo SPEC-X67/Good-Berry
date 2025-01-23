@@ -53,7 +53,6 @@ export const syncCartAfterLogin = createAsyncThunk(
   }
 );
 
-
 export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async (_, { getState }) => {
@@ -184,7 +183,7 @@ export const checkQuantity = createAsyncThunk(
   'cart/checkQuantity',
   async ({ productId, packageSize, flavor }) => {
     try {
-      const response = await axios.post(`http://localhost:5000/api/check-quantity`, { productId, packageSize, flavor }, {
+      const response = await axios.post(`${api}/check-quantity`, { productId, packageSize, flavor }, {
         withCredentials: true
       });
       return response.data;

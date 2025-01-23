@@ -231,6 +231,31 @@ const cartController = {
       console.error('Clear cart error:', error);
       res.status(500).json({ error: 'Error clearing cart' });
     }
+  },
+
+  checkQuantity : async (req, res) => {
+    try {
+      const { productId, packageSize, flavor } = req.body;
+  
+      if (!productId || !packageSize || !flavor) {
+        return res.status(400).json({ error: 'Missing required fields: productId, packageSize, and flavor are required' });
+      }
+  
+      const variant = await Variant.findOne({ productId, title: flavor });
+      if (!variant) {
+        return res.status(404).json({ error: 'Variant not found' });
+      }
+  
+      const packSize = variant.packSizePricing.find(pack => pack.size === packageSize);
+      if (!packSize) {
+        return res.status(404).json({ error: 'Package size not found' });
+      }
+  
+      res.json({ quantity: packSize.quantity });
+    } catch (error) {
+      console.error('Check quantity error:', error);
+      res.status(500).json({ error: 'Error checking quantity' });
+    }
   }
 };
 

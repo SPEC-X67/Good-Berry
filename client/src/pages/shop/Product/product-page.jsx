@@ -24,7 +24,7 @@ import { getSingleProduct, getWishlist, addToWishlist, removeFromWishlist } from
 import ZoomImage from "@/components/ui/zoom-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import CartSidebar from "../cart/cart-sidebar";
-import { addToCart } from "@/store/shop-slice/cart-slice";
+import { addToCart, checkQuantity } from "@/store/shop-slice/cart-slice";
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -39,6 +39,7 @@ export default function ProductPage() {
 
   const { product, pflavors, recomentedProds, wishlist } = useSelector((state) => state.shop);
   const { user } = useSelector((state) => state.auth);
+  const { quantity: availableQuantity, items: cartItems } = useSelector((state) => state.cart);
   
   const flavors = pflavors || {};
   const flavorKeys = Object.keys(flavors);
@@ -127,9 +128,21 @@ export default function ProductPage() {
   };
 
   const handleAddToCart = async () => {
-    if (stockStatus.status === "OUT STOCK") return;
+    const cartItem = cartItems.find(
+      item => item.productId === product._id && item.packageSize === packageSize && item.flavor === flavor.title
+    );
+    const totalQuantity = cartItem ? cartItem.quantity + quantity : quantity;
+
+    if (stockStatus.status === "OUT STOCK" || totalQuantity > availableQuantity) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: `You already have ${availableQuantity} items of this product in your cart. No more stock is available.`,
+      });
+      return;
+    }
+    
     setIsAddingToCart(true);
-    const cartItem = {
+    const newCartItem = {
       ...(user && { userId: user._id }),
       productId: product._id,
       name: product.name,
@@ -142,7 +155,7 @@ export default function ProductPage() {
     };
     
     try {
-      await dispatch(addToCart(cartItem));
+      await dispatch(addToCart(newCartItem));
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
@@ -158,6 +171,16 @@ export default function ProductPage() {
         title: err,
         description: "Failed to add product to cart. Please try again.",
       });
+    }
+  };
+
+  const handleQuantityChange = async (action) => {
+    const newQuantity = action === 'increase' ? quantity + 1 : quantity - 1;
+    if (newQuantity > 0) {
+      await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
+      if (newQuantity <= availableQuantity) {
+        setQuantity(newQuantity);
+      }
     }
   };
 
@@ -392,15 +415,15 @@ export default function ProductPage() {
               <div className="flex items-center rounded-md border">
                 <button
                   className="px-3 py-2 hover:bg-muted"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  onClick={() => handleQuantityChange('decrease')}
                 >
                   -
                 </button>
                 <span className="w-12 text-center">{quantity}</span>
                 <button
                   className="px-3 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= (flavor?.packSizePricing.find(p => p.size === packageSize)?.quantity || 0)}
+                  onClick={() => handleQuantityChange('increase')}
+                  disabled={quantity >= availableQuantity}
                 >
                   +
                 </button>
@@ -408,7 +431,7 @@ export default function ProductPage() {
               <Button 
                 className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleAddToCart}
-                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK"}
+                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK" || quantity > availableQuantity}
               >
                 {isAddingToCart ? (
                   <div className="flex items-center gap-2">

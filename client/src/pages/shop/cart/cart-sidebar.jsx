@@ -5,17 +5,15 @@ import { Trash2, Plus, Minus } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from "prop-types";
 import { removeFromCart, updateCartItemQuantity } from "@/store/shop-slice/cart-slice";
+import { checkQuantity } from "@/store/shop-slice/cart-slice";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, loading } = useSelector((state) => state.cart);
+  const { items, loading: quantityLoading, quantity: availableQuantity } = useSelector((state) => state.cart);
 
-  console.log(items);
-
-  console.log(items);
   const [animationClass, setAnimationClass] = useState("");
 
   useEffect(() => {
@@ -30,12 +28,15 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
     
     if (newQuantity > 0) {
-      await dispatch(updateCartItemQuantity({
-        itemId: productId,
-        packageSize,
-        flavor,
-        quantity: newQuantity
-      }));
+      await dispatch(checkQuantity({ productId, packageSize, flavor }));
+      if (newQuantity <= availableQuantity) {
+        await dispatch(updateCartItemQuantity({
+          itemId: productId,
+          packageSize,
+          flavor,
+          quantity: newQuantity
+        }));
+      }
     }
   };
   
@@ -60,7 +61,7 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     };
   };
 
-  if (loading) {
+  if (quantityLoading) {
     return (
       <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
         <SheetContent side="right" className={`w-full sm:max-w-sm transition-all ${animationClass}`}>
@@ -147,6 +148,7 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
                               item.flavor, 
                               'increase'
                             )}
+                            disabled={item.quantity >= availableQuantity}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>

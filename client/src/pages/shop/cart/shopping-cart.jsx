@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useDispatch, useSelector } from 'react-redux'
-import { removeFromCart, updateCartItemQuantity } from '@/store/shop-slice/cart-slice'
+import { removeFromCart, updateCartItemQuantity, checkQuantity } from '@/store/shop-slice/cart-slice'
 import { applyCoupon, checkCoupon } from '@/store/shop-slice'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
@@ -16,11 +16,11 @@ export default function ShoppingCart() {
   const [subtotal, setSubtotal] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [total, setTotal] = useState(0)
-  const { items } = useSelector(state => state.cart)
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { coupon } = useSelector(state => state.shop);
+  const { items, quantity: availableQuantity } = useSelector((state) => state.cart);
 
   const couponDiscount = coupon?.discount || 0; 
 
@@ -40,14 +40,17 @@ export default function ShoppingCart() {
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
-    
+
     if (newQuantity > 0) {
-      await dispatch(updateCartItemQuantity({
-        itemId: productId,
-        packageSize,
-        flavor,
-        quantity: newQuantity
-      }));
+      await dispatch(checkQuantity({ productId, packageSize, flavor }));
+      if (newQuantity <= availableQuantity) {
+        await dispatch(updateCartItemQuantity({
+          itemId: productId,
+          packageSize,
+          flavor,
+          quantity: newQuantity
+        }));
+      }
     }
   };
 
@@ -119,8 +122,9 @@ export default function ShoppingCart() {
                     </button>
                     <span className="w-12 text-center">{item?.quantity}</span>
                     <button
-                      className="px-3 py-2 hover:bg-muted"
+                      className="px-3 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() => handleQuantityChange(item.productId, item.quantity, item.packageSize, item.flavor, 'increase')}
+                      disabled={item.quantity >= availableQuantity}
                     >
                       +
                     </button>

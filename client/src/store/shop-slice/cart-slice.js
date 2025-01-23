@@ -58,14 +58,14 @@ export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async (_, { getState }) => {
     const { auth } = getState();
-    
+
     if (!auth.user) {
       return cartStorage.load();
     }
-    
+
     try {
       const response = await axios.get(`${api}/cart`, {
-        withCredentials: true 
+        withCredentials: true
       });
       return response.data;
     } catch (error) {
@@ -80,14 +80,14 @@ export const addToCart = createAsyncThunk(
   async (cartItem, { getState }) => {
     const { auth } = getState();
     const itemToAdd = { ...cartItem };
-    
+
     if (!auth.user) {
       delete itemToAdd.userId;
       const currentCart = cartStorage.load();
       const existingItemIndex = currentCart.findIndex(
-        item => item.productId === itemToAdd.productId && 
-               item.packageSize === itemToAdd.packageSize &&
-               item.flavor === itemToAdd.flavor 
+        item => item.productId === itemToAdd.productId &&
+          item.packageSize === itemToAdd.packageSize &&
+          item.flavor === itemToAdd.flavor
       );
 
       let updatedCart;
@@ -104,7 +104,7 @@ export const addToCart = createAsyncThunk(
       cartStorage.save(updatedCart);
       return updatedCart;
     }
-    
+
     try {
       const response = await axios.post(`${api}/cart`, itemToAdd, {
         withCredentials: true
@@ -119,27 +119,27 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItemQuantity = createAsyncThunk(
   'cart/updateQuantity',
-  async ({ itemId, quantity, packageSize, flavor }, { getState }) => { 
+  async ({ itemId, quantity, packageSize, flavor }, { getState }) => {
     const { auth } = getState();
-    
+
     if (!auth.user) {
       const currentCart = cartStorage.load();
       const updatedCart = currentCart.map(item =>
-        item.productId === itemId && 
-        item.packageSize === packageSize && 
-        item.flavor === flavor
-          ? { ...item, quantity } 
+        item.productId === itemId &&
+          item.packageSize === packageSize &&
+          item.flavor === flavor
+          ? { ...item, quantity }
           : item
       );
       cartStorage.save(updatedCart);
       return updatedCart;
     }
-    
+
     try {
-      const response = await axios.put(`${api}/cart/${itemId}`, { 
+      const response = await axios.put(`${api}/cart/${itemId}`, {
         quantity,
         packageSize,
-        flavor 
+        flavor
       }, {
         withCredentials: true
       });
@@ -153,28 +153,43 @@ export const updateCartItemQuantity = createAsyncThunk(
 
 export const removeFromCart = createAsyncThunk(
   'cart/removeItem',
-  async ({ itemId, packageSize, flavor }, { getState }) => {  
+  async ({ itemId, packageSize, flavor }, { getState }) => {
     const { auth } = getState();
-    
+
     if (!auth.user) {
       const currentCart = cartStorage.load();
       const updatedCart = currentCart.filter(
-        item => !(item.productId === itemId && 
-                 item.packageSize === packageSize && 
-                 item.flavor === flavor)
+        item => !(item.productId === itemId &&
+          item.packageSize === packageSize &&
+          item.flavor === flavor)
       );
       cartStorage.save(updatedCart);
       return { itemId, packageSize, flavor };
     }
-    
+
     try {
       await axios.delete(`${api}/cart/${itemId}`, {
-        data: { packageSize, flavor },  
+        data: { packageSize, flavor },
         withCredentials: true,
       });
-      return { itemId, packageSize, flavor };  
+      return { itemId, packageSize, flavor };
     } catch (error) {
       console.error('Error removing from cart:', error);
+      throw error;
+    }
+  }
+);
+
+export const checkQuantity = createAsyncThunk(
+  'cart/checkQuantity',
+  async ({ productId, packageSize, flavor }) => {
+    try {
+      const response = await axios.post(`http://localhost:5000/api/check-quantity`, { productId, packageSize, flavor }, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking quantity:', error);
       throw error;
     }
   }
@@ -184,6 +199,7 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState: {
     items: [],
+    quantity: 0,
     loading: false,
     error: null,
   },
@@ -230,15 +246,25 @@ const cartSlice = createSlice({
       .addCase(removeFromCart.fulfilled, (state, action) => {
         const { itemId, packageSize, flavor } = action.payload;
         state.items = state.items.filter(
-          item => !(item.productId === itemId && 
-                   item.packageSize === packageSize && 
-                   item.flavor === flavor)  
+          item => !(item.productId === itemId &&
+            item.packageSize === packageSize &&
+            item.flavor === flavor)
         );
         state.error = null;
       })
       .addCase(updateCartItemQuantity.fulfilled, (state, action) => {
         state.items = action.payload;
         state.error = null;
+      })
+      .addCase(checkQuantity.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(checkQuantity.fulfilled, (state, action) => {
+        state.quantity = action.payload.quantity;
+        state.error = null;
+      })
+      .addCase(checkQuantity.rejected, (state, action) => {
+        state.error = action.error.message;
       });
   },
 });

@@ -4,24 +4,24 @@ import axios from 'axios';
 const api = 'http://localhost:5000/api/admin';
 
 export const fetchCoupons = createAsyncThunk('coupons/fetchCoupons', async ({ page, search }) => {
-  const response = await axios.get(`${api}/coupons?page=${page}&search=${search}`);
+  const response = await axios.get(`${api}/coupons?page=${page}&search=${search}`, { withCredentials: true });
   return response.data;
 });
 
 export const addCoupon = createAsyncThunk('coupons/addCoupon', async (couponData, { dispatch }) => {
-  const response = await axios.post(`${api}/coupons`, couponData);
+  const response = await axios.post(`${api}/coupons`, couponData, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return response.data;
 });
 
 export const updateCoupon = createAsyncThunk('coupons/updateCoupon', async ({ id, couponData }, { dispatch }) => {
-  const response = await axios.put(`${api}/coupons/${id}`, couponData);
+  const response = await axios.put(`${api}/coupons/${id}`, couponData, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return response.data;
 });
 
 export const deleteCoupon = createAsyncThunk('coupons/deleteCoupon', async (id, { dispatch }) => {
-  await axios.delete(`${api}/coupons/${id}`);
+  await axios.delete(`${api}/coupons/${id}`, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return id;
 });

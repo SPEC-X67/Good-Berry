@@ -13,11 +13,9 @@ const connectCloudinary = require('./config/cloudnary');
 const passport = require('./config/passport');
 const session = require('express-session');
 const auth = require('./middleware/auth');
+const connectDB = require('./config/db');
 
-// Database connection
-mongoose.connect(`mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/`)
-.then(() => console.log('Database connected successfully'))
-.catch((err) => console.log(err));
+connectDB();
 
 connectCloudinary().then(() => console.log('Cloudinary connected successfully')).catch((err) => console.log(err));
 
@@ -40,11 +38,11 @@ app.use(
 );
 
 app.use(session({
-    secret: 'your-session-secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: 'mongodb+srv://shamnadthayyil8:wwhdWJRaqgTPJPCk@cluster0.gwyoo.mongodb.net/',
+        mongoUrl: process.env.MONGO_URI,
       })
 }));
   

@@ -4,8 +4,8 @@ const Order = require('../../models/Order');
 const Wallet = require('../../models/Wallet');
 
 const razorpay = new Razorpay({
-  key_id: 'rzp_test_CS2mGJMpuRbxFh',
-  key_secret: 'ynzmcDHi1oGOaTulB3WW4mRs'
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 const paymentController = {
@@ -45,7 +45,7 @@ const paymentController = {
         orderData
       } = req.body;
 
-      const shasum = crypto.createHmac('sha256', "ynzmcDHi1oGOaTulB3WW4mRs");
+      const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
       shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
       const digest = shasum.digest('hex');
 

@@ -17,7 +17,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { checkAuth } from "./store/auth-slice";
 import ShoppingListing from "./pages/shop/Listing/products";
-import { Skeleton } from "@/components/ui/skeleton";
 import CustomersPage from "./pages/admin/customers";
 import ProductForm from "./pages/admin/ProductsCategorys/product-form";
 import ProductPage from "./pages/shop/Product/product-page";
@@ -32,6 +31,7 @@ import ResetPassword from "./pages/auth/reset-password";
 import SearchProduct from "./pages/shop/Listing/search-product";
 import CouponManagement from "./pages/admin/coupon";
 import SalesReportPage from "./pages/admin/sales-report";
+import { FaSpinner } from "react-icons/fa";
 
 function App() {
   const { isAuthenticated, user, isLoading } = useSelector(
@@ -54,8 +54,11 @@ function App() {
   }, [dispatch, user]);
 
   if (isLoading)
-    return <Skeleton className="w-[500px] h-[500px] rounded" />;
-  console.log(isLoading, user);
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <FaSpinner className="animate-spin w-6 h-6" />
+      </div>
+    );
 
   return (
     <div className="flex flex-col overflow-hidden bg-white">

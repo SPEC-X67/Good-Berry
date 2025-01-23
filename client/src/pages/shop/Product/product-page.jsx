@@ -176,8 +176,8 @@ export default function ProductPage() {
 
   const handleQuantityChange = async (action) => {
     const newQuantity = action === 'increase' ? quantity + 1 : quantity - 1;
+    await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
     if (newQuantity > 0) {
-      await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
       if (newQuantity <= availableQuantity) {
         setQuantity(newQuantity);
       }
@@ -255,6 +255,11 @@ export default function ProductPage() {
       </div>
     );
   }
+
+  if(flavor) {
+    dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
+  }
+
 
   const discountPercentage = calculateDiscount(
     currentPrice.price,

@@ -318,16 +318,16 @@ const orderController = {
         });
       }
 
-      const deliveredDate = new Date(item.deliveredAt);
-      const currentDate = new Date();
-      const diffTime = Math.abs(currentDate - deliveredDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // const deliveredDate = new Date(item.deliveredAt);
+      // const currentDate = new Date();
+      // const diffTime = Math.abs(currentDate - deliveredDate);
+      // const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays > 5) {
-        return res.status(400).json({
-          message: 'Return period has expired. You can only return items within 5 days of delivery.'
-        });
-      }
+      // if (diffDays > 5) {
+      //   return res.status(400).json({
+      //     message: 'Return period has expired. You can only return items within 5 days of delivery.'
+      //   });
+      // }
 
       item.returnRequest = true;
       item.returnReason = reason;

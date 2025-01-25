@@ -1,38 +1,49 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-import { Heart, Search } from "lucide-react";
 
-export default function ProductCard({ product, id}) {
-  console.log("Test ting shamnd",product);
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Eye } from "lucide-react"
+import { Link } from "react-router-dom"
+
+const ProductCard = ({ product, id }) => {
   return (
-    <Link to={`/shop/product/${id}`}>
-    <div className="group relative bg-white rounded-lg text-center">
-      <div className="relative aspect-square overflow-hidden">
-      
-          <img src={product.firstVariant.images} className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110 bg-[rgb(250,250,250)]" />
-        {product.isNew && (
-          <Badge className="absolute text-center left-4 top-4 bg-[#438e44] w-12 h-12">
-            {product.isNew && "New"}
-          </Badge>
-        )}
-        {/* Quick actions */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-        <div className="flex bg-white items-center gap-2 p-2 rounded-full">
-        <Search className="h-5 w-5" />
-         Quick View
-        </div>
-        </div>
-      </div>
-      <div className="p-4">
-          <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
-          <p className="mt-1 text-sm text-gray-500">{product.categoryName}</p>
-          <div className="mt-1 text-sm font-medium text-[#8CC63F]">
-            <span>₹{product.firstVariant.salePrice.toFixed(2)}</span>
-            <span>₹{product.firstVariant?.price?.toFixed(2)}</span>
+    <Card className="group overflow-hidden">
+      <Link to={`/shop/product/${id}`} className="block">
+        <div className="relative aspect-square">
+          <img
+            src={product.firstVariant.images || "/placeholder.svg"}
+            alt={product.name}
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          {product.isNew && <Badge className="absolute left-2 top-2 bg-[#8cc63f] text-white">New</Badge>}
+          <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
+            <Badge className="bg-white text-black hover:bg-gray-200 transition-colors cursor-pointer">
+              <Eye className="h-4 w-4 mr-1" />
+              Quick View
+            </Badge>
           </div>
-      </div>
-    </div>
-    </Link>
-  );
+        </div>
+      </Link>
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
+        <p className="text-sm text-gray-500">{product.categoryName}</p>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-between items-center">
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold text-[#8cc63f]">₹{product.firstVariant.salePrice.toFixed(2)}</span>
+          {product.firstVariant.price > product.firstVariant.salePrice && (
+            <span className="text-sm text-gray-400 line-through">₹{product.firstVariant.price.toFixed(2)}</span>
+          )}
+        </div>
+        <Badge variant="outline" className="text-xs">
+          {(((product.firstVariant.price - product.firstVariant.salePrice) / product.firstVariant.price) * 100).toFixed(
+            0,
+          )}
+          % OFF
+        </Badge>
+      </CardFooter>
+    </Card>
+  )
 }
+
+export default ProductCard
+

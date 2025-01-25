@@ -778,7 +778,7 @@ const handlePay = () => {
                         className="space-y-4"
                       >
                         {[
-                          { id: "cod", name: "Cash on Delivery", disabled: false },
+                          { id: "cod", name: "Cash on Delivery", disabled: summary.total > 1000  },
                           { id: "upi", name: "Pay with UPI", disabled: false },
                           { id: "wallet", name: "Pay with Wallet", disabled: false },
                         ].map((payment) => (

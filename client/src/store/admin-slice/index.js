@@ -121,7 +121,9 @@ export const editProduct = createAsyncThunk(
 export const getProductDetails = createAsyncThunk(
   "admin/getProductDetails",
   async (id) => {
-    const response = await axios.get(`${api}/products/${id}`);
+    const response = await axios.get(`${api}/products/${id}`, {
+      withCredentials: true,
+    });
     return response.data;
   }
 );

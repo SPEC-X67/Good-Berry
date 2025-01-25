@@ -107,7 +107,7 @@ function Categorys() {
   };
 
   return (
-    <div className="rounded-lg shadow-sm bg-white pb-4">
+    <div className="rounded-lg shadow-sm bg-white pb-4 lg:m-8 lg:mt-4 lg:ml-3">
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Categories</h2>

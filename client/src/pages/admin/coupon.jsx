@@ -19,6 +19,7 @@ import {
 import { fetchCoupons, addCoupon, updateCoupon, deleteCoupon } from "@/store/admin-slice/coupon-slice";
 import { useToast } from "@/hooks/use-toast";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import PropTypes from "prop-types";
 
 export default function CouponManagement() {
   const dispatch = useDispatch();
@@ -320,7 +321,7 @@ function CouponForm({ onSubmit, initialData }) {
       
       <div className="flex gap-3 w-full">
         <div className="w-full">
-          <Label htmlFor="discount">Discount Amount ($)</Label>
+          <Label htmlFor="discount">Discount Amount (₹)</Label>
           <Input 
             id="discount" 
             type="number" 
@@ -388,7 +389,7 @@ function CouponForm({ onSubmit, initialData }) {
           {errors.usageLimit && <span className="text-red-600 text-sm">{errors.usageLimit.message}</span>}
         </div>
         <div className="w-full">
-          <Label htmlFor="minimumAmount">Minimum Amount ($)</Label>
+          <Label htmlFor="minimumAmount">Minimum Amount (₹)</Label>
           <Input 
             id="minimumAmount" 
             type="number" 
@@ -413,3 +414,18 @@ function CouponForm({ onSubmit, initialData }) {
     </form>
   );
 }
+
+
+CouponForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    _id: PropTypes.string,
+    code: PropTypes.string,
+    discount: PropTypes.number,
+    startDate: PropTypes.string,
+    endDate: PropTypes.string,
+    usageLimit: PropTypes.number,
+    minimumAmount: PropTypes.number,
+    status: PropTypes.oneOf(["active", "inactive", "expired"])
+  })
+};

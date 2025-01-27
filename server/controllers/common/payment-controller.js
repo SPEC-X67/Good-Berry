@@ -2,6 +2,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Order = require('../../models/Order');
 const Wallet = require('../../models/Wallet');
+const Variant = require('../../models/Variant');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -68,9 +69,18 @@ const paymentController = {
       order.paymentStatus = 'paid';
       order.status = 'processing';
 
-      order.items.forEach(item => {
+      for (const item of order.items) {
         item.status = 'processing';
-      })
+        const variant = await Variant.findOne({ productId: item.productId, title: item.flavor });
+        if (variant) {
+          const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
+          if (packSize) {
+            packSize.quantity -= item.quantity;
+            await variant.save();
+          }
+        }
+      }
+
       await order.save();
 
       res.json({
@@ -93,11 +103,20 @@ const paymentController = {
       }
 
       order.paymentStatus = 'failed';
-      order.status = 'failed'
+      order.status = 'failed';
 
-      order.items.forEach(item => {
+      for (const item of order.items) {
         item.status = 'failed';
-      })
+        const variant = await Variant.findOne({ productId: item.productId, title: item.flavor });
+        if (variant) {
+          const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
+          if (packSize) {
+            packSize.quantity += item.quantity;
+            await variant.save();
+          }
+        }
+      }
+
       await order.save();
 
       res.json({ message: 'Payment status updated to failed' });

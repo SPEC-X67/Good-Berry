@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { CheckCircle, Package, ShoppingBag, Truck } from 'lucide-react'
+import { CheckCircle, Download, Package, ShoppingBag, Truck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -99,10 +99,8 @@ export default function OrderSuccess() {
                 Track Your Order
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/">
-                Continue Shopping
-              </Link>
+            <Button variant="outline" className="w-full">
+                <Download className='w-4 h-4'/> Download Invoice
             </Button>
           </div>
         </CardContent>

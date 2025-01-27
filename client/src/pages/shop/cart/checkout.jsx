@@ -212,7 +212,7 @@ export default function CheckoutPage() {
     });
 
     const options = {
-      key: 'rzp_test_CS2mGJMpuRbxFh', // Your Razorpay key
+      key: 'rzp_test_CS2mGJMpuRbxFh', 
       amount: razorpayOrder.data.amount,
       currency: razorpayOrder.data.currency,
       name: "Good Berry",
@@ -254,6 +254,7 @@ export default function CheckoutPage() {
             }, {
               withCredentials: true
             });
+            navigate(`/account/order/${order.orderId}`);
             toast({
               title: 'Payment cancelled',
               description: 'Your payment was cancelled. Please try again.',

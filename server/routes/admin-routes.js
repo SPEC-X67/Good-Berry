@@ -7,6 +7,7 @@ const orderController = require('../controllers/admin/order-controller');
 const offerController = require('../controllers/admin/offer-controller');
 const couponController = require('../controllers/common/coupon-controller');
 const salesReportController = require('../controllers/admin/sales-report-controller');
+const dashboardController = require('../controllers/admin/dashboard-controller');
 const admin = require('../middleware/admin-auth');
 
 router.use(admin);
@@ -50,5 +51,8 @@ router.put('/orders/:orderId/items/:productId/reject-return', orderController.re
 
 // Sales Report
 router.get('/sales-report', salesReportController.generateSalesReport);
+
+// Dashboard
+router.get('/dashboard', dashboardController.getDashboardData);
 
 module.exports = router;

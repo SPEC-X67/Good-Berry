@@ -42,7 +42,7 @@ router.put('/order/:id/cancel', orderController.cancelOrder);
 router.put('/order/:id/return', orderController.returnOrderItem);
 
 // Coupons
-router.get('/coupons', couponController.getAllCoupons);
+router.get('/coupons', couponController.getValidCoupons);
 router.post('/apply-coupon', couponController.applyCoupon);
 router.post('/check-coupon', couponController.checkCoupon);
 

@@ -173,7 +173,7 @@ export default function CouponManagement() {
               </div>
               <div>
                 <div className="font-medium text-sm text-gray-500">Discount</div>
-                <div>${coupon.discount.toFixed(2)}</div>
+                <div>₹{coupon.discount.toFixed(2)}</div>
               </div>
               <div>
                 <div className="font-medium text-sm text-gray-500">Usage</div>
@@ -201,9 +201,12 @@ export default function CouponManagement() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={() => {
-                        setEditingCoupon(coupon);
-                        setIsDialogOpen(true);
+                        if (coupon.status !== 'expired') {
+                          setEditingCoupon(coupon);
+                          setIsDialogOpen(true);
+                        }
                       }}
+                      disabled={coupon.status === 'expired'}
                     >
                       Edit
                     </DropdownMenuItem>
@@ -279,6 +282,7 @@ function CouponForm({ onSubmit, initialData }) {
       }
     } : {
       code: "",
+      description: "",
       discount: "",
       dateRange: {
         from: undefined,
@@ -317,6 +321,16 @@ function CouponForm({ onSubmit, initialData }) {
           className="mt-1" 
         />
         {errors.code && <span className="text-red-600 text-sm">{errors.code.message}</span>}
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Input 
+          id="description" 
+          {...register("description", { required: "Description is required" })} 
+          className="mt-1" 
+        />
+        {errors.description && <span className="text-red-600 text-sm">{errors.description.message}</span>}
       </div>
       
       <div className="flex gap-3 w-full">
@@ -421,6 +435,7 @@ CouponForm.propTypes = {
   initialData: PropTypes.shape({
     _id: PropTypes.string,
     code: PropTypes.string,
+    description: PropTypes.string,
     discount: PropTypes.number,
     startDate: PropTypes.string,
     endDate: PropTypes.string,

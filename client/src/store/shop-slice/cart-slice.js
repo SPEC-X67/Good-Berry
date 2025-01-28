@@ -194,6 +194,22 @@ export const checkQuantity = createAsyncThunk(
   }
 );
 
+export const getCoupons = createAsyncThunk(
+  'cart/getCoupons',
+  async () => {
+    try {
+      const response = await axios.get(`${api}/coupons`, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking quantity:', error);
+      throw error;
+    }
+  }
+);
+
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
@@ -201,6 +217,7 @@ const cartSlice = createSlice({
     quantity: 0,
     loading: false,
     error: null,
+    coupons: [],
   },
   reducers: {
     clearCart: (state) => {
@@ -264,6 +281,14 @@ const cartSlice = createSlice({
       })
       .addCase(checkQuantity.rejected, (state, action) => {
         state.error = action.error.message;
+      })
+      .addCase(getCoupons.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getCoupons.fulfilled, (state, action) => {
+        state.coupons = action.payload;
+        state.loading = false;
+        state.error = null;
       });
   },
 });

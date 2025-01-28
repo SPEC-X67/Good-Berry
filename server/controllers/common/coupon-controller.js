@@ -21,6 +21,21 @@ const couponController = {
 
       const totalCoupons = await Coupon.countDocuments(searchQuery);
 
+      const currentDate = new Date();
+      for (const coupon of coupons) {
+        if (coupon.endDate < currentDate && coupon.status !== 'expired') {
+          coupon.status = 'expired';
+          await coupon.save();
+        }
+      }
+
+      for (const coupon of coupons) {
+        if (coupon.used >= coupon.usageLimit && coupon.status !== 'inactive' && coupon.status !== 'expired') {
+          coupon.status = 'expired';
+          await coupon.save();
+        }
+      }
+
       res.status(200).json({
         success: true,
         message: "Coupons fetched successfully",
@@ -41,7 +56,7 @@ const couponController = {
   // Add a new coupon
   addCoupon: async (req, res) => {
     try {
-      const { code, discount, startDate, endDate, usageLimit, minimumAmount, status } = req.body;
+      const { code, description, discount, startDate, endDate, usageLimit, minimumAmount, status } = req.body;
 
       const existingCoupon = await Coupon.findOne({ code });
       if (existingCoupon) {
@@ -51,7 +66,7 @@ const couponController = {
         });
       }
 
-      const newCoupon = new Coupon({ code, discount, startDate, endDate, usageLimit, minimumAmount, status });
+      const newCoupon = new Coupon({ code, description, discount, startDate, endDate, usageLimit, minimumAmount, status });
       const savedCoupon = await newCoupon.save();
 
       res.status(201).json({
@@ -72,12 +87,12 @@ const couponController = {
   // Update a coupon
   updateCoupon: async (req, res) => {
     const { id } = req.params;
-    const { code, discount, startDate, endDate, usageLimit, minimumAmount, status } = req.body;
+    const { code, description, discount, startDate, endDate, usageLimit, minimumAmount, status } = req.body;
 
     try {
       const updatedCoupon = await Coupon.findByIdAndUpdate(
         id,
-        { code, discount, startDate, endDate, usageLimit, minimumAmount, status },
+        { code, description, discount, startDate, endDate, usageLimit, minimumAmount, status },
         { new: true }
       );
 
@@ -214,7 +229,17 @@ const couponController = {
     } catch (error) {
       console.error('Error checking coupon:', error);
     }
-  }
+  },
+
+  getValidCoupons: async (req, res) => {
+    try {
+      const coupons = await Coupon.find({ status: 'active' });
+      
+      res.json(coupons);
+    } catch (error) {
+      console.error('Error fetching valid coupons:', error);
+    }
+  },
 };
 
-  module.exports = couponController;
+module.exports = couponController;

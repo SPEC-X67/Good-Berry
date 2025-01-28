@@ -1,6 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useDispatch, useSelector } from "react-redux"
+import { getCoupons } from "@/store/shop-slice/cart-slice"
+
+
 
 // Dummy data for coupons
 const dummyCoupons = [
@@ -11,7 +15,14 @@ const dummyCoupons = [
 
 export default function CouponList({ onSelectCoupon }) {
   const [open, setOpen] = useState(false)
+  const dispatch = useDispatch();
+  const { coupons, loading } = useSelector(state => state.cart);
 
+  useEffect(() => {
+    dispatch(getCoupons())
+  },[])
+  
+  console.log(coupons);
   const handleCouponSelect = (couponCode) => {
     onSelectCoupon(couponCode)
     setOpen(false)
@@ -26,14 +37,15 @@ export default function CouponList({ onSelectCoupon }) {
         <DialogHeader>
           <DialogTitle>Available Coupons</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {dummyCoupons.map((coupon) => (
-            <div key={coupon.code} className="flex items-center justify-between">
+        <div className="grid gap-4 py-4 no-scrollbar" style={{ maxHeight: "500px", overflowY: "scroll" }}>
+          {loading ? "Loading..." : ""}
+          {coupons.map((coupon) => (
+            <div key={coupon._id} className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{coupon.code}</p>
                 <p className="text-sm text-muted-foreground">{coupon.description}</p>
               </div>
-              <Button onClick={() => handleCouponSelect(coupon.code)}>Apply</Button>
+              <Button onClick={() => handleCouponSelect(coupon.code)}>Copy</Button>
             </div>
           ))}
         </div>

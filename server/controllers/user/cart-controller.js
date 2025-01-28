@@ -11,14 +11,14 @@ const cartController = {
     try {
       const userId = req.user.id;
 
-      const cart = await Cart.findOne({ userId })
+      const cart = await Cart.findOne({ userId }).populate('items.productId');
       if (!cart) {
         return res.json([]);
       }
 
-      // const coupon = await Coupon.findOne({ _id: cart.couponId });
+      const filteredItems = cart.items.filter(item => !item.productId.unListed);
 
-      res.json(cart.items);
+      res.json(filteredItems);
     } catch (error) {
       console.error('Get cart error:', error);
       res.status(500).json({ error: 'Error fetching cart items' });

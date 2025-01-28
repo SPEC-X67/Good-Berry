@@ -157,7 +157,7 @@ export const unlistProduct = createAsyncThunk(
   "admin/unlistProduct",
   async (id) => {
     const response = await axios.patch(
-      `${api}/products/${id}`,
+      `${api}/products/${id}`,{},
       {
         withCredentials: true,
       }

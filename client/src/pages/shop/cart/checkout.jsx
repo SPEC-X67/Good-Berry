@@ -44,8 +44,9 @@ export default function CheckoutPage() {
   const [activeStep, setActiveStep] = useState("address");
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedShipping, setSelectedShipping] = useState("free");
-  const [selectedPayment, setSelectedPayment] = useState("cod");
+  const [selectedPayment, setSelectedPayment] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
@@ -204,6 +205,7 @@ export default function CheckoutPage() {
     };
 
     const order = await dispatch(createOrder(orderData)).unwrap();
+    setOrderDetails(order);
 
     const razorpayOrder = await axios.post('http://localhost:5000/api/user/create-razorpay-order', {
       orderId: order._id
@@ -316,6 +318,7 @@ const handleWalletPayment = async () => {
     };
 
     const order = await dispatch(createOrder(orderData)).unwrap();
+    setOrderDetails(order);
 
     const { data } = await axios.post('http://localhost:5000/api/user/wallet-payment', {
       orderId: order._id
@@ -364,7 +367,8 @@ const handlePay = () => {
 
   dispatch(createOrder(orderData))
     .unwrap()
-    .then(() => {
+    .then((res) => {
+      setOrderDetails(res);
       setPaymentSuccess(true);
       dispatch(clearCart());
     })
@@ -378,7 +382,7 @@ const handlePay = () => {
 };
 
   if (paymentSuccess) {
-    return <OrderSuccess />;
+    return <OrderSuccess data={orderDetails}/>;
   }
 
   const selectedAddressDetails = addresses.find(addr => addr._id === selectedAddress);
@@ -811,7 +815,7 @@ const handlePay = () => {
                       </Button>
                       <Button 
                        variant="default"
-                       disabled={summary.total === 0}
+                       disabled={summary.total === 0 || !selectedPayment}
                        onClick={handlePay}>
                         {isLoading || loading ? (
                           <>

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, isBefore, startOfToday } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ export function DatePickerWithRange({ value, onValueChange, className }) {
   const handleDateChange = (newDate) => {
     setDate(newDate);
     onValueChange(newDate);
+  };
+
+  const disablePastDates = (date) => {
+    return isBefore(date, startOfToday());
   };
 
   return (
@@ -46,6 +50,7 @@ export function DatePickerWithRange({ value, onValueChange, className }) {
             selected={date}
             onSelect={handleDateChange}
             numberOfMonths={2}
+            disabled={disablePastDates}
           />
         </PopoverContent>
       </Popover>

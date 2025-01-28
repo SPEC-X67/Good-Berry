@@ -90,6 +90,14 @@ const couponController = {
     const { code, description, discount, startDate, endDate, usageLimit, minimumAmount, status } = req.body;
 
     try {
+      const existingCoupon = await Coupon.findOne({ code, _id: { $ne: id } });
+      if (existingCoupon) {
+        return res.status(400).json({
+          success: false,
+          message: "Coupon code already exists",
+        });
+      }
+
       const updatedCoupon = await Coupon.findByIdAndUpdate(
         id,
         { code, description, discount, startDate, endDate, usageLimit, minimumAmount, status },

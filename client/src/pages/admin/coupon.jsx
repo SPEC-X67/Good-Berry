@@ -38,15 +38,25 @@ export default function CouponManagement() {
 
   const handleAddCoupon = (newCoupon) => {
     dispatch(addCoupon(newCoupon))
-      .then(() => {
-        toast({
-          title: "Success",
-          description: "Coupon added successfully"
-        });
-        setIsDialogOpen(false);
+      .then((response) => {
+        console.error("Error adding coupon:", response);
+        if (response.payload) {
+          toast({
+            title: "Success",
+            description: "Coupon added successfully"
+          });
+          setIsDialogOpen(false);
+        } else {
+          toast({
+            title: "Error",
+            description: "Coupon code already exists",
+            variant: "destructive"
+          });
+        }
       })
       .catch((error) => {
-        toast({
+        console.error("Error adding coupon: err", error);
+        toast({ 
           title: "Error",
           description: error.message,
           variant: "destructive"
@@ -56,13 +66,21 @@ export default function CouponManagement() {
 
   const handleEditCoupon = (editedCoupon) => {
     dispatch(updateCoupon({ id: editedCoupon._id, couponData: editedCoupon }))
-      .then(() => {
-        toast({
-          title: "Success",
-          description: "Coupon updated successfully",
-        });
-        setIsDialogOpen(false);
-        setEditingCoupon(null);
+      .then((response) => {
+        if (response.payload) {
+          toast({
+            title: "Success",
+            description: "Coupon updated successfully",
+          });
+          setIsDialogOpen(false);
+          setEditingCoupon(null);
+        } else {
+          toast({
+            title: "Error",
+            description: "Coupon code already exists",
+            variant: "destructive"
+          });
+        }
       })
       .catch((error) => {
         toast({

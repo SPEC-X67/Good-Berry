@@ -5,6 +5,17 @@ const initialState = {
   users: [],
   categories: [],
   products: [],
+  data: {
+    totalRevenue: { value: 0, change: 0 },
+    newCustomers: { value: 0, change: 0 },
+    totalSales: { value: 0, change: 0 },
+    activeUsers: { value: 0, change: 0 },
+    recentSales: [],
+    overviewData: [],
+    top10Products: [],
+    top10Categories: []
+  },
+  status: 'idle',
 };
 
 const api = "http://localhost:5000/api/admin";
@@ -182,6 +193,16 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+export const fetchDashboardData = createAsyncThunk(
+  'dashboard/fetchDashboardData',
+  async (timeRange = 'weekly') => {
+    const response = await axios.get(`${api}/dashboard?timeRange=${timeRange}`, {
+      withCredentials: true
+    });
+    return response.data;
+  }
+);
+
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -213,7 +234,7 @@ const adminSlice = createSlice({
         const { id, isBlocked } = action.payload;
         const user = state.users.find((user) => user._id === id);
         if (user) {
-          user.isBlocked = isBlocked; // Update the user's status
+          user.isBlocked = isBlocked; 
         }
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
@@ -245,7 +266,16 @@ const adminSlice = createSlice({
         state.totalPages = action.payload.totalPages;
         state.currentPage = action.payload.currentPage;
       })
-      
+      .addCase(fetchDashboardData.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchDashboardData.fulfilled, (state, action) => {
+        state.data = action.payload;
+        state.status = 'success';
+      })
+      .addCase(fetchDashboardData.rejected, (state) => {
+        state.status = 'failed';
+      });
 
   },
 });

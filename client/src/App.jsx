@@ -124,6 +124,7 @@ function App() {
             </CheckAuth>
           }
         >
+          <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products">

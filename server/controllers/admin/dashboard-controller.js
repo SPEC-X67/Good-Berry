@@ -7,7 +7,7 @@ const Variant = require('../../models/Variant');
 const dashboardController = {
   getDashboardData: async (req, res) => {
     try {
-      const timeRange = req.query.timeRange || 'monthly';
+      const timeRange = req.query.timeRange || 'weekly';
       const today = new Date();
       let dateFilter = {};
 

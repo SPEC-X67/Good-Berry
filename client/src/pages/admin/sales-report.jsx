@@ -1,28 +1,19 @@
-import { useState, useEffect } from "react"
-import { subDays, subWeeks, subMonths, subYears, format, startOfDay, endOfDay } from "date-fns"
-import { CalendarIcon, DollarSign, ShoppingCart, Tag, Percent, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-import { useForm } from "react-hook-form"
-import axios from "axios"
-import jsPDF from "jspdf"
-import "jspdf-autotable"
-import * as XLSX from "xlsx"
+import { useState, useEffect } from "react";
+import { subDays, subWeeks, subMonths, subYears, format, startOfDay, endOfDay } from "date-fns";
+import { CalendarIcon, DollarSign, ShoppingCart, Tag, Percent, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const SalesPeriod = {
   DAY: "day",
@@ -30,14 +21,14 @@ const SalesPeriod = {
   MONTH: "month",
   YEAR: "year",
   CUSTOM: "custom",
-}
+};
 
 export default function SalesReportPage() {
-  const [report, setReport] = useState(null)
-  const [filteredOrders, setFilteredOrders] = useState([])
-  const [filterText, setFilterText] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [ordersPerPage] = useState(10)
+  const [report, setReport] = useState(null);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [filterText, setFilterText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(10);
   const form = useForm({
     defaultValues: {
       period: SalesPeriod.DAY,
@@ -46,69 +37,69 @@ export default function SalesReportPage() {
         to: new Date(),
       },
     },
-  })
+  });
 
-  const { watch, setValue } = form
+  const { watch, setValue } = form;
 
-  const period = watch("period")
-  const dateRange = watch("dateRange")
+  const period = watch("period");
+  const dateRange = watch("dateRange");
 
   useEffect(() => {
-    fetchReport()
-  }, [period, dateRange, currentPage, filterText])
+    fetchReport();
+  }, [period, dateRange, currentPage, filterText]);
 
   const fetchReport = async () => {
-    const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined
-    const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined
+    const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
+    const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
     const response = await axios.get('http://localhost:5000/api/admin/sales-report', {
       params: { period, startDate, endDate, page: currentPage, limit: ordersPerPage, search: filterText },
       withCredentials: true
     });
-    setReport(response.data)
-    setFilteredOrders(response.data.orders)
-  }
+    setReport(response.data);
+    setFilteredOrders(response.data.orders);
+  };
 
   const handlePeriodChange = (newPeriod) => {
-    setValue("period", newPeriod)
-    const today = new Date()
-    let newDateRange
+    setValue("period", newPeriod);
+    const today = new Date();
+    let newDateRange;
 
     switch (newPeriod) {
       case SalesPeriod.DAY:
-        newDateRange = { from: startOfDay(subDays(today, 1)), to: endOfDay(today) }
-        break
+        newDateRange = { from: startOfDay(subDays(today, 1)), to: endOfDay(today) };
+        break;
       case SalesPeriod.WEEK:
-        newDateRange = { from: startOfDay(subWeeks(today, 1)), to: endOfDay(today) }
-        break
+        newDateRange = { from: startOfDay(subWeeks(today, 1)), to: endOfDay(today) };
+        break;
       case SalesPeriod.MONTH:
-        newDateRange = { from: startOfDay(subMonths(today, 1)), to: endOfDay(today) }
-        break
+        newDateRange = { from: startOfDay(subMonths(today, 1)), to: endOfDay(today) };
+        break;
       case SalesPeriod.YEAR:
-        newDateRange = { from: startOfDay(subYears(today, 1)), to: endOfDay(today) }
-        break
+        newDateRange = { from: startOfDay(subYears(today, 1)), to: endOfDay(today) };
+        break;
       case SalesPeriod.CUSTOM:
-        newDateRange = dateRange
-        break
+        newDateRange = dateRange;
+        break;
     }
 
-    setValue("dateRange", newDateRange)
-  }
+    setValue("dateRange", newDateRange);
+  };
 
   const handleDateRangeChange = (newDateRange) => {
-    setValue("dateRange", newDateRange)
-  }
+    setValue("dateRange", newDateRange);
+  };
 
   const handleFilterChange = (e) => {
-    setFilterText(e.target.value)
-  }
+    setFilterText(e.target.value);
+  };
 
   const downloadReport = (format) => {
     if (format === "pdf") {
-      downloadPDF()
+      downloadPDF();
     } else if (format === "excel") {
-      downloadExcel()
+      downloadExcel();
     }
-  }
+  };
 
   const downloadPDF = () => {
     try {
@@ -174,8 +165,8 @@ export default function SalesReportPage() {
       "Order Amount": order.total?.toFixed(2),
       "Discount Amount": order.discount?.toFixed(2),
       "Coupon Discount": `${order.couponDiscount?.toFixed(2) || "0.00"}`
-    }))
-    worksheetData.push({})
+    }));
+    worksheetData.push({});
     worksheetData.push({
       "Order ID": "Overall Sales Count",
       "Date": report.overallSalesCount,
@@ -183,24 +174,24 @@ export default function SalesReportPage() {
       "Order Amount": report.overallOrderCount,
       "Discount Amount": "Overall Order Amount",
       "Coupon Discount": `₹${report.overallOrderAmount.toFixed(2)}`
-    })
+    });
     worksheetData.push({
       "Order ID": "Overall Discount",
       "Date": `₹${report.overallDiscount.toFixed(2)}`,
       "Customer Name": "Overall Coupon Discount",
       "Order Amount": `₹${report.overallCouponDiscount.toFixed(2)}`
-    })
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report")
-    XLSX.writeFile(workbook, "sales_report.xlsx")
-  }
+    });
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+    XLSX.writeFile(workbook, "sales_report.xlsx");
+  };
 
   const formatDate = (date) => {
-    return format(date, "yyyy-MM-dd")
-  }
+    return format(date, "yyyy-MM-dd");
+  };
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber)
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mx-auto p-4 bg-gray-50">
@@ -367,55 +358,31 @@ export default function SalesReportPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
-                    </PaginationItem>
-                    {currentPage > 2 && (
-                      <PaginationItem>
-                        <PaginationLink onClick={() => paginate(1)}>1</PaginationLink>
-                      </PaginationItem>
-                    )}
-                    {currentPage > 3 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
-                    {[...Array(report.totalPages)].map((_, index) => {
-                      const pageNumber = index + 1
-                      if (
-                        pageNumber === currentPage ||
-                        pageNumber === currentPage - 1 ||
-                        pageNumber === currentPage + 1
-                      ) {
-                        return (
-                          <PaginationItem key={index}>
-                            <PaginationLink onClick={() => paginate(pageNumber)} isActive={currentPage === pageNumber}>
-                              {pageNumber}
-                            </PaginationLink>
-                          </PaginationItem>
-                        )
-                      }
-                      return null
-                    })}
-                    {currentPage < report.totalPages - 2 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
-                    {currentPage < report.totalPages - 1 && (
-                      <PaginationItem>
-                        <PaginationLink onClick={() => paginate(report.totalPages)}>{report.totalPages}</PaginationLink>
-                      </PaginationItem>
-                    )}
-                    <PaginationItem>
-                      <PaginationNext onClick={() => paginate(currentPage + 1)} disabled={currentPage === report.totalPages} />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
+              {report.totalPages > 1 && (
+                <div className="flex items-center justify-end mt-5 mr-4 gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm font-medium">
+                    Page {currentPage} of {report.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === report.totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-end">
               <Button onClick={() => downloadReport("pdf")} className="mr-2" variant="outline">
@@ -429,6 +396,6 @@ export default function SalesReportPage() {
         </>
       )}
     </div>
-  )
+  );
 }
 

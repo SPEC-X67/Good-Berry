@@ -76,7 +76,7 @@ const dashboardController = {
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('userId', 'username email')
-        .select('total createdAt userId');
+        .select('total createdAt userId orderId');
 
       const overviewData = await Order.aggregate([
         {
@@ -184,12 +184,9 @@ const dashboardController = {
           change: 0 
         },
         recentSales: recentSales.map(sale => ({
+          orderId: sale.orderId,
           name: sale.userId.username,
-          email: sale.userId.email,
-          sale: sale.total.toLocaleString('en-IN', {
-            style: 'currency',
-            currency: 'INR'
-          })
+          sale: sale.total 
         })),
         overviewData: overviewData.map(data => ({
           name: timeRange === 'yearly'

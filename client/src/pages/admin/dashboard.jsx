@@ -63,8 +63,8 @@ function RecentSales() {
       {recentSales.map((sale, index) => (
         <div key={index} className="flex items-center">
           <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">{sale.name}</p>
-            <p className="text-sm text-muted-foreground">{sale.email}</p>
+            <p className="text-sm font-medium leading-none">#{sale.orderId}</p>
+            <p className="text-sm text-muted-foreground">{sale.name}</p>
           </div>
           <div className="ml-auto font-medium">
             <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">

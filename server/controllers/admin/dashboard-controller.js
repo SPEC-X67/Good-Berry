@@ -185,7 +185,7 @@ const dashboardController = {
         },
         recentSales: recentSales.map(sale => ({
           orderId: sale.orderId,
-          name: sale.userId.username,
+          name: sale.userId?.username || "dff",
           sale: sale.total 
         })),
         overviewData: overviewData.map(data => ({

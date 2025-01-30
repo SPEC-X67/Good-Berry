@@ -2,6 +2,7 @@ const Order = require('../../models/Order');
 const Variant = require('../../models/Variant');
 const Product = require('../../models/Product')
 const Wallet = require('../../models/Wallet');
+const User = require('../../models/User');
 
 const orderController = {
   getAllOrders: async (req, res) => {
@@ -76,27 +77,27 @@ const orderController = {
     try {
       const { orderId, productId } = req.params;
       const { status, cancellationReason } = req.body;
-  
+
       const order = await Order.findById(orderId)
         .populate('userId', 'username')
         .populate('addressId')
         .populate('items.productId')
         .populate('couponId');
-  
+
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-  
+
       const itemIndex = order.items.findIndex(
         (item) => item.productId._id.toString() === productId
       );
-  
+
       if (itemIndex === -1) {
         return res.status(404).json({ message: 'Order item not found' });
       }
 
       order.items[itemIndex].status = status;
-  
+
       if (status === 'cancelled') {
         order.items[itemIndex].cancellationReason = cancellationReason;
 
@@ -122,19 +123,56 @@ const orderController = {
             (sum, item) => sum + item.salePrice * item.quantity,
             0
           );
-  
+
           if (remainingTotal < order.couponId.minimumAmount) {
             const discountToReverse = order.couponDiscount;
-            refundAmount -= discountToReverse; 
+            refundAmount -= discountToReverse;
             order.couponId = null;
             order.couponDiscount = 0;
           }
         }
 
         if (['wallet', 'upi'].includes(order.paymentMethod)) {
-          const wallet = await Wallet.findOne({ userId: order.userId });
-          if (wallet) {
-            await wallet.refund(refundAmount, `Refund for cancelled item ${order.items[itemIndex].name}`);
+          let wallet = await Wallet.findOne({ userId: order.userId });
+          if (!wallet) {
+            wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+            await wallet.save();
+          }
+          await wallet.refund(refundAmount, `Refund for cancelled item ${order.items[itemIndex].name}`);
+        }
+      }
+
+      if (status === 'delivered') {
+        order.paymentStatus = "paid"
+        order.items[itemIndex].deliveredAt = new Date();
+
+        // Handle referral bonuses
+        const user = await User.findById(order.userId);
+
+        if (user.referredBy && !user.referralBonusApplied) {
+          const referrer = await User.findOne({ referralCode: user.referredBy });
+
+          if (referrer) {
+            let referrerWallet = await Wallet.findOne({ userId: referrer._id });
+            let userWallet = await Wallet.findOne({ userId: user._id });
+
+            if (!referrerWallet) {
+              referrerWallet = new Wallet({ userId: referrer._id, balance: 0, transactions: [] });
+              await referrerWallet.save(); // Save the new wallet instance
+            }
+
+            await referrerWallet.credit(50, 'Referral bonus for referring a new user');
+
+            if (!userWallet) {
+              userWallet = new Wallet({ userId: user._id, balance: 0, transactions: [] });
+              await userWallet.save();
+            }
+
+            await userWallet.credit(25, 'Referral bonus for being referred');
+
+
+            user.referralBonusApplied = true;
+            await user.save();
           }
         }
       }
@@ -145,7 +183,7 @@ const orderController = {
         0
       );
 
-      
+
       order.discount = remainingItems.reduce(
         (totalDiscount, i) =>
           totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
@@ -169,9 +207,9 @@ const orderController = {
           order.status = 'returned';
         }
       }
-  
+
       await order.save();
-  
+
       res.json({
         message: 'Order item status updated successfully',
         order,
@@ -181,17 +219,17 @@ const orderController = {
       res.status(500).json({ message: 'Error updating order item status' });
     }
   },
-  
+
   approveReturnRequest: async (req, res) => {
     try {
       const { orderId, productId } = req.params;
-  
+
       const order = await Order.findById(orderId)
         .populate('userId', 'username')
         .populate('addressId')
         .populate('items.productId')
         .populate('couponId');
-  
+
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
@@ -199,19 +237,19 @@ const orderController = {
       const itemIndex = order.items.findIndex(
         (item) => item.productId._id.toString() === productId
       );
-  
+
       if (itemIndex === -1) {
         return res.status(404).json({ message: 'Order item not found' });
       }
-  
+
       const item = order.items[itemIndex];
-  
+
       if (!item.returnRequest) {
         return res.status(400).json({
           message: 'No return request found for this item',
         });
       }
-  
+
       const variant = await Variant.findOne({ productId: productId });
       if (variant) {
         const packSize = item.packageSize;
@@ -237,15 +275,15 @@ const orderController = {
           (sum, i) => sum + i.salePrice * i.quantity,
           0
         );
-  
+
         if (remainingTotal < order.couponId.minimumAmount) {
           const discountToReverse = order.couponDiscount;
-          refundAmount -= discountToReverse; 
+          refundAmount -= discountToReverse;
           order.couponId = null;
           order.couponDiscount = 0;
         }
       }
-  
+
       const remainingItems = order.items.filter((i) => i.status !== 'returned');
       order.subtotal = remainingItems.reduce(
         (sum, i) => sum + i.price * i.quantity,
@@ -257,14 +295,16 @@ const orderController = {
           totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
         0
       );
-      
+
       order.total = order.subtotal - order.couponDiscount - order.discount;
 
       if (['wallet', 'upi'].includes(order.paymentMethod)) {
-        const wallet = await Wallet.findOne({ userId: order.userId });
-        if (wallet) {
-          await wallet.refund(refundAmount, `Refund for returned item ${item.name}`);
+        let wallet = await Wallet.findOne({ userId: order.userId });
+        if (!wallet) {
+          wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+          await wallet.save();
         }
+        await wallet.refund(refundAmount, `Refund for returned item ${item.name}`);
       }
 
       const allReturned = order.items.every((item) => item.status === 'returned');
@@ -286,42 +326,42 @@ const orderController = {
       });
     }
   },
-  
+
 
   rejectReturnRequest: async (req, res) => {
     try {
       const { orderId, productId } = req.params;
-  
+
       const order = await Order.findById(orderId)
         .populate('userId', 'username')
         .populate('addressId')
         .populate('items.productId');
-  
+
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-  
+
       const itemIndex = order.items.findIndex(
         item => item.productId._id.toString() === productId
       );
-  
+
       if (itemIndex === -1) {
         return res.status(404).json({ message: 'Order item not found' });
       }
-  
+
       const item = order.items[itemIndex];
-  
+
       if (!item.returnRequest) {
         return res.status(400).json({
           message: 'No return request found for this item'
         });
       }
-  
+
       item.status = 'delivered';
       item.returnRequest = false;
-  
+
       await order.save();
-  
+
       res.json(order);
     } catch (error) {
       res.status(500).json({

@@ -4,6 +4,7 @@ const Address = require('../../models/Address');
 const Variant = require('../../models/Variant');
 const Wallet = require('../../models/Wallet');
 const Coupon = require('../../models/Coupon');
+const User = require('../../models/User');
 
 const orderController = {  
   createOrder : async (req, res) => {
@@ -100,11 +101,12 @@ const orderController = {
         }
       }
   
-      await order.save();
-  
-      cart.items = [];
-      await cart.save();
+      if(!paymentMethod == 'wallet') {
+        cart.items = [];
+        await cart.save();
+      }
 
+      await order.save();
       await order.populate('addressId');
       
       res.status(201).json(order);
@@ -272,13 +274,14 @@ const orderController = {
       await order.save();
 
       if (['wallet', 'upi'].includes(order.paymentMethod)) {
-        const wallet = await Wallet.findOne({ userId: req.user.id });
-        if (wallet) {
+        let wallet = await Wallet.findOne({ userId: req.user.id });
+        if (!wallet) {
+          wallet = await new Wallet({ userId: req.user.id, balance: 0, transactions: [] });
+        }
           await wallet.refund(
             item.salePrice * item.quantity,
             `Refund for cancelled item ${item.name}`
           );
-        }
       }
   
       res.json(order);

@@ -104,19 +104,7 @@ const paymentController = {
 
       order.paymentStatus = 'failed';
       order.status = 'failed';
-
-      for (const item of order.items) {
-        item.status = 'failed';
-        const variant = await Variant.findOne({ productId: item.productId, title: item.flavor });
-        if (variant) {
-          const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
-          if (packSize) {
-            packSize.quantity += item.quantity;
-            await variant.save();
-          }
-        }
-      }
-
+      
       await order.save();
 
       res.json({ message: 'Payment status updated to failed' });

@@ -42,7 +42,20 @@ const UserSchema = new mongoose.Schema({
     resetPasswordToken: {
         token: String,
         expiresAt: Date
-    }
+    },
+    referralCode: {
+        type: String,
+        unique: true,
+    },
+    referredBy: {
+        type: String, 
+        default: null,
+    },
+    referralBonusApplied: {
+        type: Boolean,
+        default: false,
+    },
+
 });
 
 const User = mongoose.model("User", UserSchema);

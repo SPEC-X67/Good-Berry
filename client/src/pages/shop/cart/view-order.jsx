@@ -168,7 +168,7 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, onReturn, re
           <div className="flex items-center gap-4 mt-2">
             <p className="text-sm">Quantity: {item.quantity}</p>
             <p className="text-sm font-medium">
-              Price: <span className="text-[#92c949]">₹{(item.price * item.quantity).toFixed(2)}</span>
+              Price: <span className="text-[#92c949]">₹{item.price.toFixed(2)}</span>
             </p>
           </div>
         </div>

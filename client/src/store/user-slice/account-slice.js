@@ -5,12 +5,15 @@ const initialState = {
     user: null,
     addresses: [],
     isLoading: false,
+    referralCode: null,
+    appliedCode: null,
+    applyResult: null,
+    referredCount: 0,
     error: null,
 };
 
 const api = "http://localhost:5000/api/user";
 
-// Helper function for error extraction
 const extractError = (error) => error.response?.data?.error || 'Something went wrong';
 
 // Thunks
@@ -50,7 +53,6 @@ export const updatePassword = createAsyncThunk(
     }
 );
 
-// Address Thunks
 export const fetchAddresses = createAsyncThunk(
     "account/fetchAddresses",
     async (_, { rejectWithValue }) => {
@@ -112,7 +114,42 @@ export const setDefault = createAsyncThunk(
     }
 );
 
-  
+export const getReferralCode = createAsyncThunk(
+    "account/getReferralCode",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(`${api}/referral-code`, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Something went wrong');
+        }
+    }
+);
+
+export const applyReferralCode = createAsyncThunk(
+    "account/applyReferralCode",
+    async (referralCode, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(`${api}/apply-referral`, { referralCode }, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Something went wrong');
+        }
+    }
+);
+
+export const getReferredCount = createAsyncThunk(
+    "account/getReferredCount",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(`${api}/referred-count`, { withCredentials: true });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Something went wrong');
+        }
+    }
+);
+
 const accountSlice = createSlice({
     name: "account",
     initialState,
@@ -243,6 +280,44 @@ const accountSlice = createSlice({
                 state.isLoading = false;
             })
             .addCase(setDefault.rejected, (state, action) => {
+                state.error = action.payload;
+                state.isLoading = false;
+            })
+            .addCase(getReferralCode.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(getReferralCode.fulfilled, (state, action) => {
+                state.referralCode = action.payload.referralCode;
+                state.appliedCode = action.payload.appliedCode;
+                state.isLoading = false;
+            })
+            .addCase(getReferralCode.rejected, (state, action) => {
+                state.error = action.payload;
+                state.isLoading = false;
+            })
+            .addCase(applyReferralCode.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(applyReferralCode.fulfilled, (state, action) => {
+                state.appliedCode = action.meta.arg;
+                state.applyResult = action.payload.message;
+                state.isLoading = false;
+            })
+            .addCase(applyReferralCode.rejected, (state, action) => {
+                state.applyResult = action.payload;
+                state.isLoading = false;
+            })
+            .addCase(getReferredCount.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(getReferredCount.fulfilled, (state, action) => {
+                state.referredCount = action.payload.referredCount;
+                state.isLoading = false;
+            })
+            .addCase(getReferredCount.rejected, (state, action) => {
                 state.error = action.payload;
                 state.isLoading = false;
             });

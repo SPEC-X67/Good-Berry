@@ -1,5 +1,6 @@
 const Wallet = require('../../models/Wallet');
 const Order = require('../../models/Order');
+const Cart = require('../../models/Cart');
 
 const walletController = {
   getWallet: async (req, res) => {
@@ -79,6 +80,10 @@ const walletController = {
         order.paymentStatus = 'paid';
         order.status = 'processing';
         await order.save();
+        
+        const cart = await Cart.findOne({ userId: order.userId._id });
+        cart.items = [];
+        await cart.save();
   
         res.json({ message: 'Payment successful', orderId: order.orderId });
       } catch (error) {

@@ -8,6 +8,7 @@ const wishlistController = require('../controllers/user/wishlist-controller');
 const couponController = require('../controllers/common/coupon-controller');
 const paymentController = require('../controllers/common/payment-controller');
 const walletController = require('../controllers/user/wallet-controller');
+const referralController = require('../controllers/user/referral-controller');
 const auth = require('../middleware/auth');
 
 router.use(auth);
@@ -61,5 +62,10 @@ router.get('/wallet', walletController.getWallet);
 router.post('/wallet-payment', walletController.handleWalletPayment);
 router.post('/wallet/add-money', walletController.addMoney);
 router.get('/wallet/transactions', walletController.getTransactions);
+
+// Referral
+router.post('/apply-referral', referralController.applyReferralCode);
+router.get('/referral-code', referralController.getReferralCode);
+router.get('/referred-count', referralController.getReferredCount);
 
 module.exports = router;

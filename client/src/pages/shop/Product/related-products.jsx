@@ -62,7 +62,7 @@ export default function RelatedProducts({products, id}) {
             }}
             onScroll={checkScroll}
           >
-            {products.map((product) => (
+            {products && products.map((product) => (
               <Card 
                 key={product._id} 
                 className="border-none shadow-none flex-none w-[280px] snap-start text-center"
@@ -78,7 +78,7 @@ export default function RelatedProducts({products, id}) {
                   </div>
                   <h3 className="font-medium mb-2">{product?.name}</h3>
                   <div className="flex flex-col gap-1">
-                    <span className="text-primary">${product?.firstVariant?.salePrice.toFixed(2)}</span>
+                    <span className="text-primary">₹{product?.firstVariant?.salePrice.toFixed(2)}</span>
                     {product.isOriginal && (
                       <span className="text-sm text-muted-foreground">Original</span>
                     )}

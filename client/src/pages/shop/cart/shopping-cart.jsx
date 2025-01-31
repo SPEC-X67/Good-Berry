@@ -88,6 +88,7 @@ export default function ShoppingCart() {
           description: response.message,
           variant: "destructive",
         })
+        setCouponCode("")
       }
     } catch (error) {
       toast({

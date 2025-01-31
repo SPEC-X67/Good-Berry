@@ -7,11 +7,10 @@ const Coupon = require('../../models/Coupon');
 const cartController = {
   // Get cart items
   getCart: async (req, res) => {
-    console.log(req.user);
     try {
       const userId = req.user.id;
 
-      const cart = await Cart.findOne({ userId }).populate('items.productId');
+      const cart = await Cart.findOne({ userId })
       if (!cart) {
         return res.json([]);
       }

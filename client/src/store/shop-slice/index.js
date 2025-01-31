@@ -12,6 +12,7 @@ const initialState = {
     pflavors: [],
     wishlist: [], 
     coupon: {},
+    error : null
 };
 
 const api = "http://localhost:5000/api";
@@ -138,17 +139,28 @@ const shopSlice = createSlice({
             state.recomentedProds = []; 
         })
         .addCase(getSingleProduct.pending, (state) => {
-            state.loading = true;
             state.product = null;
             state.pflavors = null;
             state.recomentedProds = null; 
+            state.error = null;
         })
 
         .addCase(getSingleProduct.fulfilled, (state, action) => {
-            state.loading = false;
             state.product = action.payload.product;
             state.recomentedProds = action.payload.recommendedProducts;
             state.pflavors = action.payload.variantsFormatted;
+            state.error = null;
+        })
+
+        .addCase(getSingleProduct.rejected, (state) => {
+            state.product = null;
+            state.pflavors = null;
+            state.recomentedProds = null; 
+            state.error = "Product not found";
+        })
+
+        .addCase(getWishlist.rejected, (state) => {
+          state.wishlist = [];
         })
         .addCase(getWishlist.fulfilled, (state, action) => {
             state.wishlist = action.payload.data;

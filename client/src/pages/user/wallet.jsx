@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { fetchWallet, addMoneyToWallet, fetchTransactions } from "@/store/user-slice/wallet-slice";
+import { useToast } from "@/hooks/use-toast";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -16,6 +17,7 @@ const WalletPage = () => {
   const { register, handleSubmit, reset, setValue } = useForm();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
 
   useEffect(() => {
     dispatch(fetchWallet());
@@ -27,6 +29,19 @@ const WalletPage = () => {
       ...data,
       amount: parseFloat(data.amount),
     };
+    if(parsedData.amount > 1000) {
+      return toast({
+        title: 'Amount exeed',
+        description: 'Cant add more than 1000. please try again.',
+        variant: 'destructive',
+      }) 
+    } else if (parsedData.amount <= 0) {
+      return toast({
+        title: 'Invalid amount',
+        description: 'Amount must be greater than 0.',
+        variant: 'destructive',
+      })
+    }
     if (parsedData.amount > 0) {
       dispatch(addMoneyToWallet(parsedData)).then(() => {
         reset();

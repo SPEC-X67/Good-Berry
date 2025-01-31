@@ -1,4 +1,4 @@
-import { Check, Copy, Heart, Maximize, Share2, Star } from "lucide-react";
+import { AlertTriangle, Check, Copy, Heart, Maximize, Share2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,14 +31,14 @@ export default function ProductPage() {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
-
+  
   useEffect(() => {
-    dispatch(getSingleProduct(id));
-    dispatch(getWishlist());
+    dispatch(getSingleProduct(id))
+    dispatch(getWishlist())
   }, [dispatch, id]);
-
-  const { product, pflavors, recomentedProds, wishlist } = useSelector((state) => state.shop);
+  
   const { user } = useSelector((state) => state.auth);
+  const { product, pflavors, recomentedProds, wishlist, error } = useSelector((state) => state.shop);
   const { quantity: availableQuantity, items: cartItems } = useSelector((state) => state.cart);
   
   const flavors = pflavors || {};
@@ -129,7 +129,7 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     const cartItem = cartItems.find(
-      item => item.productId === product._id && item.packageSize === packageSize && item.flavor === flavor.title
+      item => item.productId === product._id && item.packageSize === packageSize && item.flavor === flavor?.title
     );
     const totalQuantity = cartItem ? cartItem.quantity + quantity : quantity;
 
@@ -146,7 +146,7 @@ export default function ProductPage() {
       ...(user && { userId: user._id }),
       productId: product._id,
       name: product.name,
-      flavor: flavor.title,
+      flavor: flavor?.title,
       packageSize,
       quantity,
       price: currentPrice.price,
@@ -183,7 +183,7 @@ export default function ProductPage() {
       });
       return;
     }
-    await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
+    await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor?.title }));
     if (newQuantity > 0) {
       if (newQuantity <= availableQuantity) {
         setQuantity(newQuantity);
@@ -243,6 +243,26 @@ export default function ProductPage() {
     }
   };
 
+  if (!currentPrice.price || !currentPrice.salePrice) {
+      dispatch(getSingleProduct(id))
+  }
+
+  if (error) {
+    return (  
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+      <div className="text-center space-y-4">
+        <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500" />
+        <h1 className="text-3xl font-bold">Product Not Found</h1>
+        <p className="text-muted-foreground">We couldn&apos;t find the product you&apos;re looking for.</p>
+        <Button asChild>
+          <Link to="/shop">Return to Shop</Link>
+        </Button>
+      </div>
+    </div>
+    )
+  }
+    
+
   if (!flavor) {
     return (
       <div className="flex flex-row space-x-3 justify-center items-center p-10 mt-10">
@@ -287,7 +307,7 @@ export default function ProductPage() {
           Shop
         </Link>
         <span>/</span>
-        <span className="text-foreground font-semibold">{product.name}</span>
+        <span className="text-foreground font-semibold">{product?.name}</span>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2 md:grid-cols-2">
@@ -329,7 +349,7 @@ export default function ProductPage() {
 
           {/* Thumbnails */}
           <div className="flex lg:flex-col gap-5 order-2 lg:order-1">
-            {flavor.images.map((image, i) => (
+            {flavor && flavor.images.map((image, i) => (
               <button
                 key={i}
                 className={cn(
@@ -340,7 +360,7 @@ export default function ProductPage() {
               >
                 <img
                   src={image}
-                  alt={`${flavor.title} thumbnail ${i + 1}`}
+                  alt={`${flavor?.title} thumbnail ${i + 1}`}
                   className="object-cover rounded-md"
                 />
               </button>
@@ -353,9 +373,9 @@ export default function ProductPage() {
           <div className="relative">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-medium">{product.name}</h1>
+                <h1 className="text-3xl font-medium">{product?.name}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {flavor.title.toUpperCase()} STYLE FLAVOR
+                  {flavor?.title.toUpperCase()} STYLE FLAVOR
                 </p>
               </div>
               <Button
@@ -370,19 +390,19 @@ export default function ProductPage() {
 
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-medium text-[#8CC63F]">
-              ₹{currentPrice.salePrice?.toFixed(2)}
+              ₹{currentPrice?.salePrice?.toFixed(2)}
             </span>
-            {currentPrice.price > currentPrice.salePrice && (
+            {currentPrice?.price > currentPrice?.salePrice && (
               <span className="text-sm text-muted-foreground line-through">
-                ₹{currentPrice.price?.toFixed(2)}
+                ₹{currentPrice?.price?.toFixed(2)}
               </span>
             )}
-            <span className={`ml-4 text-sm ${stockStatus.color} border px-3 py-1 rounded-full`}>
-              {stockStatus.status}
+            <span className={`ml-4 text-sm ${stockStatus?.color} border px-3 py-1 rounded-full`}>
+              {stockStatus?.status}
             </span>
           </div>
 
-          <p className="text-sm text-muted-foreground">{flavor.description}</p>
+          <p className="text-sm text-muted-foreground">{flavor?.description}</p>
 
           <div className="space-y-4">
             <div>
@@ -394,9 +414,9 @@ export default function ProductPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {flavorKeys.map((flavorKey) => (
+                  {flavor && flavorKeys.map((flavorKey) => (
                     <SelectItem key={flavorKey} value={flavorKey}>
-                      {flavors[flavorKey].title}
+                      {flavors[flavorKey]?.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -406,7 +426,7 @@ export default function ProductPage() {
             <div>
               <div className="mb-2 text-sm font-medium">Package size:</div>
               <div className="flex gap-4">
-                {flavor.packageSizes.map((size) => (
+                {flavor && flavor.packageSizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => handlePackageSizeChange(size)}
@@ -507,7 +527,7 @@ export default function ProductPage() {
       </div>
 
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Share product</DialogTitle>
           </DialogHeader>
@@ -522,15 +542,15 @@ export default function ProductPage() {
                 </span>
               </div>
             </div>
-            <Button type="button" size="icon" onClick={handleCopyLink}>
-              <Copy className="h-4 w-4" />
-            </Button>
           </div>
+            <Button type="button" className="w-[90px]" onClick={handleCopyLink}>
+              Copy <Copy className="h-4 w-4" />
+            </Button>
         </DialogContent>
       </Dialog>
 
-      <ProductDetails description={product.description} />
-      <RelatedProducts products={recomentedProds} id={product._id} />
+      <ProductDetails description={product?.description} />
+      <RelatedProducts products={recomentedProds} id={product?._id} />
       
       <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
     </div>

@@ -8,6 +8,7 @@ import AdminProducts from "./pages/admin/ProductsCategorys/products";
 import AdminCategorys from "./pages/admin/ProductsCategorys/categorys";
 import AdminOrders from "./pages/admin/order/orders";
 import AdminFeatures from "./pages/admin/features";
+import Unauthorized from "./pages/unauth";
 import ShopLayout from "./components/shop/layout";
 import ShoppingHome from "./pages/shop/Home/home";
 import ShoppingCheckout from "./pages/shop/cart/checkout";
@@ -142,6 +143,7 @@ function App() {
           <Route path="sales-report" element={<SalesReportPage />} />
         </Route>
 
+        <Route path="/unauth-page" element={<Unauthorized />} />
         {/* Catch-All Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>

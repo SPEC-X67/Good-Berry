@@ -116,11 +116,9 @@ const orderController = {
         let refundAmount = order.items[itemIndex].salePrice * order.items[itemIndex].quantity;
 
         if (order.couponId) {
-          const remainingItems = order.items.filter(
-            (item) => item.status !== 'cancelled'
-          );
+          const remainingItems = order.items.filter((item) => item.status !== 'cancelled');
           const remainingTotal = remainingItems.reduce(
-            (sum, item) => sum + item.salePrice * item.quantity,
+            (sum, item) => sum + (item.salePrice * item.quantity),
             0
           );
 
@@ -141,6 +139,7 @@ const orderController = {
           await wallet.refund(refundAmount, `Refund for cancelled item ${order.items[itemIndex].name}`);
         }
       }
+
 
       if (status === 'delivered') {
         order.paymentStatus = "paid"
@@ -250,6 +249,7 @@ const orderController = {
         });
       }
 
+      // Update stock quantity
       const variant = await Variant.findOne({ productId: productId });
       if (variant) {
         const packSize = item.packageSize;
@@ -310,6 +310,17 @@ const orderController = {
       const allReturned = order.items.every((item) => item.status === 'returned');
       if (allReturned) {
         order.status = 'returned';
+      } else {
+        const statuses = order.items.map((i) => i.status);
+        if (statuses.some((s) => s === 'delivered')) {
+          order.status = 'delivered';
+        } else if (statuses.some((s) => s === 'shipped')) {
+          order.status = 'shipped';
+        } else if (statuses.some((s) => s === 'processing')) {
+          order.status = 'processing';
+        } else if (statuses.every((s) => s === 'cancelled')) {
+          order.status = 'cancelled';
+        }
       }
 
       await order.save();

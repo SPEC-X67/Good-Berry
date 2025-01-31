@@ -10,37 +10,53 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, MapPin, ShoppingCart, Wallet, Pencil, Loader2, CreditCard } from "lucide-react";
+import {
+  Plus,
+  MapPin,
+  ShoppingCart,
+  Wallet,
+  Pencil,
+  Loader2,
+  CreditCard,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import OrderSuccess from "./success-order";
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchAddresses, updateAddress, setDefault, addAddress } from '@/store/user-slice/account-slice';
-import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { createOrder } from '@/store/shop-slice/order-slice';
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAddresses,
+  updateAddress,
+  setDefault,
+  addAddress,
+} from "@/store/user-slice/account-slice";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { createOrder } from "@/store/shop-slice/order-slice";
 import { clearCart } from "@/store/shop-slice/cart-slice";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const addressSchema = z.object({
-  street: z.string().min(1, 'Street address is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  zip: z.string().min(1, 'ZIP code is required')
-    .regex(/^\d+$/, 'ZIP code must contain only numbers'),
-  country: z.string().min(1, 'Country is required'),
-  name: z.string().min(1, 'Name is required'),
-  type: z.string().min(1, 'Address type is required'),
-  mobile: z.string()
-    .min(1, 'Mobile number is required')
-    .regex(/^\d{10}$/, 'Mobile number must be 10 digits')
+  street: z.string().min(1, "Street address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zip: z
+    .string()
+    .min(1, "ZIP code is required")
+    .regex(/^\d+$/, "ZIP code must contain only numbers"),
+  country: z.string().min(1, "Country is required"),
+  name: z.string().min(1, "Name is required"),
+  type: z.string().min(1, "Address type is required"),
+  mobile: z
+    .string()
+    .min(1, "Mobile number is required")
+    .regex(/^\d{10}$/, "Mobile number must be 10 digits"),
 });
 
 export default function CheckoutPage() {
   const dispatch = useDispatch();
-  const { addresses } = useSelector(state => state.account);
+  const { addresses } = useSelector((state) => state.account);
   const [activeStep, setActiveStep] = useState("address");
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedShipping, setSelectedShipping] = useState("free");
@@ -53,32 +69,36 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const items = useSelector(state => state.cart.items)
-  const { isLoading } = useSelector(state => state.order)
+  const items = useSelector((state) => state.cart.items);
+  const { isLoading } = useSelector((state) => state.order);
 
-  const { coupon } = useSelector(state => state.shop);
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const discount = subtotal - items.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
-  console.log(coupon);
+  const { coupon } = useSelector((state) => state.shop);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const discount =
+    subtotal -
+    items.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      street: '',
-      city: '',
-      state: '',
-      zip: '',
-      country: '',
-      name: '',
-      type: '',
-      mobile: ''
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
+      country: "",
+      name: "",
+      type: "",
+      mobile: "",
     },
-    mode: 'onChange'
+    mode: "onChange",
   });
 
   useEffect(() => {
@@ -87,14 +107,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (addresses.length > 0) {
-      const defaultAddress = addresses.find(addr => addr.isDefault);
+      const defaultAddress = addresses.find((addr) => addr.isDefault);
       setSelectedAddress(defaultAddress?._id || addresses[0]._id);
     }
   }, [addresses]);
 
   useEffect(() => {
     if (isEditing) {
-      const editingAddress = addresses.find(addr => addr._id === isEditing);
+      const editingAddress = addresses.find((addr) => addr._id === isEditing);
       if (editingAddress) {
         reset({
           street: editingAddress.street,
@@ -104,19 +124,19 @@ export default function CheckoutPage() {
           country: editingAddress.country,
           name: editingAddress.name,
           type: editingAddress.type,
-          mobile: editingAddress.mobile
+          mobile: editingAddress.mobile,
         });
       }
     } else {
       reset({
-        street: '',
-        city: '',
-        state: '',
-        zip: '',
-        country: '',
-        name: '',
-        type: '',
-        mobile: ''
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "",
+        name: "",
+        type: "",
+        mobile: "",
       });
     }
   }, [isEditing, addresses, reset]);
@@ -124,7 +144,7 @@ export default function CheckoutPage() {
   const onSubmit = (data) => {
     const addressData = {
       ...data,
-      isDefault: true
+      isDefault: true,
     };
 
     if (isEditing) {
@@ -134,7 +154,7 @@ export default function CheckoutPage() {
           setIsEditing(null);
           setShowForm(false);
           toast({
-            title: 'Address updated successfully',
+            title: "Address updated successfully",
           });
         });
     } else {
@@ -143,7 +163,7 @@ export default function CheckoutPage() {
         .then(() => {
           setShowForm(false);
           toast({
-            title: 'Address added successfully',
+            title: "Address added successfully",
           });
         });
     }
@@ -174,133 +194,203 @@ export default function CheckoutPage() {
     });
   };
 
- const handleRazorpayPayment = async () => {
-  try {
-    setLoading(true);
-    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
-    
+  const handleRazorpayPayment = async () => {
+    try {
+      setLoading(true);
+      const res = await loadScript(
+        "https://checkout.razorpay.com/v1/checkout.js"
+      );
 
-    if (!res) {
-      toast({
-        title: 'Razorpay SDK failed to load',
-        variant: 'destructive',
-      });
-      return;
-    }
+      if (!res) {
+        toast({
+          title: "Razorpay SDK failed to load",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const orderData = {
-      addressId: selectedAddress,
-      shippingMethod: selectedShippingDetails,
-      paymentMethod: selectedPayment,
-      discount: discount,
-      coupon: {
-        couponId: coupon?.couponId,
-        discount: coupon?.discount
-      },
-      items: items,
-      subtotal: summary.subtotal,
-      shippingCost: summary.shipping,
-      couponDiscount: summary.coupon,
-      total: summary.total
-    };
+      const orderData = {
+        addressId: selectedAddress,
+        shippingMethod: selectedShippingDetails,
+        paymentMethod: selectedPayment,
+        discount: discount,
+        coupon: {
+          couponId: coupon?.couponId,
+          discount: coupon?.discount,
+        },
+        items: items,
+        subtotal: summary.subtotal,
+        shippingCost: summary.shipping,
+        couponDiscount: summary.coupon,
+        total: summary.total,
+      };
 
-    const order = await dispatch(createOrder(orderData)).unwrap();
-    setOrderDetails(order);
+      const order = await dispatch(createOrder(orderData)).unwrap();
+      setOrderDetails(order);
 
-    const razorpayOrder = await axios.post('http://localhost:5000/api/user/create-razorpay-order', {
-      orderId: order._id
-    }, {
-      withCredentials: true
-    });
-
-    const options = {
-      key: 'rzp_test_CS2mGJMpuRbxFh', 
-      amount: razorpayOrder.data.amount,
-      currency: razorpayOrder.data.currency,
-      name: "Good Berry",
-      description: `Order ${order.orderId}`,
-      order_id: razorpayOrder.data.orderId,
-      handler: async function (response) {
-        try {
-          const { data } = await axios.post('http://localhost:5000/api/user/verify-payment', {
-            orderCreationId: razorpayOrder.data.orderId,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpaySignature: response.razorpay_signature,
-            orderData: order
-          }, {
-            withCredentials: true
-          });
-          
-          setPaymentSuccess(true);
-          dispatch(clearCart());
-          
-          toast({
-            title: 'Payment successful',
-            description: `Order ID: ${data.orderId}`,
-          });
-        } catch (error) {
-          console.error("Error verifying payment:", error);
-          toast({
-            title: 'Payment verification failed',
-            description: error.response?.data?.message || 'Please contact support',
-            variant: 'destructive',
-          });
+      const razorpayOrder = await axios.post(
+        "http://localhost:5000/api/user/create-razorpay-order",
+        {
+          orderId: order._id,
+        },
+        {
+          withCredentials: true,
         }
-      },
-      modal: {
-        ondismiss: async function () {
+      );
+
+      const options = {
+        key: "rzp_test_CS2mGJMpuRbxFh",
+        amount: razorpayOrder.data.amount,
+        currency: razorpayOrder.data.currency,
+        name: "Good Berry",
+        description: `Order ${order.orderId}`,
+        order_id: razorpayOrder.data.orderId,
+        handler: async function (response) {
           try {
-            await axios.post('http://localhost:5000/api/user/payment-failure', {
-              orderId: order._id
-            }, {
-              withCredentials: true
-            });
-            navigate(`/account/order/${order.orderId}`);
+            const { data } = await axios.post(
+              "http://localhost:5000/api/user/verify-payment",
+              {
+                orderCreationId: razorpayOrder.data.orderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+                orderData: order,
+              },
+              {
+                withCredentials: true,
+              }
+            );
+
+            setPaymentSuccess(true);
+            dispatch(clearCart());
+
             toast({
-              title: 'Payment cancelled',
-              description: 'Your payment was cancelled. Please try again.',
-              variant: 'destructive',
+              title: "Payment successful",
+              description: `Order ID: ${data.orderId}`,
             });
           } catch (error) {
-            console.error("Error handling payment failure:", error);
+            console.error("Error verifying payment:", error);
             toast({
-              title: 'Error handling payment failure',
-              description: error.message || 'Please contact support',
-              variant: 'destructive',
+              title: "Payment verification failed",
+              description:
+                error.response?.data?.message || "Please contact support",
+              variant: "destructive",
             });
           }
+        },
+        modal: {
+          ondismiss: async function () {
+            try {
+              await axios.post(
+                "http://localhost:5000/api/user/payment-failure",
+                {
+                  orderId: order._id,
+                },
+                {
+                  withCredentials: true,
+                }
+              );
+              navigate(`/account/order/${order.orderId}`);
+              toast({
+                title: "Payment cancelled",
+                description: "Your payment was cancelled. Please try again.",
+                variant: "destructive",
+              });
+            } catch (error) {
+              console.error("Error handling payment failure:", error);
+              toast({
+                title: "Error handling payment failure",
+                description: error.message || "Please contact support",
+                variant: "destructive",
+              });
+            }
+          },
+        },
+        prefill: {
+          name: selectedAddressDetails?.name,
+          email: "",
+          contact: selectedAddressDetails?.mobile,
+        },
+        notes: {
+          address: "Good Berry Store Order",
+        },
+        theme: {
+          color: "#8AB446",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+      setLoading(false);
+    } catch (error) {
+      console.error("Error initiating Razorpay payment:", error);
+      toast({
+        title: "Error initiating payment",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleWalletPayment = async () => {
+    try {
+      setLoading(true);
+      const orderData = {
+        addressId: selectedAddress,
+        shippingMethod: selectedShippingDetails,
+        paymentMethod: selectedPayment,
+        discount: discount,
+        coupon: {
+          couponId: coupon?.couponId,
+          discount: coupon?.discount,
+        },
+        items: items,
+        subtotal: summary.subtotal,
+        shippingCost: summary.shipping,
+        couponDiscount: summary.coupon,
+        total: summary.total,
+      };
+
+      const order = await dispatch(createOrder(orderData)).unwrap();
+      setOrderDetails(order);
+
+      const { data } = await axios.post(
+        "http://localhost:5000/api/user/wallet-payment",
+        {
+          orderId: order._id,
+        },
+        {
+          withCredentials: true,
         }
-      },
-      prefill: {
-        name: selectedAddressDetails?.name,
-        email: "", 
-        contact: selectedAddressDetails?.mobile,
-      },
-      notes: {
-        address: "Good Berry Store Order"
-      },
-      theme: {
-        color: "#8AB446"
-      }
-    };
+      );
 
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.open();
-    setLoading(false);
-  } catch (error) {
-    console.error("Error initiating Razorpay payment:", error);
-    toast({
-      title: 'Error initiating payment',
-      description: error.message || 'Please try again',
-      variant: 'destructive',
-    });
-  }
-};
+      setPaymentSuccess(true);
+      dispatch(clearCart());
 
-const handleWalletPayment = async () => {
-  try {
-    setLoading(true);
+      toast({
+        title: "Payment successful",
+        description: `Order ID: ${data.orderId}`,
+      });
+    } catch (error) {
+      console.error("Error handling wallet payment:", error);
+      toast({
+        title: "Payment failed",
+        description: error.response?.data?.message || "Please contact support",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePay = () => {
+    if (selectedPayment === "upi") {
+      setLoading(true);
+      return handleRazorpayPayment();
+    } else if (selectedPayment === "wallet") {
+      setLoading(true);
+      return handleWalletPayment();
+    }
     const orderData = {
       addressId: selectedAddress,
       shippingMethod: selectedShippingDetails,
@@ -308,85 +398,34 @@ const handleWalletPayment = async () => {
       discount: discount,
       coupon: {
         couponId: coupon?.couponId,
-        discount: coupon?.discount
+        discount: coupon?.discount,
       },
       items: items,
-      subtotal: summary.subtotal,
-      shippingCost: summary.shipping,
-      couponDiscount: summary.coupon,
-      total: summary.total
     };
 
-    const order = await dispatch(createOrder(orderData)).unwrap();
-    setOrderDetails(order);
-
-    const { data } = await axios.post('http://localhost:5000/api/user/wallet-payment', {
-      orderId: order._id
-    }, {
-      withCredentials: true
-    });
-
-    setPaymentSuccess(true);
-    dispatch(clearCart());
-
-    toast({
-      title: 'Payment successful',
-      description: `Order ID: ${data.orderId}`,
-    });
-  } catch (error) {
-    console.error("Error handling wallet payment:", error);
-    toast({
-      title: 'Payment failed',
-      description: error.response?.data?.message || 'Please contact support',
-      variant: 'destructive',
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handlePay = () => {
-  if (selectedPayment === "upi") {
-    setLoading(true);
-    return handleRazorpayPayment();
-  } else if (selectedPayment === "wallet") {
-    setLoading(true);
-    return handleWalletPayment();
-  }
-  const orderData = {
-    addressId: selectedAddress,
-    shippingMethod: selectedShippingDetails,
-    paymentMethod: selectedPayment,
-    discount: discount,
-    coupon: {
-      couponId: coupon?.couponId,
-      discount: coupon?.discount
-    },
-    items: items
+    dispatch(createOrder(orderData))
+      .unwrap()
+      .then((res) => {
+        setOrderDetails(res);
+        setPaymentSuccess(true);
+        dispatch(clearCart());
+      })
+      .catch((error) => {
+        toast({
+          title: "Error placing order",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
   };
 
-  dispatch(createOrder(orderData))
-    .unwrap()
-    .then((res) => {
-      setOrderDetails(res);
-      setPaymentSuccess(true);
-      dispatch(clearCart());
-    })
-    .catch((error) => {
-      toast({
-        title: 'Error placing order',
-        description: error.message,
-        variant: 'destructive'
-      });
-    });
-};
-
   if (paymentSuccess) {
-    return <OrderSuccess data={orderDetails}/>;
+    return <OrderSuccess data={orderDetails} />;
   }
 
-  const selectedAddressDetails = addresses.find(addr => addr._id === selectedAddress);
-  
+  const selectedAddressDetails = addresses.find(
+    (addr) => addr._id === selectedAddress
+  );
 
   const shippingMethods = [
     {
@@ -413,13 +452,18 @@ const handlePay = () => {
 
   const couponDiscount = coupon?.discount || 0;
 
-  const selectedShippingDetails = shippingMethods.find(method => method.id === selectedShipping);
+  const selectedShippingDetails = shippingMethods.find(
+    (method) => method.id === selectedShipping
+  );
   const summary = {
-    subtotal: subtotal, 
+    subtotal: subtotal,
     coupon: couponDiscount,
     discount: discount,
     shipping: selectedShippingDetails?.price || 0,
-    total: subtotal + (-couponDiscount) + (selectedShippingDetails?.price - discount || 0) 
+    total:
+      subtotal +
+      -couponDiscount +
+      (selectedShippingDetails?.price - discount || 0),
   };
 
   return (
@@ -507,32 +551,44 @@ const handlePay = () => {
                     <div>
                       <Label className="text-gray-600">Street Address</Label>
                       <Input
-                        {...register('street')}
-                        className={`mt-1 ${errors.street ? 'border-red-500' : ''}`}
+                        {...register("street")}
+                        className={`mt-1 ${
+                          errors.street ? "border-red-500" : ""
+                        }`}
                       />
                       {errors.street && (
-                        <p className="text-sm text-red-500 mt-1">{errors.street.message}</p>
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.street.message}
+                        </p>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-gray-600">City</Label>
                         <Input
-                          {...register('city')}
-                          className={`mt-1 ${errors.city ? 'border-red-500' : ''}`}
+                          {...register("city")}
+                          className={`mt-1 ${
+                            errors.city ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.city && (
-                          <p className="text-sm text-red-500 mt-1">{errors.city.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.city.message}
+                          </p>
                         )}
                       </div>
                       <div>
                         <Label className="text-gray-600">State</Label>
                         <Input
-                          {...register('state')}
-                          className={`mt-1 ${errors.state ? 'border-red-500' : ''}`}
+                          {...register("state")}
+                          className={`mt-1 ${
+                            errors.state ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.state && (
-                          <p className="text-sm text-red-500 mt-1">{errors.state.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.state.message}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -540,53 +596,73 @@ const handlePay = () => {
                       <div>
                         <Label className="text-gray-600">Zip Code</Label>
                         <Input
-                          {...register('zip')}
-                          className={`mt-1 ${errors.zip ? 'border-red-500' : ''}`}
+                          {...register("zip")}
+                          className={`mt-1 ${
+                            errors.zip ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.zip && (
-                          <p className="text-sm text-red-500 mt-1">{errors.zip.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.zip.message}
+                          </p>
                         )}
                       </div>
                       <div>
                         <Label className="text-gray-600">Country</Label>
                         <Input
-                          {...register('country')}
-                          className={`mt-1 ${errors.country ? 'border-red-500' : ''}`}
+                          {...register("country")}
+                          className={`mt-1 ${
+                            errors.country ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.country && (
-                          <p className="text-sm text-red-500 mt-1">{errors.country.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.country.message}
+                          </p>
                         )}
                       </div>
                     </div>
                     <div>
                       <Label className="text-gray-600">Name</Label>
                       <Input
-                        {...register('name')}
-                        className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
+                        {...register("name")}
+                        className={`mt-1 ${
+                          errors.name ? "border-red-500" : ""
+                        }`}
                       />
                       {errors.name && (
-                        <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.name.message}
+                        </p>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-gray-600">Type</Label>
                         <Input
-                          {...register('type')}
-                          className={`mt-1 ${errors.type ? 'border-red-500' : ''}`}
+                          {...register("type")}
+                          className={`mt-1 ${
+                            errors.type ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.type && (
-                          <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.type.message}
+                          </p>
                         )}
                       </div>
                       <div>
                         <Label className="text-gray-600">Mobile</Label>
                         <Input
-                          {...register('mobile')}
-                          className={`mt-1 ${errors.mobile ? 'border-red-500' : ''}`}
+                          {...register("mobile")}
+                          className={`mt-1 ${
+                            errors.mobile ? "border-red-500" : ""
+                          }`}
                         />
                         {errors.mobile && (
-                          <p className="text-sm text-red-500 mt-1">{errors.mobile.message}</p>
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.mobile.message}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -615,7 +691,7 @@ const handlePay = () => {
                       setSelectedAddress(value);
                       dispatch(setDefault(value)).then(() => {
                         toast({
-                          title: 'Default address updated successfully',
+                          title: "Default address updated successfully",
                         });
                       });
                     }}
@@ -662,7 +738,9 @@ const handlePay = () => {
                 <Button variant="outline" onClick={() => navigate(-1)}>
                   Back
                 </Button>
-                <Button onClick={handleNext} disabled={addresses.length === 0}>Next</Button>
+                <Button onClick={handleNext} disabled={addresses.length === 0}>
+                  Next
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -683,15 +761,35 @@ const handlePay = () => {
                   <Card key={method.id} className="bg-gray-50 border-0">
                     <CardContent className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
-                        <RadioGroupItem value={method.id} id={method.id} disabled={method.disabled} />
+                        <RadioGroupItem
+                          value={method.id}
+                          id={method.id}
+                          disabled={method.disabled}
+                        />
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className={`font-medium ${method.disabled ? 'text-gray-400' : ''}`}>{method.name}</span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold text-primary-foreground rounded ${method.disabled ? 'bg-gray-400' : 'bg-primary' }`}>
+                            <span
+                              className={`font-medium ${
+                                method.disabled ? "text-gray-400" : ""
+                              }`}
+                            >
+                              {method.name}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 text-xs font-semibold text-primary-foreground rounded ${
+                                method.disabled ? "bg-gray-400" : "bg-primary"
+                              }`}
+                            >
                               {method.price > 0 ? `₹${method.price}` : "Free"}
                             </span>
                           </div>
-                          <span className={`text-sm ${method.disabled ? 'text-gray-300' : 'text-gray-600'} `}>
+                          <span
+                            className={`text-sm ${
+                              method.disabled
+                                ? "text-gray-300"
+                                : "text-gray-600"
+                            } `}
+                          >
                             {method.description}
                           </span>
                         </div>
@@ -756,17 +854,21 @@ const handlePay = () => {
                           <span>Discount</span>
                           <span>-₹{summary.discount.toFixed(2)}</span>
                         </div>
-                       {coupon.discount && <div className="flex justify-between text-sm">
-                          <span>Coupon</span>
-                          <span>-₹{summary.coupon.toFixed(2)}</span>
-                        </div>}
+                        {coupon.discount && (
+                          <div className="flex justify-between text-sm">
+                            <span>Coupon</span>
+                            <span>-₹{summary.coupon.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm">
                           <span>Shipping & Handling</span>
                           <span>₹{summary.shipping.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between font-semibold">
                           <span>Total</span>
-                          <span className="text-[#8ec743]">₹{summary.total.toFixed(2)}</span>
+                          <span className="text-[#8ec743]">
+                            ₹{summary.total.toFixed(2)}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
@@ -783,9 +885,17 @@ const handlePay = () => {
                         className="space-y-4"
                       >
                         {[
-                          { id: "cod", name: "Cash on Delivery", disabled: summary.total > 1000  },
+                          {
+                            id: "cod",
+                            name: "Cash on Delivery",
+                            disabled: summary.total > 1000,
+                          },
                           { id: "upi", name: "Pay with UPI", disabled: false },
-                          { id: "wallet", name: "Pay with Wallet", disabled: false },
+                          {
+                            id: "wallet",
+                            name: "Pay with Wallet",
+                            disabled: false,
+                          },
                         ].map((payment) => (
                           <Card
                             key={payment.id}
@@ -799,7 +909,11 @@ const handlePay = () => {
                                   disabled={payment.disabled}
                                 />
                                 <div className="flex flex-col">
-                                  <div className={`font-medium ${payment.disabled ? 'text-gray-400' : ''}`}>
+                                  <div
+                                    className={`font-medium ${
+                                      payment.disabled ? "text-gray-400" : ""
+                                    }`}
+                                  >
                                     {payment.name}
                                   </div>
                                 </div>
@@ -813,10 +927,11 @@ const handlePay = () => {
                       <Button variant="outline" onClick={handleBack}>
                         Back
                       </Button>
-                      <Button 
-                       variant="default"
-                       disabled={summary.total === 0 || !selectedPayment}
-                       onClick={handlePay}>
+                      <Button
+                        variant="default"
+                        disabled={summary.total === 0 || !selectedPayment}
+                        onClick={handlePay}
+                      >
                         {isLoading || loading ? (
                           <>
                             <Loader2 className="animate-spin" />

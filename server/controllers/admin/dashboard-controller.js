@@ -34,49 +34,24 @@ const dashboardController = {
       }
 
       const totalRevenue = await Order.aggregate([
-        { $match: { status: 'delivered' } },
+        { $match: { status: 'delivered', createdAt: dateFilter } },
         { $group: { _id: null, total: { $sum: '$total' } } }
       ]);
 
-      const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-      const lastMonthRevenue = await Order.aggregate([
-        {
-          $match: {
-            status: 'delivered',
-            createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
-          }
-        },
-        { $group: { _id: null, total: { $sum: '$total' } } }
-      ]);
-
-      const newCustomers = await User.countDocuments({
-        createdAt: { $gte: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) }
+      const totalCustomers = await User.countDocuments({
+        createdAt: dateFilter,
+        isBlocked: false
       });
 
-      const lastMonthCustomers = await User.countDocuments({
-        createdAt: {
-          $gte: lastMonthStart,
-          $lte: lastMonthEnd
-        }
-      });
-
-      const totalSales = await Order.countDocuments({ status: 'delivered' });
-      const lastMonthSales = await Order.countDocuments({
+      const totalSales = await Order.countDocuments({
         status: 'delivered',
-        createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
+        createdAt: dateFilter
       });
 
-      const activeUsers = await User.countDocuments({
-        isBlocked: false,
-        lastActivity: { $gte: new Date(today.getTime() - 60 * 60 * 1000) } // Last hour
+      const totalCancelled = await Order.countDocuments({
+        status: 'cancelled',
+        createdAt: dateFilter
       });
-
-      const recentSales = await Order.find({ status: 'delivered' })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .populate('userId', 'username email')
-        .select('total createdAt userId orderId');
 
       const overviewData = await Order.aggregate([
         {
@@ -98,35 +73,8 @@ const dashboardController = {
         { $sort: { '_id': 1 } }
       ]);
 
-      const top10Products = await Order.aggregate([
-        { $match: { status: 'delivered' } },
-        { $unwind: '$items' },
-        {
-          $group: {
-            _id: '$items.productId',
-            totalSales: { $sum: '$items.quantity' }
-          }
-        },
-        { $sort: { totalSales: -1 } },
-        { $limit: 10 },
-        {
-          $lookup: {
-            from: 'products',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'product'
-          }
-        },
-        {
-          $project: {
-            name: { $arrayElemAt: ['$product.name', 0] },
-            sales: '$totalSales'
-          }
-        }
-      ]);
-
       const top10Categories = await Order.aggregate([
-        { $match: { status: 'delivered' } },
+        { $match: { status: 'delivered', createdAt: dateFilter } },
         { $unwind: '$items' },
         {
           $lookup: {
@@ -160,28 +108,61 @@ const dashboardController = {
         }
       ]);
 
-      const revenueChange = lastMonthRevenue[0]
-        ? ((totalRevenue[0]?.total - lastMonthRevenue[0].total) / lastMonthRevenue[0].total) * 100
-        : 0;
-      const customerChange = ((newCustomers - lastMonthCustomers) / lastMonthCustomers) * 100;
-      const salesChange = ((totalSales - lastMonthSales) / lastMonthSales) * 100;
+      const top10Products = await Order.aggregate([
+        { $match: { status: 'delivered', createdAt: dateFilter } },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.productId',
+            totalSales: { $sum: '$items.quantity' }
+          }
+        },
+        { $sort: { totalSales: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: 'products',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'product'
+          }
+        },
+        {
+          $project: {
+            name: { $arrayElemAt: ['$product.name', 0] },
+            sales: '$totalSales'
+          }
+        }
+      ]);
+
+      const recentSales = await Order.find({ status: 'delivered' })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .populate('userId', 'username email')
+        .select('total createdAt userId orderId');
 
       res.json({
         totalRevenue: {
           value: totalRevenue[0]?.total || 0,
-          change: revenueChange.toFixed(1)
+          change: 0
+        },
+        totalCancelled: {
+          value: totalCancelled,
+          change: 0
         },
         newCustomers: {
-          value: newCustomers,
-          change: customerChange.toFixed(1)
+          value: totalCustomers,
+          change: 0
         },
         totalSales: {
           value: totalSales,
-          change: salesChange.toFixed(1)
+          change: 0
         },
+        top10Categories,
+        top10Products,
         activeUsers: {
-          value: activeUsers,
-          change: 0 
+          value: 0,
+          change: 0
         },
         recentSales: recentSales.map(sale => ({
           orderId: sale.orderId,
@@ -196,8 +177,6 @@ const dashboardController = {
               : new Date(2024, 0, data._id).toLocaleString('en-US', { weekday: 'short' }),
           total: data.total
         })),
-        top10Products,
-        top10Categories
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

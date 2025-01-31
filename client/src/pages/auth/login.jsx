@@ -68,6 +68,15 @@ function AuthLogin() {
   function onSubmit(event) {
     event.preventDefault();
 
+    if (formData.email.trim() === "" && formData.password.trim() === "") {
+      toast({
+        title: "Required",
+        description: "Please fill in all the required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     dispatch(loginUser(formData)).then((data) => {
 
       if (data?.payload?.success) {
@@ -84,6 +93,7 @@ function AuthLogin() {
         } else {
           toast({
             title: data?.payload?.message || "Something went wrong",
+            description: "Enter correct email and password",
             variant: "destructive",
           });
         }

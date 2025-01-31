@@ -13,7 +13,6 @@ function Overview() {
     status
   } = useSelector((state) => state.admin.data)
   
-  
   const handleTimeRangeChange = (value) => {
     dispatch(fetchDashboardData(value))
   }
@@ -64,11 +63,11 @@ function RecentSales() {
         <div key={index} className="flex items-center">
           <div className="ml-4 space-y-1">
             <p className="text-sm font-medium leading-none">#{sale.orderId}</p>
-            <p className="text-sm text-muted-foreground">{sale.name}</p>
+            <p className="text-sm text-muted-foreground">{sale.name || "Unknown"}</p>
           </div>
           <div className="ml-auto font-medium">
             <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-              {sale.sale}
+            ₹{sale.sale}
             </span>
           </div>
         </div>
@@ -117,7 +116,7 @@ export default function AdminDashboard() {
     totalRevenue, 
     newCustomers, 
     totalSales, 
-    activeUsers 
+    totalCancelled 
   } = useSelector((state) => state.admin.data)
   const status = useSelector((state) => state.admin.status)
   const error = useSelector((state) => state.admin.error)
@@ -144,10 +143,10 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ₹{totalRevenue.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              ₹{totalRevenue?.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-emerald-600">
-              {totalRevenue.change > 0 ? '+' : ''}{totalRevenue.change}% from last month
+              {totalRevenue?.change > 0 ? '+' : ''}{totalRevenue?.change}% from last month
             </p>
           </CardContent>
         </Card>
@@ -157,9 +156,9 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{newCustomers.value.toLocaleString()}</div>
+            <div className="text-2xl font-bold">+{newCustomers?.value.toLocaleString()}</div>
             <p className="text-xs text-blue-600">
-              {newCustomers.change > 0 ? '+' : ''}{newCustomers.change}% from last month
+              {newCustomers?.change > 0 ? '+' : ''}{newCustomers?.change}% from last month
             </p>
           </CardContent>
         </Card>
@@ -169,21 +168,21 @@ export default function AdminDashboard() {
             <CreditCard className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{totalSales.value.toLocaleString()}</div>
+            <div className="text-2xl font-bold">+{totalSales?.value.toLocaleString()}</div>
             <p className="text-xs text-purple-600">
-              {totalSales.change > 0 ? '+' : ''}{totalSales.change}% from last month
+              {totalSales.change > 0 ? '+' : ''}{totalSales?.change}% from last month
             </p>
           </CardContent>
         </Card>
         <Card className="transition-all hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
+            <CardTitle className="text-sm font-medium">Cancelled Orders</CardTitle>
             <Activity className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{activeUsers.value.toLocaleString()}</div>
+            <div className="text-2xl font-bold">+{totalCancelled?.value.toLocaleString()}</div>
             <p className="text-xs text-orange-600">
-              {activeUsers.change > 0 ? '+' : ''}{activeUsers.change} since last hour
+              {totalCancelled?.change > 0 ? '+' : ''}{totalCancelled?.change} from last month
             </p>
           </CardContent>
         </Card>

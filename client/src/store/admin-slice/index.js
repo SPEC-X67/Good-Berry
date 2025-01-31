@@ -9,7 +9,7 @@ const initialState = {
     totalRevenue: { value: 0, change: 0 },
     newCustomers: { value: 0, change: 0 },
     totalSales: { value: 0, change: 0 },
-    activeUsers: { value: 0, change: 0 },
+    totalCancelled: { value: 0, change: 0 },
     recentSales: [],
     overviewData: [],
     top10Products: [],

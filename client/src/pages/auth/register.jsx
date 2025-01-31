@@ -24,19 +24,49 @@ function AuthRegister() {
   
   function onSubmit(event) {
     event.preventDefault();
-    if(formData.email === "" || formData.password === "" || formData.username === ""){ 
+    if(formData.email.trim() === "" && formData.password.trim() === "" && formData.username.trim() === ""){ 
       toast({
-        title: "Please enter email and password",
+        title: "Required",
+        description: "Please fill in all the required fields, name, email and password",
         variant: "destructive",
       });
       return
     }
-  
-    if(formData.password.length < 8) {
+
+    if (formData.username.trim() === "") {
       toast({
-        title: "Password must be at least 8 characters long",
+        title: "Missing Username",
+        description: "Please enter your name.",
         variant: "destructive",
-      })
+      });
+      return;
+    }
+  
+    if (formData.email.trim() === "") {
+      toast({
+        title: "Missing Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (formData.password.trim() === "") {
+      toast({
+        title: "Missing Password",
+        description: "Password is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (formData.password.length < 8) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      return;
     }
     dispatch(registerUser(formData)).then((data) => {
       if (data?.payload?.success) {

@@ -228,6 +228,14 @@ const couponController = {
 
       if (total < coupon.minimumAmount) return res.json({});
 
+      const existingOrder = await Order.findOne({ userId, couponId: coupon._id });
+      if (existingOrder) {
+        return res.json({
+          success: false,
+          message: 'You have already used this coupon',
+        });
+      }
+
       res.json({
         success: true,
         message: 'Coupon found',

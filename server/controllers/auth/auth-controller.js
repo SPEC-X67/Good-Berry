@@ -19,7 +19,7 @@ const register = async (req, res) => {
         if (checkUser)
             return res.json({
                 success: false,
-                message: "User Already exists with the same email! Please try again",
+                message: "User Already exists with the same email! Please try to login",
             });
 
         const hashPassword = await bcrypt.hash(password, 12);

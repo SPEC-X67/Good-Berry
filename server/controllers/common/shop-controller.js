@@ -99,7 +99,6 @@ const getAllProducts = async (req, res) => {
     const sortConfigurations = {
       'price-asc': { 'firstVariant.salePrice': 1 },
       'price-desc': { 'firstVariant.salePrice': -1 },
-      'rating': { 'averageRating': -1 },
       'featured': { 'featured': -1, 'createdAt': -1 },
       'new-arrivals': { 'createdAt': -1 },
       'name-asc': { 'name': 1 },
@@ -177,13 +176,6 @@ const getAllProducts = async (req, res) => {
           as: "reviews"
         },
       },
-      {
-        $addFields: {
-          categoryName: { $arrayElemAt: ["$categoryDetails.name", 0] },
-          averageRating: { $avg: "$reviews.rating" },
-          inStock: { $gt: ["$firstVariant.packSizePricing.quantity", 0] }
-        },
-      },
       ...searchPipeline,
       {
         $match: {
@@ -206,7 +198,6 @@ const getAllProducts = async (req, res) => {
           "firstVariant.packSizePricing.quantity": 1,
           isNew: 1,
           featured: 1,
-          averageRating: 1,
           createdAt: 1,
           inStock: 1
         },

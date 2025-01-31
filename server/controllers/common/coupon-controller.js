@@ -17,7 +17,8 @@ const couponController = {
 
       const coupons = await Coupon.find(searchQuery)
         .skip((page - 1) * limit)
-        .limit(parseInt(limit));
+        .limit(parseInt(limit))
+        .sort({ createdAt: -1 });     
 
       const totalCoupons = await Coupon.countDocuments(searchQuery);
 

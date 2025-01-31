@@ -28,7 +28,6 @@ const sortOptions = [
   { value: 'new-arrivals', label: 'New Arrivals' },
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'rating', label: 'Average Rating' },
   { value: 'name-asc', label: 'Name: A to Z' },
   { value: 'name-desc', label: 'Name: Z to A' }
 ];
@@ -43,22 +42,16 @@ export default function ShopPage() {
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const dispatch = useDispatch();
 
-  const { products, pagination, categories } = useSelector((state) => state.shop);
+  const { products, pagination } = useSelector((state) => state.shop);
 
   useEffect(() => {
     dispatch(getCategories());
   }, [dispatch]);
 
   useEffect(() => {
-    if (categories.length > 0) {
-      setSelectedCategories(categories.map(category => category._id));
-    }
-  }, [categories]);
-
-  useEffect(() => {
     dispatch(getProducts({ 
       page: currentPage, 
-      limit: 10, 
+      limit: 8, 
       sort,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],

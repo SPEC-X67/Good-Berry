@@ -60,7 +60,8 @@ const getAllProducts = async (req, res) => {
 
     const products = await Product.find(searchQuery)
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
 
     const totalProducts = await Product.countDocuments(searchQuery);
 
@@ -129,7 +130,6 @@ const getProduct = async (req, res) => {
   }
 };
 
-// Update a product and its variants
 const updateProduct = async (req, res) => {
   const { id } = req.params;
   const {

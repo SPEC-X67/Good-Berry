@@ -148,7 +148,7 @@ export default function SearchProduct() {
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
                   <p className="text-lg font-bold">
-                    ${product.firstVariant?.salePrice.toFixed(2)}
+                    ₹{product.firstVariant?.salePrice.toFixed(2)}
                   </p>
                   <p className="text-sm gray-600">
                     {product.firstVarient?.price.toFixed(2)}

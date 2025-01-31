@@ -5,14 +5,6 @@ import { useDispatch, useSelector } from "react-redux"
 import { getCoupons } from "@/store/shop-slice/cart-slice"
 
 
-
-// Dummy data for coupons
-const dummyCoupons = [
-  { code: "SAVE10", description: "10% off your order" },
-  { code: "FREESHIP", description: "Free shipping on orders over ₹1000" },
-  { code: "BUNDLE20", description: "20% off when you buy 2 or more items" },
-]
-
 export default function CouponList({ onSelectCoupon }) {
   const [open, setOpen] = useState(false)
   const dispatch = useDispatch();

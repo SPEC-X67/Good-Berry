@@ -1,8 +1,7 @@
-
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Eye } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const ProductCard = ({ product, id }) => {
   return (
@@ -14,7 +13,11 @@ const ProductCard = ({ product, id }) => {
             alt={product.name}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {product.isNew && <Badge className="absolute left-2 top-2 bg-[#8cc63f] text-white">New</Badge>}
+          {product.isNew && (
+            <Badge className="absolute text-center left-4 top-4 bg-[#438e44] w-12 h-12">
+              {product.isNew && "New"}
+            </Badge>
+          )}
           <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
             <Badge className="bg-white text-black hover:bg-gray-200 transition-colors cursor-pointer">
               <Eye className="h-4 w-4 mr-1" />
@@ -29,21 +32,26 @@ const ProductCard = ({ product, id }) => {
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold text-[#8cc63f]">₹{product.firstVariant.salePrice.toFixed(2)}</span>
+          <span className="text-lg font-bold text-[#8cc63f]">
+            ₹{product.firstVariant.salePrice.toFixed(2)}
+          </span>
           {product.firstVariant.price > product.firstVariant.salePrice && (
-            <span className="text-sm text-gray-400 line-through">₹{product.firstVariant.price.toFixed(2)}</span>
+            <span className="text-sm text-gray-400 line-through">
+              ₹{product.firstVariant.price.toFixed(2)}
+            </span>
           )}
         </div>
         <Badge variant="outline" className="text-xs">
-          {(((product.firstVariant.price - product.firstVariant.salePrice) / product.firstVariant.price) * 100).toFixed(
-            0,
-          )}
+          {(
+            ((product.firstVariant.price - product.firstVariant.salePrice) /
+              product.firstVariant.price) *
+            100
+          ).toFixed(0)}
           % OFF
         </Badge>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-export default ProductCard
-
+export default ProductCard;

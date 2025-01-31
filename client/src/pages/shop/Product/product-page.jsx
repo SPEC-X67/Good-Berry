@@ -133,6 +133,14 @@ export default function ProductPage() {
     );
     const totalQuantity = cartItem ? cartItem.quantity + quantity : quantity;
 
+    if(totalQuantity > 5) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: "You can only add a maximum of 5 items to the cart.",
+      });
+      return;
+    }
+
     if (stockStatus.status === "OUT STOCK" || totalQuantity > availableQuantity) {
       toast({
         title: "Quantity Limit Reached",

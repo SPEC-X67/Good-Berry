@@ -16,6 +16,7 @@ export default function ShoppingCart() {
   const [subtotal, setSubtotal] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [total, setTotal] = useState(0)
+  const [totalAfterDiscount, setTotalAfterDiscount] = useState(0)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -24,19 +25,36 @@ export default function ShoppingCart() {
 
   const couponDiscount = coupon?.discount || 0
 
+  const clearCoupon = () => {
+    setCouponCode("")
+    dispatch({ type: 'shop/applyCoupon/fulfilled', payload: {} })
+  }
+
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + item?.price * item?.quantity, 0)
     const discount = newSubtotal - items.reduce((sum, item) => sum + item.salePrice * item.quantity, 0)
     setDiscount(discount)
     setSubtotal(newSubtotal)
-    setTotal(newSubtotal - discount - couponDiscount)
-  }, [items, discount, couponDiscount])
+
+    const subtotalAfterDiscount = newSubtotal - discount
+    setTotalAfterDiscount(subtotalAfterDiscount)
+    setTotal(subtotalAfterDiscount - (coupon?.discount || 0))
+
+    if (coupon?.discount && subtotalAfterDiscount < 1000) { 
+      clearCoupon()
+      toast({
+        title: "Coupon Removed",
+        description: "Cart total after discount is below the minimum required amount.",
+        variant: "destructive",
+      })
+    }
+  }, [items, discount, coupon])
 
   useEffect(() => {
-    if (couponCode) {
-      dispatch(checkCoupon({ code: couponCode, total }))
+    if (couponCode && !coupon.discount) {
+      dispatch(checkCoupon({ code: couponCode, total: totalAfterDiscount }))
     }
-  }, [dispatch, total])
+  }, [dispatch, couponCode, totalAfterDiscount])
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === "increase" ? currentQuantity + 1 : currentQuantity - 1
@@ -71,11 +89,28 @@ export default function ShoppingCart() {
         flavor,
       }),
     )
+    const remainingItems = items.filter(
+      item => !(item.productId === productId && item.packageSize === packageSize && item.flavor === flavor)
+    )
+    const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const newDiscount = newSubtotal - remainingItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0)
+    const newTotalAfterDiscount = newSubtotal - newDiscount
+
+    if (remainingItems.length === 0 || newTotalAfterDiscount < 1000) {
+      clearCoupon()
+      if (newTotalAfterDiscount < 1000 && remainingItems.length > 0) {
+        toast({
+          title: "Coupon Removed",
+          description: "Cart total after discount is below the minimum required amount.",
+          variant: "destructive",
+        })
+      }
+    }
   }
 
   const handleApplyCoupon = async (code = couponCode) => {
     try {
-      const response = await dispatch(applyCoupon({ code, total })).unwrap()
+      const response = await dispatch(applyCoupon({ code, total: totalAfterDiscount })).unwrap()
       if (response.success) {
         toast({
           title: `Coupon applied successfully`,
@@ -143,7 +178,6 @@ export default function ShoppingCart() {
                         onClick={() =>
                           handleQuantityChange(item.productId, item.quantity, item.packageSize, item.flavor, "increase")
                         }
-                        disabled={item.quantity >= availableQuantity}
                       >
                         +
                       </button>
@@ -203,7 +237,12 @@ export default function ShoppingCart() {
                 <span>-₹{discount?.toFixed(2)}</span>
               </div>
 
-              {coupon.discount && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Total after discount</span>
+                <span>₹{totalAfterDiscount?.toFixed(2)}</span>
+              </div>
+
+              {coupon.discount > 0 && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>Coupon</span>
                   <span>-₹{couponDiscount?.toFixed(2)}</span>
@@ -229,4 +268,3 @@ export default function ShoppingCart() {
     </div>
   )
 }
-

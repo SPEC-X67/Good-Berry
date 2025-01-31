@@ -24,7 +24,7 @@ export default function ShoppingCart() {
   const { items, quantity: availableQuantity } = useSelector((state) => state.cart)
 
   const couponDiscount = coupon?.discount || 0
-
+  
   const clearCoupon = () => {
     setCouponCode("")
     dispatch({ type: 'shop/applyCoupon/fulfilled', payload: {} })

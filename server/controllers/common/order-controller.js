@@ -180,120 +180,104 @@ const orderController = {
   
   cancelOrder: async (req, res) => {
     try {
-      const { itemId, reason } = req.body;
-  
-      if (!reason) {
-        return res.status(400).json({ message: 'Cancellation reason is required' });
-      }
-  
-      const order = await Order.findOne({
-        orderId: req.params.id,
-        userId: req.user.id,
-      })
-        .populate('addressId')
-        .populate('couponId');
-  
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      const item = order.items.id(itemId);
-      if (!item) {
-        return res.status(404).json({ message: 'Item not found in order' });
-      }
-  
-      if (item.status !== 'processing' && item.status !== 'delivered') {
-        return res.status(400).json({
-          message: `Item cannot be cancelled in ${item.status} status`,
+        const { itemId, reason } = req.body;
+
+        if (!reason) {
+            return res.status(400).json({ message: 'Cancellation reason is required' });
+        }
+
+        const order = await Order.findOne({
+            orderId: req.params.id,
+            userId: req.user.id,
+        }).populate('addressId').populate('couponId');
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found in order' });
+        }
+
+        if (!['processing', 'delivered'].includes(item.status)) {
+            return res.status(400).json({ message: `Item cannot be cancelled in ${item.status} status` });
+        }
+
+        const variant = await Variant.findOne({
+            productId: item.productId,
+            title: item.flavor,
         });
-      }
-  
-      const variant = await Variant.findOne({
-        productId: item.productId,
-        title: item.flavor,
-      });
-  
-      if (!variant) {
-        return res.status(404).json({ message: 'Product variant not found' });
-      }
-  
-      const packSize = variant.packSizePricing.find(
-        (pack) => pack.size === item.packageSize
-      );
-  
-      if (packSize) {
-        packSize.quantity += item.quantity;
-        await variant.save();
-      }
-  
-      item.status = 'cancelled';
-      item.cancellationReason = reason;
-      item.cancellation = {
-        reason,
-        message: '',
-        date: new Date(),
-      };
- 
-      const remainingItems = order.items.filter((i) => i.status !== 'cancelled');
-      order.discount = remainingItems.reduce(
-        (totalDiscount, i) =>
-          totalDiscount + (i.price * i.quantity - i.salePrice * i.quantity),
-        0
-      );
 
-      if (order.couponId) {
-        const remainingTotal = remainingItems.reduce(
-          (sum, i) => sum + i.salePrice * i.quantity,
-          0
-        );
-  
-        if (remainingTotal < order.couponId.minimumAmount) {
-          order.couponId = null;
-          order.couponDiscount = 0;
+        if (!variant) {
+            return res.status(404).json({ message: 'Product variant not found' });
         }
-      }
-  
-      order.subtotal = remainingItems.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-      );
-      order.total = order.subtotal - order.couponDiscount - order.discount;
-  
-      if (order.items.every((i) => i.status === 'cancelled')) {
-        order.status = 'cancelled';
-      } else if (order.items.some((i) => i.status === 'processing')) {
-        order.status = 'processing';
-      } else if (order.items.some((i) => i.status === 'shipped')) {
-        order.status = 'shipped';
-      } else if (order.items.some((i) => i.status === 'delivered')) {
-        order.status = 'delivered';
-      } else if (order.items.every((i) => i.status === 'returned')) {
-        order.status = 'returned';
-      }
-  
-      await order.save();
 
-      if (['wallet', 'upi'].includes(order.paymentMethod)) {
-        let wallet = await Wallet.findOne({ userId: req.user.id });
-        if (!wallet) {
-          wallet = await new Wallet({ userId: req.user.id, balance: 0, transactions: [] });
+        const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
+        if (packSize) {
+            packSize.quantity += item.quantity;
+            await variant.save();
         }
-          await wallet.refund(
-            item.salePrice * item.quantity,
-            `Refund for cancelled item ${item.name}`
-          );
-      }
-  
-      res.json(order);
+
+        item.status = 'cancelled';
+        item.cancellationReason = reason;
+        item.cancellation = {
+            reason,
+            date: new Date(),
+        };
+
+        const remainingItems = order.items.filter(i => i.status !== 'cancelled');
+        order.discount = remainingItems.reduce((total, i) => total + (i.price - i.salePrice) * i.quantity, 0);
+
+        let couponRefundAmount = 0;
+        let isCouponRemoved = false;
+
+        if (order.couponId) {
+            const remainingTotal = remainingItems.reduce((sum, i) => sum + i.salePrice * i.quantity, 0);
+            if (remainingTotal < order.couponId.minimumAmount) {
+                couponRefundAmount = order.couponDiscount; 
+                order.couponId = null;
+                order.couponDiscount = 0;
+                isCouponRemoved = true;
+            }
+        }
+
+        order.subtotal = remainingItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        order.total = order.subtotal - order.couponDiscount - order.discount;
+
+        if (order.items.every(i => i.status === 'cancelled')) {
+            order.status = 'cancelled';
+        } else if (order.items.some(i => i.status === 'processing')) {
+            order.status = 'processing';
+        } else if (order.items.some(i => i.status === 'shipped')) {
+            order.status = 'shipped';
+        } else if (order.items.some(i => i.status === 'delivered')) {
+            order.status = 'delivered';
+        } else if (order.items.every(i => i.status === 'returned')) {
+            order.status = 'returned';
+        }
+
+        await order.save();
+
+        if (['wallet', 'upi'].includes(order.paymentMethod)) {
+            let wallet = await Wallet.findOne({ userId: req.user.id });
+            if (!wallet) {
+                wallet = new Wallet({ userId: req.user.id, balance: 0, transactions: [] });
+                await wallet.save();
+            }
+
+            const refundAmount = isCouponRemoved
+                ? (item.salePrice * item.quantity) - couponRefundAmount
+                : (item.salePrice * item.quantity);
+
+            await wallet.refund(refundAmount, `Refund for cancelled item ${item.name}`);
+        }
+
+        res.json(order);
     } catch (error) {
-      res.status(500).json({
-        message: 'Error cancelling item',
-        error: error.message,
-      });
+        res.status(500).json({ message: 'Error cancelling item', error: error.message });
     }
   },
-  
-  
 
   returnOrderItem: async (req, res) => {
     try {

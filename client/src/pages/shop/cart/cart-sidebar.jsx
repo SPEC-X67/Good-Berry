@@ -28,6 +28,15 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
 
   const handleQuantityChange = async (productId, currentQuantity, packageSize, flavor, action) => {
     const newQuantity = action === 'increase' ? currentQuantity + 1 : currentQuantity - 1;
+
+
+    if(newQuantity > availableQuantity) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: `You already have ${availableQuantity} items of this product in your cart. No more stock is available.`,
+      })
+      return;
+    }
     
     if(newQuantity > 5) {
       toast({
@@ -158,7 +167,6 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
                               item.flavor, 
                               'increase'
                             )}
-                            disabled={item.quantity >= availableQuantity}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
@@ -174,7 +182,6 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
               Your cart is empty
             </div>
           )}
-
         </ScrollArea>
 
         <SheetFooter className="mt-auto">

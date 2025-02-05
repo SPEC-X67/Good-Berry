@@ -7,7 +7,6 @@ const Cart = require('../../models/Cart');
 const addCategoryOffer = async (req, res) => {
   try {
     const { categoryId, offerPercentage } = req.body;
-
     const category = await Category.findById(categoryId);
 
     if (!category) {
@@ -36,23 +35,38 @@ const addCategoryOffer = async (req, res) => {
       }));
     }));
 
-    // Update cart items for all users
-    const carts = await Cart.find({ "items.productId": { $in: products.map(p => p._id) } });
+
+
+    const productIds = products.map(p => p._id);
+    const variants = await Variant.find({ productId: { $in: productIds } });
+
+    const variantsByProduct = {};
+    variants.forEach(v => {
+      const key = v.productId.toString();
+      if (!variantsByProduct[key]) variantsByProduct[key] = [];
+      variantsByProduct[key].push(v);
+    });
+
+    // Update carts
+    const carts = await Cart.find({ "items.productId": { $in: productIds } });
     for (const cart of carts) {
+      let hasChanges = false;
       cart.items.forEach(item => {
-        const product = products.find(p => p._id.toString() === item.productId.toString());
-        if (product) {
-          const variant = product.variants.find(v => v.title === item.flavor);
-          if (variant) {
-            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
-            if (pack) {
-              item.price = pack.price;
-              item.salePrice = pack.salePrice;
-            }
+        const productVariants = variantsByProduct[item.productId.toString()] || [];
+        const variant = productVariants.find(v => v.title === item.flavor);
+        if (variant) {
+          const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+          if (pack && (item.salePrice !== pack.salePrice || item.price !== pack.price)) {
+            item.price = pack.price;
+            item.salePrice = pack.salePrice;
+            hasChanges = true;
           }
         }
       });
-      await cart.save();
+
+      if (hasChanges) {
+        await cart.save();
+      }
     }
 
     res.status(200).json({ success: true, message: 'Offer added successfully' });
@@ -95,25 +109,37 @@ const removeCategoryOffer = async (req, res) => {
       }));
     }));
 
-    // Update cart items for all users
-    const carts = await Cart.find({ "items.productId": { $in: products.map(p => p._id) } });
+    const productIds = products.map(p => p._id);
+    const variants = await Variant.find({ productId: { $in: productIds } });
+
+    const variantsByProduct = {};
+    variants.forEach(v => {
+      const key = v.productId.toString();
+      if (!variantsByProduct[key]) variantsByProduct[key] = [];
+      variantsByProduct[key].push(v);
+    });
+
+    // Update carts
+    const carts = await Cart.find({ "items.productId": { $in: productIds } });
     for (const cart of carts) {
+      let hasChanges = false;
       cart.items.forEach(item => {
-        const product = products.find(p => p._id.toString() === item.productId.toString());
-        if (product) {
-          const variant = product.variants.find(v => v.title === item.flavor);
-          if (variant) {
-            const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
-            if (pack) {
-              item.price = pack.price;
-              item.salePrice = pack.salePrice;
-            }
+        const productVariants = variantsByProduct[item.productId.toString()] || [];
+        const variant = productVariants.find(v => v.title === item.flavor);
+        if (variant) {
+          const pack = variant.packSizePricing.find(p => p.size === item.packageSize);
+          if (pack && (item.salePrice !== pack.salePrice || item.price !== pack.price)) {
+            item.price = pack.price;
+            item.salePrice = pack.salePrice;
+            hasChanges = true;
           }
         }
       });
-      await cart.save();
-    }
 
+      if (hasChanges) {
+        await cart.save();
+      }
+    }
     res.status(200).json({ success: true, message: 'Offer removed successfully' });
   } catch (error) {
     console.error('Error removing offer:', error.message);

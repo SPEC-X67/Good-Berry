@@ -1,5 +1,4 @@
 import { logodark } from "@/assets/images";
-import { Image } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Footer() {
@@ -83,12 +82,7 @@ export function Footer() {
               WILDSPRING © 2024 CREATED BY SPECZ1N
             </p>
             <div className="flex items-center gap-2">
-              <Image src="/placeholder.svg?height=30&width=40" alt="Visa" width={40} height={30} className="h-[30px] w-auto" />
-              <Image src="/placeholder.svg?height=30&width=40" alt="Mastercard" width={40} height={30} className="h-[30px] w-auto" />
-              <Image src="/placeholder.svg?height=30&width=40" alt="PayPal" width={40} height={30} className="h-[30px] w-auto" />
-              <Image src="/placeholder.svg?height=30&width=40" alt="American Express" width={40} height={30} className="h-[30px] w-auto" />
-              <Image src="/placeholder.svg?height=30&width=40" alt="Bank Card" width={40} height={30} className="h-[30px] w-auto" />
-              <Image src="/placeholder.svg?height=30&width=40" alt="Credit Card" width={40} height={30} className="h-[30px] w-auto" />
+              <img src="/src/assets/images/payments.png" className="h-auto w-auto" />
             </div>
           </div>
         </div>

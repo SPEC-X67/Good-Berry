@@ -1,24 +1,33 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { fetchDashboardData } from "@/store/admin-slice"
 import { Users, CreditCard, Activity, IndianRupee } from "lucide-react"
 import { useEffect } from "react"
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch, useSelector } from "react-redux"
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
+
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Skeleton className="h-10 w-[180px]" />
+      </div>
+      <Skeleton className="h-[350px] w-full" />
+    </div>
+  )
+}
 
 function Overview() {
   const dispatch = useDispatch()
-  const {  
-    overviewData,
-    status
-  } = useSelector((state) => state.admin.data)
-  
+  const { overviewData, status } = useSelector((state) => state.admin.data)
+
   const handleTimeRangeChange = (value) => {
     dispatch(fetchDashboardData(value))
   }
 
-  if (status === 'loading') {
-    return <div >Loading...</div>
+  if (status === "loading") {
+    return <OverviewSkeleton />
   }
 
   return (
@@ -54,8 +63,28 @@ function Overview() {
   )
 }
 
+function RecentSalesSkeleton() {
+  return (
+    <div className="space-y-8">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center">
+          <div className="ml-4 space-y-2">
+            <Skeleton className="h-4 w-[200px]" />
+            <Skeleton className="h-4 w-[150px]" />
+          </div>
+          <Skeleton className="h-6 w-16 ml-auto" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function RecentSales() {
-  const { recentSales } = useSelector((state) => state.admin.data)
+  const { recentSales, status } = useSelector((state) => state.admin.data)
+
+  if (status === "loading") {
+    return <RecentSalesSkeleton />
+  }
 
   return (
     <div className="space-y-8">
@@ -67,7 +96,7 @@ function RecentSales() {
           </div>
           <div className="ml-auto font-medium">
             <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-            ₹{sale.sale}
+              ₹{sale.sale}
             </span>
           </div>
         </div>
@@ -76,8 +105,16 @@ function RecentSales() {
   )
 }
 
+function ChartSkeleton() {
+  return <Skeleton className="h-[350px] w-full" />
+}
+
 function Top10Products() {
-  const { top10Products } = useSelector((state) => state.admin.data)
+  const { top10Products, status } = useSelector((state) => state.admin.data)
+
+  if (status === "loading") {
+    return <ChartSkeleton />
+  }
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -94,7 +131,11 @@ function Top10Products() {
 }
 
 function Top10Categories() {
-  const { top10Categories } = useSelector((state) => state.admin.data)
+  const { top10Categories, status } = useSelector((state) => state.admin.data)
+
+  if (status === "loading") {
+    return <ChartSkeleton />
+  }
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -110,82 +151,83 @@ function Top10Categories() {
   )
 }
 
+function MetricCard({ title, value, change, icon: Icon, color }) {
+  const { status } = useSelector((state) => state.admin)
+
+  return (
+    <Card className="transition-all hover:shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className={`h-4 w-4 text-${color}-600`} />
+      </CardHeader>
+      <CardContent>
+        {status === "loading" ? (
+          <>
+            <Skeleton className="h-7 w-[100px]" />
+            <Skeleton className="mt-2 h-4 w-[120px]" />
+          </>
+        ) : (
+          <>
+            <div className="text-2xl font-bold">
+              {title === "Total Revenue" ? "₹" : "+"}
+              {value?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </div>
+            <p className={`text-xs text-${color}-600`}>
+              {change > 0 ? "+" : ""}
+              {change}% from last month
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminDashboard() {
   const dispatch = useDispatch()
-  const { 
-    totalRevenue, 
-    newCustomers, 
-    totalSales, 
-    totalCancelled 
-  } = useSelector((state) => state.admin.data)
+  const { totalRevenue, newCustomers, totalSales, totalCancelled } = useSelector((state) => state.admin.data)
   const status = useSelector((state) => state.admin.status)
   const error = useSelector((state) => state.admin.error)
 
   useEffect(() => {
-    dispatch(fetchDashboardData('weekly'))
+    dispatch(fetchDashboardData("weekly"))
   }, [dispatch])
 
-  if (status === 'loading') {
-    return <div>Loading dashboard data...</div>
-  }
-
-  if (status === 'failed') {
+  if (status === "failed") {
     return <div>Error: {error}</div>
   }
 
   return (
     <div className="flex-1 space-y-4 p-8 pl-4 pt-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <IndianRupee className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₹{totalRevenue?.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-emerald-600">
-              {totalRevenue?.change > 0 ? '+' : ''}{totalRevenue?.change}% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{newCustomers?.value.toLocaleString()}</div>
-            <p className="text-xs text-blue-600">
-              {newCustomers?.change > 0 ? '+' : ''}{newCustomers?.change}% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <CreditCard className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{totalSales?.value.toLocaleString()}</div>
-            <p className="text-xs text-purple-600">
-              {totalSales.change > 0 ? '+' : ''}{totalSales?.change}% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cancelled Orders</CardTitle>
-            <Activity className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{totalCancelled?.value.toLocaleString()}</div>
-            <p className="text-xs text-orange-600">
-              {totalCancelled?.change > 0 ? '+' : ''}{totalCancelled?.change} from last month
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Revenue"
+          value={totalRevenue?.value}
+          change={totalRevenue?.change}
+          icon={IndianRupee}
+          color="emerald"
+        />
+        <MetricCard
+          title="New Customers"
+          value={newCustomers?.value}
+          change={newCustomers?.change}
+          icon={Users}
+          color="blue"
+        />
+        <MetricCard
+          title="Sales"
+          value={totalSales?.value}
+          change={totalSales?.change}
+          icon={CreditCard}
+          color="purple"
+        />
+        <MetricCard
+          title="Cancelled Orders"
+          value={totalCancelled?.value}
+          change={totalCancelled?.change}
+          icon={Activity}
+          color="orange"
+        />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">

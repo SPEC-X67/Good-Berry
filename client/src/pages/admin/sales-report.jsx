@@ -51,7 +51,7 @@ export default function SalesReportPage() {
   const fetchReport = async () => {
     const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
     const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
-    const response = await axios.get('http://localhost:5000/api/admin/sales-report', {
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE}/api/admin/sales-report`, {
       params: { period, startDate, endDate, page: currentPage, limit: ordersPerPage, search: filterText },
       withCredentials: true
     });

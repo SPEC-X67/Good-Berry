@@ -20,6 +20,7 @@ import {
   Truck,
   ShoppingBag,
   Info,
+  Download,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import OrderSuccess from "./success-order";
 import PropTypes from "prop-types";
 import axios from "axios";
 
@@ -270,6 +272,8 @@ export default function OrderView() {
   const { order, isLoading, error } = useSelector((state) => state.order);
   const [cancelReason, setCancelReason] = useState("");
   const [returnReason, setReturnReason] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
 
   useEffect(() => {
     dispatch(fetchOrderById(id));
@@ -359,14 +363,14 @@ export default function OrderView() {
         return;
       }
 
-      const razorpayOrder = await axios.post('http://localhost:5000/api/user/create-razorpay-order', {
+      const razorpayOrder = await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/create-razorpay-order`, {
         orderId: order._id
       }, {
         withCredentials: true
       });
 
       const options = {
-        key: 'rzp_test_CS2mGJMpuRbxFh', // Your Razorpay key
+        key: 'rzp_test_CS2mGJMpuRbxFh',
         amount: razorpayOrder.data.amount,
         currency: razorpayOrder.data.currency,
         name: "Good Berry",
@@ -374,7 +378,7 @@ export default function OrderView() {
         order_id: razorpayOrder.data.orderId,
         handler: async function (response) {
           try {
-            const { data } = await axios.post('http://localhost:5000/api/user/verify-payment', {
+            const { data } = await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/verify-payment`, {
               orderCreationId: razorpayOrder.data.orderId,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
@@ -384,6 +388,7 @@ export default function OrderView() {
               withCredentials: true
             });
 
+            setPaymentSuccess(true);
             toast({
               title: 'Payment successful',
               description: `Order ID: ${data.orderId}`,
@@ -401,7 +406,7 @@ export default function OrderView() {
         modal: {
           ondismiss: async function () {
             try {
-              await axios.post('http://localhost:5000/api/user/payment-failure', {
+              await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/payment-failure`, {
                 orderId: order._id
               }, {
                 withCredentials: true
@@ -445,6 +450,11 @@ export default function OrderView() {
       });
     }
   };
+
+  if (paymentSuccess) {
+      return <OrderSuccess data={order} setPaymentSuccess={setPaymentSuccess} isRepay={true} />;
+  }
+  
 
   if (isLoading) {
     return (
@@ -581,10 +591,11 @@ export default function OrderView() {
           </div>
         </CardContent>
 
-        <CardFooter className="border-t">
+        <CardFooter className="border-t pb-5 flex items-center justify-between">
           <p className="text-sm text-gray-600 pt-4">
             Thank you for shopping with us! We appreciate your business.
           </p>
+          <Button variant="outline" className="mt-4"> Invoice <Download/></Button>
         </CardFooter>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-import { iceCream, jam, juice, snacks, tea } from '@/assets/images'
+ import { iceCream, jam, juice, snacks, tea } from '@/assets/images'
 
 const Category = ({ icon, label, isActive, onClick }) => (
   <div

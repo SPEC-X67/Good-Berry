@@ -59,7 +59,7 @@ const orderController = {
 
         if (packSize.quantity < cartItem.quantity) {
           return res.status(400).json({ 
-            message: `Insufficient quantity available. Required: ${cartItem.quantity}, Available: ${packSize.quantity}` 
+            message: `Insufficient quantity available for ${cartItem.name}. Required: ${cartItem.quantity}, Available: ${packSize.quantity}` 
           });
         }
 
@@ -101,7 +101,7 @@ const orderController = {
         }
       }
   
-      if(!paymentMethod == 'wallet') {
+      if(paymentMethod == 'cod' || paymentMethod == 'upi') {
         cart.items = [];
         await cart.save();
       }
@@ -268,7 +268,7 @@ const orderController = {
 
             const refundAmount = isCouponRemoved
                 ? (item.salePrice * item.quantity) - couponRefundAmount
-                : (item.salePrice * item.quantity);
+                  : (item.salePrice * item.quantity);
 
             await wallet.refund(refundAmount, `Refund for cancelled item ${item.name}`);
         }

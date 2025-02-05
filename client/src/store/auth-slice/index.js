@@ -12,7 +12,7 @@ export const registerUser = createAsyncThunk(
 
     async (formData) => {
         const response = await axios.post(
-            "http://localhost:5000/api/auth/register",
+            `${import.meta.env.VITE_API_BASE}/api/auth/register`,
             formData,
             {
                 withCredentials: true,
@@ -28,7 +28,7 @@ export const loginUser = createAsyncThunk(
 
     async (formData) => {
         const response = await axios.post(
-            "http://localhost:5000/api/auth/login",
+            `${import.meta.env.VITE_API_BASE}/api/auth/login`,
             formData,
             {
                 withCredentials: true,
@@ -44,7 +44,7 @@ export const checkAuth = createAsyncThunk(
 
     async () => {
         const response = await axios.get(
-            "http://localhost:5000/api/auth/auth-check",
+            `${import.meta.env.VITE_API_BASE}/api/auth/auth-check`,
             {
                 withCredentials: true,
                 headers: {
@@ -63,7 +63,7 @@ export const logoutUser = createAsyncThunk(
 
     async () => {
         const response = await axios.post(
-            "http://localhost:5000/api/auth/logout",
+            `${import.meta.env.VITE_API_BASE}/api/auth/logout`,
             {},
             {
                 withCredentials: true,
@@ -78,7 +78,7 @@ export const verifyOtp = createAsyncThunk(
   "auth/verifyOtp",
   async (otp) => {
     const response = await axios.post(
-      `http://localhost:5000/api/auth/verify`,
+      `${import.meta.env.VITE_API_BASE}/api/auth/verify`,
       otp,
       {
         withCredentials: true,
@@ -92,7 +92,7 @@ export const resendOtp = createAsyncThunk(
   "auth/resendOtp",
   async () => {
     const response = await axios.post(
-      `http://localhost:5000/api/auth/resend-otp`,
+      `${import.meta.env.VITE_API_BASE}/api/auth/resend-otp`,
       {},
       {
         withCredentials: true,
@@ -106,7 +106,7 @@ export const forgetPassword = createAsyncThunk(
   "auth/forgetPassword",
   async (email, thunkAPI) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/forget-password", { email });
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/auth/forget-password`, { email });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
@@ -118,7 +118,7 @@ export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async ({ token, password }, thunkAPI) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/reset-password", { token, password });
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/auth/reset-password`, { token, password });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });

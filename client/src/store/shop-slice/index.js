@@ -15,7 +15,7 @@ const initialState = {
     error : null
 };
 
-const api = "http://localhost:5000/api";
+const api = `${import.meta.env.VITE_API_BASE}/api`;
 
 export const featuredProducts = createAsyncThunk(
     "shop/featuredProducts",
@@ -32,7 +32,7 @@ export const featuredProducts = createAsyncThunk(
 
 export const getProducts = createAsyncThunk(
     "shop/getProducts",
-    async ({ page, limit, sort = 'featured', search = '', minPrice, maxPrice, categories}) => {
+    async ({ page, limit, sort = 'featured', search = '', minPrice = 0, maxPrice = 100000, categories = ''}) => {
       try {
         const response = await axios.get(
           `${api}/products?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}`
@@ -131,7 +131,12 @@ const shopSlice = createSlice({
             state.pflavors = [];
             state.recomentedProds = []; 
         })
+
+        .addCase(getProducts.pending, (state) => {
+          state.loading = true;
+        })
         .addCase(getProducts.fulfilled, (state, action) => {
+            state.loading = false
             state.products = action.payload.data;
             state.pagination = action.payload.pagination;
             state.product = {};

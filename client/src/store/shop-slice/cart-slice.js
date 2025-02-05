@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const api = 'http://localhost:5000/api/user';
+const api = `${import.meta.env.VITE_API_BASE}/api/user`;
 
 const cartStorage = {
   load: () => {
@@ -183,7 +183,7 @@ export const checkQuantity = createAsyncThunk(
   'cart/checkQuantity',
   async ({ productId, packageSize, flavor }) => {
     try {
-      const response = await axios.post(`http://localhost:5000/api/check-quantity`, { productId, packageSize, flavor }, {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/check-quantity`, { productId, packageSize, flavor }, {
         withCredentials: true
       });
       return response.data;

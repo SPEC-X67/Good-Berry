@@ -26,6 +26,7 @@ const getProductDetails = async (req, res) => {
       });
     }
 
+    console.log(product)
     const variants = await Variant.find({ productId: id });
 
     const variantsFormatted = variants.reduce((acc, variant) => {

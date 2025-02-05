@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const api = 'http://localhost:5000/api/admin';
+const api = `${import.meta.env.VITE_API_BASE}/api/admin`;
 
 export const fetchAllOrders = createAsyncThunk(
   'adminOrder/fetchAllOrders',

@@ -12,6 +12,7 @@ const transporter = nodemailer.createTransport({
 
 
 const SendVerificationCode = async (email, code) => {
+    console.log("Verification code: ", email, code)
     try {
         const htmlTemplate = `
         <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;">

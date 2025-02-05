@@ -1,4 +1,12 @@
-import { AlertTriangle, Check, Copy, Heart, Maximize, Share2, Star } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  Heart,
+  Maximize,
+  Share2,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +28,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import ProductDetails from "./product-details";
 import RelatedProducts from "./related-products";
 import { useDispatch, useSelector } from "react-redux";
-import { getSingleProduct, getWishlist, addToWishlist, removeFromWishlist } from "@/store/shop-slice";
+import {
+  getSingleProduct,
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
+} from "@/store/shop-slice";
 import ZoomImage from "@/components/ui/zoom-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import CartSidebar from "../cart/cart-sidebar";
@@ -31,16 +44,20 @@ export default function ProductPage() {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   useEffect(() => {
-    dispatch(getSingleProduct(id))
-    dispatch(getWishlist())
+    dispatch(getSingleProduct(id));
+    dispatch(getWishlist());
   }, [dispatch, id]);
-  
+
   const { user } = useSelector((state) => state.auth);
-  const { product, pflavors, recomentedProds, wishlist, error } = useSelector((state) => state.shop);
-  const { quantity: availableQuantity, items: cartItems } = useSelector((state) => state.cart);
-  
+  const { product, pflavors, recomentedProds, wishlist, error } = useSelector(
+    (state) => state.shop
+  );
+  const { quantity: availableQuantity, items: cartItems } = useSelector(
+    (state) => state.cart
+  );
+
   const flavors = pflavors || {};
   const flavorKeys = Object.keys(flavors);
 
@@ -69,7 +86,9 @@ export default function ProductPage() {
 
   const calculateDiscount = (originalPrice, salePrice) => {
     if (!originalPrice || !salePrice) return 0;
-    const discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+    const discount = Math.round(
+      ((originalPrice - salePrice) / originalPrice) * 100
+    );
     return discount > 0 ? discount : 0;
   };
 
@@ -77,10 +96,13 @@ export default function ProductPage() {
     if (!flavor || !flavor.packSizePricing) {
       return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
     }
-    const pack = flavor.packSizePricing.find(p => p.size === packageSize);
+    const pack = flavor.packSizePricing.find((p) => p.size === packageSize);
     if (pack && pack.quantity > 0) {
       if (pack.quantity < 20) {
-        return { status: `Limited Stock (${pack.quantity})`, color: "text-yellow-600 border-yellow-600" };
+        return {
+          status: `Limited Stock (${pack.quantity})`,
+          color: "text-yellow-600 border-yellow-600",
+        };
       }
       return { status: "IN STOCK", color: "text-[#8CC63F] border-[#8CC63F]" };
     }
@@ -102,6 +124,18 @@ export default function ProductPage() {
       });
     }
   }, [pflavors]);
+
+  useEffect(() => {
+    if (flavor) {
+      dispatch(
+        checkQuantity({
+          productId: product._id,
+          packageSize,
+          flavor: flavor.title,
+        })
+      );
+    }
+  }, [flavor]);
 
   const handleFlavorChange = (value) => {
     setSelectedFlavor(value);
@@ -129,11 +163,14 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     const cartItem = cartItems.find(
-      item => item.productId === product._id && item.packageSize === packageSize && item.flavor === flavor?.title
+      (item) =>
+        item.productId === product._id &&
+        item.packageSize === packageSize &&
+        item.flavor === flavor?.title
     );
     const totalQuantity = cartItem ? cartItem.quantity + quantity : quantity;
 
-    if(totalQuantity > 5) {
+    if (totalQuantity > 5) {
       toast({
         title: "Quantity Limit Reached",
         description: "You can only add a maximum of 5 items to the cart.",
@@ -141,14 +178,17 @@ export default function ProductPage() {
       return;
     }
 
-    if (stockStatus.status === "OUT STOCK" || totalQuantity > availableQuantity) {
+    if (
+      stockStatus.status === "OUT STOCK" ||
+      totalQuantity > availableQuantity
+    ) {
       toast({
         title: "Quantity Limit Reached",
         description: `You already have ${availableQuantity} items of this product in your cart. No more stock is available.`,
       });
       return;
     }
-    
+
     setIsAddingToCart(true);
     const newCartItem = {
       ...(user && { userId: user._id }),
@@ -159,9 +199,9 @@ export default function ProductPage() {
       quantity,
       price: currentPrice.price,
       salePrice: currentPrice.salePrice,
-      image: selectedImage
+      image: selectedImage,
     };
-    
+
     try {
       await dispatch(addToCart(newCartItem));
       setIsAddingToCart(false);
@@ -183,15 +223,21 @@ export default function ProductPage() {
   };
 
   const handleQuantityChange = async (action) => {
-    const newQuantity = action === 'increase' ? quantity + 1 : quantity - 1;
-    if(newQuantity > 5) {
+    const newQuantity = action === "increase" ? quantity + 1 : quantity - 1;
+    if (newQuantity > 5) {
       toast({
         title: "Quantity Limit Reached",
         description: "You can only add a maximum of 5 items to the cart.",
       });
       return;
     }
-    await dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor?.title }));
+    await dispatch(
+      checkQuantity({
+        productId: product._id,
+        packageSize,
+        flavor: flavor?.title,
+      })
+    );
     if (newQuantity > 0) {
       if (newQuantity <= availableQuantity) {
         setQuantity(newQuantity);
@@ -199,27 +245,33 @@ export default function ProductPage() {
     }
   };
 
-  const isInWishlist = flavor && wishlist.some(item => 
-    item.productId === product._id && item.variantId === flavor._id
-  );
+  const isInWishlist =
+    flavor &&
+    wishlist.some(
+      (item) => item.productId === product._id && item.variantId === flavor._id
+    );
 
   const handleWishlistToggle = async () => {
-    if(!user){
+    if (!user) {
       toast({
         title: "Please login to add to wishlist",
         description: "You must be logged in to add items to your wishlist.",
-      })
+      });
       return navigate("/auth/login");
     }
     try {
       if (isInWishlist) {
-        await dispatch(removeFromWishlist({ productId: product._id, variantId: flavor._id }));
+        await dispatch(
+          removeFromWishlist({ productId: product._id, variantId: flavor._id })
+        );
         toast({
           title: "Success",
           description: "Product removed from wishlist",
         });
       } else {
-        await dispatch(addToWishlist({ productId: product._id, variantId: flavor._id }));
+        await dispatch(
+          addToWishlist({ productId: product._id, variantId: flavor._id })
+        );
         toast({
           title: "Success",
           description: "Product added to wishlist",
@@ -252,24 +304,25 @@ export default function ProductPage() {
   };
 
   if (!currentPrice.price || !currentPrice.salePrice) {
-      dispatch(getSingleProduct(id))
+    dispatch(getSingleProduct(id));
   }
 
   if (error) {
-    return (  
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-      <div className="text-center space-y-4">
-        <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500" />
-        <h1 className="text-3xl font-bold">Product Not Found</h1>
-        <p className="text-muted-foreground">We couldn&apos;t find the product you&apos;re looking for.</p>
-        <Button asChild>
-          <Link to="/shop">Return to Shop</Link>
-        </Button>
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500" />
+          <h1 className="text-3xl font-bold">Product Not Found</h1>
+          <p className="text-muted-foreground">
+            We couldn&apos;t find the product you&apos;re looking for.
+          </p>
+          <Button asChild>
+            <Link to="/shop">Return to Shop</Link>
+          </Button>
+        </div>
       </div>
-    </div>
-    )
+    );
   }
-    
 
   if (!flavor) {
     return (
@@ -290,11 +343,6 @@ export default function ProductPage() {
       </div>
     );
   }
-
-  if(flavor) {
-    dispatch(checkQuantity({ productId: product._id, packageSize, flavor: flavor.title }));
-  }
-
 
   const discountPercentage = calculateDiscount(
     currentPrice.price,
@@ -357,22 +405,23 @@ export default function ProductPage() {
 
           {/* Thumbnails */}
           <div className="flex lg:flex-col gap-5 order-2 lg:order-1">
-            {flavor && flavor.images.map((image, i) => (
-              <button
-                key={i}
-                className={cn(
-                  "relative h-20 w-20 flex-shrink-0 rounded-lg border bg-white",
-                  selectedImage === image && "ring-2 ring-primary"
-                )}
-                onClick={() => setSelectedImage(image)}
-              >
-                <img
-                  src={image}
-                  alt={`${flavor?.title} thumbnail ${i + 1}`}
-                  className="object-cover rounded-md"
-                />
-              </button>
-            ))}
+            {flavor &&
+              flavor.images.map((image, i) => (
+                <button
+                  key={i}
+                  className={cn(
+                    "relative h-20 w-20 flex-shrink-0 rounded-lg border bg-white",
+                    selectedImage === image && "ring-2 ring-primary"
+                  )}
+                  onClick={() => setSelectedImage(image)}
+                >
+                  <img
+                    src={image}
+                    alt={`${flavor?.title} thumbnail ${i + 1}`}
+                    className="object-cover rounded-md"
+                  />
+                </button>
+              ))}
           </div>
         </div>
 
@@ -405,7 +454,9 @@ export default function ProductPage() {
                 ₹{currentPrice?.price?.toFixed(2)}
               </span>
             )}
-            <span className={`ml-4 text-sm ${stockStatus?.color} border px-3 py-1 rounded-full`}>
+            <span
+              className={`ml-4 text-sm ${stockStatus?.color} border px-3 py-1 rounded-full`}
+            >
               {stockStatus?.status}
             </span>
           </div>
@@ -422,11 +473,12 @@ export default function ProductPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {flavor && flavorKeys.map((flavorKey) => (
-                    <SelectItem key={flavorKey} value={flavorKey}>
-                      {flavors[flavorKey]?.title}
-                    </SelectItem>
-                  ))}
+                  {flavor &&
+                    flavorKeys.map((flavorKey) => (
+                      <SelectItem key={flavorKey} value={flavorKey}>
+                        {flavors[flavorKey]?.title}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -434,20 +486,21 @@ export default function ProductPage() {
             <div>
               <div className="mb-2 text-sm font-medium">Package size:</div>
               <div className="flex gap-4">
-                {flavor && flavor.packageSizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handlePackageSizeChange(size)}
-                    className={cn(
-                      "rounded-md border px-4 py-2 text-sm transition-colors",
-                      packageSize === size
-                        ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {flavor &&
+                  flavor.packageSizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => handlePackageSizeChange(size)}
+                      className={cn(
+                        "rounded-md border px-4 py-2 text-sm transition-colors",
+                        packageSize === size
+                          ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
+                          : "hover:bg-muted"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -455,23 +508,29 @@ export default function ProductPage() {
               <div className="flex items-center rounded-md border">
                 <button
                   className="px-3 py-2 hover:bg-muted"
-                  onClick={() => handleQuantityChange('decrease')}
+                  onClick={() => handleQuantityChange("decrease")}
                 >
                   -
                 </button>
                 <span className="w-12 text-center">{quantity}</span>
                 <button
                   className="px-3 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => handleQuantityChange('increase')}
+                  onClick={() => handleQuantityChange("increase")}
                   disabled={quantity >= availableQuantity}
                 >
                   +
                 </button>
               </div>
-              <Button 
+              <Button
                 className="bg-[#8CC63F] px-8 hover:bg-[#7AB32F] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleAddToCart}
-                disabled={isAddingToCart || addedToCart || stockStatus.status === "OUT STOCK" || quantity > availableQuantity || quantity > 5}
+                disabled={
+                  isAddingToCart ||
+                  addedToCart ||
+                  stockStatus.status === "OUT STOCK" ||
+                  quantity > availableQuantity ||
+                  quantity > 5
+                }
               >
                 {isAddingToCart ? (
                   <div className="flex items-center gap-2">
@@ -489,15 +548,15 @@ export default function ProductPage() {
               </Button>
             </div>
 
-            <Button 
+            <Button
               className="flex items-center gap-2 p-0 bg-transparent hover:bg-transparent text-sm text-black transition-colors"
               onClick={handleWishlistToggle}
             >
-              <Heart 
+              <Heart
                 className={cn(
                   "h-4 w-4 transition-colors duration-200",
                   isInWishlist ? "fill-red-500 text-red-500" : "text-gray-500"
-                )} 
+                )}
               />
               {isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
             </Button>
@@ -527,7 +586,7 @@ export default function ProductPage() {
                 to="/category/ice-cream"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Ice Cream
+                {product.category.name}
               </Link>
             </div>
           </div>
@@ -551,15 +610,15 @@ export default function ProductPage() {
               </div>
             </div>
           </div>
-            <Button type="button" className="w-[90px]" onClick={handleCopyLink}>
-              Copy <Copy className="h-4 w-4" />
-            </Button>
+          <Button type="button" className="w-[90px]" onClick={handleCopyLink}>
+            Copy <Copy className="h-4 w-4" />
+          </Button>
         </DialogContent>
       </Dialog>
 
       <ProductDetails description={product?.description} />
       <RelatedProducts products={recomentedProds} id={product?._id} />
-      
+
       <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
     </div>
   );

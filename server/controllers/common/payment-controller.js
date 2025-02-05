@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const Order = require('../../models/Order');
 const Wallet = require('../../models/Wallet');
 const Variant = require('../../models/Variant');
+const Cart = require('../../models/Cart');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -96,6 +97,7 @@ const paymentController = {
   handlePaymentFailure: async (req, res) => {
     try {
       const { orderId } = req.body;
+      const userId = req.user.id;
 
       const order = await Order.findById(orderId);
       if (!order) {
@@ -104,6 +106,10 @@ const paymentController = {
 
       order.paymentStatus = 'failed';
       order.status = 'failed';
+
+      const cart = await Cart.findOne({ userId });
+      cart.items = [];
+      await cart.save();
       
       await order.save();
 

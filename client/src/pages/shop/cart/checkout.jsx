@@ -71,6 +71,7 @@ export default function CheckoutPage() {
 
   const items = useSelector((state) => state.cart.items);
   const { isLoading } = useSelector((state) => state.order);
+  const BASE_URL = import.meta.env.VITE_API_BASE
 
   const { coupon } = useSelector((state) => state.shop);
   const subtotal = items.reduce(
@@ -229,7 +230,7 @@ export default function CheckoutPage() {
       setOrderDetails(order);
 
       const razorpayOrder = await axios.post(
-        "http://localhost:5000/api/user/create-razorpay-order",
+        `${BASE_URL}/api/user/create-razorpay-order`,
         {
           orderId: order._id,
         },
@@ -239,7 +240,7 @@ export default function CheckoutPage() {
       );
 
       const options = {
-        key: "rzp_test_CS2mGJMpuRbxFh",
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: razorpayOrder.data.amount,
         currency: razorpayOrder.data.currency,
         name: "Good Berry",
@@ -248,7 +249,7 @@ export default function CheckoutPage() {
         handler: async function (response) {
           try {
             const { data } = await axios.post(
-              "http://localhost:5000/api/user/verify-payment",
+              `${BASE_URL}/api/user/verify-payment`,
               {
                 orderCreationId: razorpayOrder.data.orderId,
                 razorpayPaymentId: response.razorpay_payment_id,
@@ -270,10 +271,11 @@ export default function CheckoutPage() {
             });
           } catch (error) {
             console.error("Error verifying payment:", error);
+            setLoading(false);
             toast({
               title: "Payment verification failed",
               description:
-                error.response?.data?.message || "Please contact support",
+              error?.message || "Please contact support",
               variant: "destructive",
             });
           }
@@ -282,7 +284,7 @@ export default function CheckoutPage() {
           ondismiss: async function () {
             try {
               await axios.post(
-                "http://localhost:5000/api/user/payment-failure",
+                `${BASE_URL}/api/user/payment-failure`,
                 {
                   orderId: order._id,
                 },
@@ -291,6 +293,7 @@ export default function CheckoutPage() {
                 }
               );
               navigate(`/account/order/${order.orderId}`);
+              dispatch(clearCart());
               toast({
                 title: "Payment cancelled",
                 description: "Your payment was cancelled. Please try again.",
@@ -298,6 +301,7 @@ export default function CheckoutPage() {
               });
             } catch (error) {
               console.error("Error handling payment failure:", error);
+              setLoading(false);
               toast({
                 title: "Error handling payment failure",
                 description: error.message || "Please contact support",
@@ -329,6 +333,7 @@ export default function CheckoutPage() {
         description: error.message || "Please try again",
         variant: "destructive",
       });
+      setLoading(false);
     }
   };
 
@@ -355,7 +360,7 @@ export default function CheckoutPage() {
       setOrderDetails(order);
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/user/wallet-payment",
+        `${BASE_URL}/api/user/wallet-payment`,
         {
           orderId: order._id,
         },
@@ -375,7 +380,7 @@ export default function CheckoutPage() {
       console.error("Error handling wallet payment:", error);
       toast({
         title: "Payment failed",
-        description: error.response?.data?.message || "Please contact support",
+        description: error?.message || "Please contact support",
         variant: "destructive",
       });
     } finally {
@@ -890,7 +895,7 @@ export default function CheckoutPage() {
                             name: "Cash on Delivery",
                             disabled: summary.total > 1000,
                           },
-                          { id: "upi", name: "Pay with UPI", disabled: false },
+                          { id: "upi", name: "Razorpay", disabled: false },
                           {
                             id: "wallet",
                             name: "Pay with Wallet",

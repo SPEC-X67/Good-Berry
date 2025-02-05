@@ -12,7 +12,7 @@ const initialState = {
     error: null,
 };
 
-const api = "http://localhost:5000/api/user";
+const api = `${import.meta.env.VITE_API_BASE}/api/user`;
 
 const extractError = (error) => error.response?.data?.error || 'Something went wrong';
 

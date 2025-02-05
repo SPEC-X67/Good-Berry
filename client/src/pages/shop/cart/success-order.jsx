@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
-export default function OrderSuccess({ data }) {
+export default function OrderSuccess({ data, isRepay, setPaymentSuccess }) {
   useEffect(() => {
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
@@ -276,11 +276,18 @@ export default function OrderSuccess({ data }) {
           </div>
 
           <div className="mt-8 space-y-4">
-            <Button asChild className="w-full bg-[#8CC63F] hover:bg-[#8CC63F]">
-              <Link to={`/account/order/${data.orderId}`}>
+            {isRepay ? (
+              <Button onClick={() => setPaymentSuccess(false)} className="w-full bg-[#8CC63F] hover:bg-[#8CC63F]">
                 Track Your Order
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button asChild className="w-full bg-[#8CC63F] hover:bg-[#8CC63F]">
+                 <Link to={`/account/order/${data.orderId}`}>
+                Track Your Order
+                </Link>
+              </Button>
+            )}
+
             <Button
               variant="outline"
               className="w-full"

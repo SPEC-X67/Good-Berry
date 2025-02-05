@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const api = 'http://localhost:5000/api/admin';
+const BASE_URL = import.meta.env.VITE_API_BASE;
+const api = `${BASE_URL}/api/admin`;
 
 export const addCategoryOffer = createAsyncThunk(
   'offer/addCategoryOffer',

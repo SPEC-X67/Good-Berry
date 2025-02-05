@@ -18,7 +18,8 @@ const initialState = {
   status: 'idle',
 };
 
-const api = "http://localhost:5000/api/admin";
+const BASE_URL = import.meta.env.VITE_API_BASE;
+const api = `${BASE_URL}/api/admin`;
 
 // Thunk to Fetch Users
 export const fetchUsers = createAsyncThunk(
@@ -86,6 +87,7 @@ export const updateCategory = createAsyncThunk(
   }
 )
 
+
 export const addCategory = createAsyncThunk(
   "admin/addCategory",
 
@@ -146,7 +148,7 @@ export const uploadToCloudinary = createAsyncThunk(
     formData.append("image", file);
 
     try {
-      const response = await fetch("http://localhost:5000/api/upload", {
+      const response = await fetch(`${BASE_URL}/api/upload`, {
         method: "POST",
         body: formData,
       });

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { background, product } from "@/assets/hero"
 
 const banners = [
   {
     id: 1,
-    backgroundImage: "/src/assets/hero/organic-slide-bg-1.jpg",
-    productImage: "/src/assets/hero/organic-slide-1-img-535x487.png",
+    backgroundImage: background,
+    productImage: product,
     title: "SOUR\nGREEN APPLE\nICE CREAM",
     subtitle: "IT IS A LONG ESTABLISHED FACT THAT A READER WILL",
   },

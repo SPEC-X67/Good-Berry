@@ -20,7 +20,7 @@ export function ProductSlider({ products }) {
   }, [emblaApi]);
 
   return (
-    <div className="relative group pb-10"> {/* Moved group class here */}
+    <div className="our-product-move relative group pb-10"> {/* Moved group class here */}
       <div ref={emblaRef} className="overflow-x-auto no-scrollbar" style={{ height: "360px" }}>
 
         <div className="flex gap-8">

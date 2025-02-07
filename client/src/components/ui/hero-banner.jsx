@@ -34,7 +34,7 @@ export default function HeroBanner() {
     if (banners.length > 1) {
       const interval = setInterval(() => {
         setCurrentBanner((prev) => (prev + 1) % banners.length)
-      }, 10000) // Change banner every 5 seconds
+      }, 10000) // Change banner every 10 seconds
 
       return () => clearInterval(interval)
     }
@@ -62,14 +62,14 @@ export default function HeroBanner() {
       </AnimatePresence>
 
       <div className="relative z-10 mx-auto max-w-7xl h-full">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8 h-full">
+        <div className="banner-content grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8 h-full">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="flex items-center justify-center"
+            className="banner-flex flex items-center justify-center"
           >
-            <img src={banner.productImage || "/placeholder.svg"} alt="Product" className="mt-12 max-w-full h-auto max-h-[487px]" />
+            <img src={banner.productImage || "/placeholder.svg"} alt="Product" className="mt-12 max-w-full h-auto max-h-[487px] banner-img" />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 100 }}
@@ -81,14 +81,15 @@ export default function HeroBanner() {
               {banner.title}
             </h1>
             <p className="mt-4 text-lg text-white/90">{banner.subtitle}</p>
-            <div className="mt-8 flex gap-4 justify-center pr-12">
+            <div className="banner-buttons  mt-8 flex gap-4 justify-center pr-12">
               <Button
                 size="lg"
-                className="border-2 bg-transparent text-white hover:bg-white/90 hover:text-black rounded-full h-12"
+                className="hidden md:block border-2 bg-transparent text-white hover:bg-white/90 hover:text-black rounded-full h-12"
+                onClick={() => {navigator.push("/shop")}}
               >
                 SHOP NOW
               </Button>
-              <Button size="lg" className="bg-[#83ac2b] hover:bg-[#7AB32E] text-white rounded-full h-12">
+              <Button size="lg" className="bg-[#83ac2b] hover:bg-[#7AB32E] text-white rounded-full h-12" onClick={() => {navigator.push("/shop")}}>
                 VIEW MORE
               </Button>
             </div>

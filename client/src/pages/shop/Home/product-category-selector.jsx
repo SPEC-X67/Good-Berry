@@ -24,7 +24,7 @@ export function ProductCategorySelector({ activeCategory, onCategoryChange }) {
   ]
 
   return (
-    <div className="flex justify-center gap-12 mb-16">
+    <div className="our-categorys flex justify-center gap-12 mb-16">
       {categories.map((category) => (
         <Category
           key={category.value}

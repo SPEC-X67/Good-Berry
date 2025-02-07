@@ -367,7 +367,7 @@ export default function CheckoutPage() {
         {
           withCredentials: true,
         }
-      );
+      )
 
       setPaymentSuccess(true);
       dispatch(clearCart());
@@ -377,10 +377,10 @@ export default function CheckoutPage() {
         description: `Order ID: ${data.orderId}`,
       });
     } catch (error) {
-      console.error("Error handling wallet payment:", error);
+      console.error("Error handling wallet payment:", error.response.data.message);
       toast({
         title: "Payment failed",
-        description: error?.message || "Please contact support",
+        description: error?.response?.data?.message || "Please contact support",
         variant: "destructive",
       });
     } finally {

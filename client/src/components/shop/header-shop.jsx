@@ -40,11 +40,11 @@ function ShopHeader() {
   
           <div className="flex flex-1 items-center justify-center">
             <Link to="/" className="flex items-center space-x-2">
-              <img src={logodark} alt="Logo" className="lg:h-8 h-6" />
+              <img src={logodark} alt="Logo" className="hidden md:block lg:h-8 h-6" />
             </Link>
           </div>
   
-          <div className="flex items-center me-6">
+          <div className="flex items-center md:me-6">
             <Link to={user ? '/account' : 'auth/login'} className="text-sm font-medium  text-black hidden md:block">
             {user ? <UserRound className="h-5 w-5 mx-2 text-black" /> : 'LOGIN/REGISTER'}
             </Link>
@@ -63,7 +63,7 @@ function ShopHeader() {
                 {items.length}
               </span>
             </Button>
-            <span className="text-sm font-bold text-black">₹{total.toFixed(2)}</span>
+            <span className="hidden md:block text-sm font-bold text-black">₹{total.toFixed(2)}</span>
           </div>
         </div>
         <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />

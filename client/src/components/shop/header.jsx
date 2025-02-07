@@ -31,7 +31,7 @@ function HomeHeader() {
         <header className={`fixed top-0 z-50 w-full py-1 transition-colors duration-300  ${isScrolled ? 'bg-white home-header' : 'bg-transparent'}`}>
         <div className="flex h-16 items-center px-4">
           <Button variant="transparent" size="icon" className={`md:hidden  ${isScrolled ? 'text-black' : 'text-white'}`}>
-            <Menu className="h-8 w-8" />
+            <Menu className="h-9 w-9" style={{width: "20px", height: "24px"}} />
             <span className="sr-only">Toggle menu</span>
           </Button>
           
@@ -52,11 +52,11 @@ function HomeHeader() {
   
           <div className="flex flex-1 items-center justify-center">
             <Link to="/" className="flex items-center space-x-2">
-              <img src={isScrolled ? logodark : logolight} alt="Logo" className="lg:h-8 h-6" />
+              <img src={isScrolled ? logodark : logolight} alt="Logo" className="hidden md:block lg:h-8 h-6" />
             </Link>
           </div>
   
-          <div className="flex items-center me-6">
+          <div className="flex items-center md:me-6">
             <Link to={user ? '/account' : 'auth/login'} className={`text-sm font-medium ${isScrolled ? 'text-black' : 'text-white'} hidden md:block`}>
             {user ? <UserRound className={`h-5 w-5 mx-2 ${isScrolled ? 'text-black' : 'text-white'}`}/> : 'LOGIN/REGISTER'}
             </Link>
@@ -75,7 +75,7 @@ function HomeHeader() {
                 {items.length}
               </span>
             </Button>
-            <span className={`text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>₹{total.toFixed(2)}</span>
+            <span className={`hidden md:block text-sm font-bold  ${isScrolled ? 'text-black' : 'text-white'}`}>₹{total.toFixed(2)}</span>
           </div>
         </div>
           <CartSidebar isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />

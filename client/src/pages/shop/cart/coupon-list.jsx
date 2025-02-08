@@ -13,8 +13,7 @@ export default function CouponList({ onSelectCoupon }) {
   useEffect(() => {
     dispatch(getCoupons())
   },[])
-  
-  console.log(coupons);
+
   const handleCouponSelect = (couponCode) => {
     onSelectCoupon(couponCode)
     setOpen(false)

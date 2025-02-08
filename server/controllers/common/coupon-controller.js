@@ -146,7 +146,6 @@ const couponController = {
     try {
       const { code, total } = req.body;
       const userId = req.user.id;
-      console.log(userId)
 
       const coupon = await Coupon.findOne({ code, status: 'active' });
 

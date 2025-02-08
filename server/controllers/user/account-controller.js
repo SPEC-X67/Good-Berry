@@ -30,7 +30,6 @@ const accountController = {
     changePassword: async (req, res) => {
 
         const { newPassword, currentPassword } = req.body;
-        console.log(req.body);
 
         if(!newPassword || !currentPassword) {
             return res.json({ sussess: false, message: 'Missing required fields' });

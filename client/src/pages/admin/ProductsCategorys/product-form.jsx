@@ -322,8 +322,6 @@ export default function ProductForm() {
       })),
     };
 
-    console.log(variants);
-
     try {
       const action = id
         ? editProduct({ ...formData, id })

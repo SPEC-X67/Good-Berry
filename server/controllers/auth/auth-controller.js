@@ -125,7 +125,6 @@ const login = async (req, res) => {
             },
         });
     } catch (e) {
-        console.log(e);
         res.status(500).json({
             success: false,
             message: "Some error occured",
@@ -156,7 +155,6 @@ const authMiddleware = async (req, res, next) => {
                 message: "Please login first",
             });
         }
-        console.log(e);
         res.status(500).json({
             success: false,
             message: "Some error occured",
@@ -173,8 +171,6 @@ const googleAuth = async (req, res) => {
         if (req.user.isBlocked) {
             return res.redirect('http://localhost:5173/auth/login?error=blocked_user');
         }
-
-        console.log(req.user)
 
         const token = jwt.sign(
             {

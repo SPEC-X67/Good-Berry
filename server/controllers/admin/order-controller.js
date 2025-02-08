@@ -116,7 +116,7 @@ const orderController = {
         let refundAmount = order.items[itemIndex].salePrice * order.items[itemIndex].quantity;
 
         if (order.couponId) {
-          const remainingItems = order.items.filter((item) => item.status !== 'cancelled');
+          const remainingItems = order.items.filter((item) => item.status !== 'cancelled' && item.status !== 'returned');
           const remainingTotal = remainingItems.reduce(
             (sum, item) => sum + (item.salePrice * item.quantity),
             0
@@ -284,7 +284,7 @@ const orderController = {
         }
       }
 
-      const remainingItems = order.items.filter((i) => i.status !== 'returned');
+      const remainingItems = order.items.filter((i) => i.status !== 'returned' && i.status !== 'cancelled');
       order.subtotal = remainingItems.reduce(
         (sum, i) => sum + i.price * i.quantity,
         0
@@ -298,7 +298,7 @@ const orderController = {
 
       order.total = order.subtotal - order.couponDiscount - order.discount;
 
-      if (['wallet', 'upi'].includes(order.paymentMethod)) {
+      if (['wallet', 'upi', 'cod'].includes(order.paymentMethod)) {
         let wallet = await Wallet.findOne({ userId: order.userId });
         if (!wallet) {
           wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });

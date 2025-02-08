@@ -39,7 +39,6 @@ const orderController = {
 
       for (const cartItem of cart.items) {
         const variant = await Variant.findOne({ productId: cartItem.productId, title : cartItem.flavor });
-        console.log("Varient",variant);
 
         if (!variant) {
           return res.status(400).json({ 
@@ -226,7 +225,7 @@ const orderController = {
             date: new Date(),
         };
 
-        const remainingItems = order.items.filter(i => i.status !== 'cancelled');
+        const remainingItems = order.items.filter(i => i.status !== 'cancelled' && i.status !== 'returned');
         order.discount = remainingItems.reduce((total, i) => total + (i.price - i.salePrice) * i.quantity, 0);
 
         let couponRefundAmount = 0;
@@ -298,7 +297,6 @@ const orderController = {
 
       
       const item = order.items.id(itemId);
-      console.log(order, item);
       if (!item) {
         return res.status(404).json({ message: 'Item not found in order' });
       }

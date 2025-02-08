@@ -23,7 +23,6 @@ export const fetchOrders = createAsyncThunk(
         params: { page, limit, search, status },
         withCredentials: true
       });
-      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

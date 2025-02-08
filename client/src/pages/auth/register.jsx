@@ -87,8 +87,6 @@ function AuthRegister() {
     window.location.href = `${import.meta.env.VITE_API_BASE}/api/auth/google`;
 };
 
-  console.log(formData);
-
   return (
     <div className="mx-auto w-full space-y-6" style={{ maxWidth: "310px" }}>
       <div className="text-center">

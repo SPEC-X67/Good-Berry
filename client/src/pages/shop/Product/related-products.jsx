@@ -38,7 +38,6 @@ export default function RelatedProducts({products, id}) {
 
   const handleProductClick = async (id) => {
     try {
-      console.log(id); 
       navigate(`/shop/product/${id}`);
       window.location.reload();
       await dispatch(getSingleProduct(id));

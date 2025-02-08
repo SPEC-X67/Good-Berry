@@ -15,8 +15,6 @@ function AdminOrders() {
   const dispatch = useDispatch();
   const { orders, isLoading, error, currentPage, totalPages } = useSelector((state) => state.adminOrder);
   const searchInputRef = useRef(null);
-
-  console.log(orders);
   
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

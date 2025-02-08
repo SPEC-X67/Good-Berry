@@ -36,7 +36,6 @@ const addressController = {
             });
 
             const savedAddress = await newAddress.save();
-            console.log(savedAddress);
 
             res.status(201).json(savedAddress);
 

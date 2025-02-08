@@ -205,7 +205,7 @@ export default function AdminDashboard() {
           value={totalRevenue?.value}
           change={totalRevenue?.change}
           icon={IndianRupee}
-          color="emerald"
+          color="green"
         />
         <MetricCard
           title="New Customers"
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
           value={totalCancelled?.value}
           change={totalCancelled?.change}
           icon={Activity}
-          color="orange"
+          color="red"
         />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

@@ -44,6 +44,7 @@ const ProductDetails = ({ description }) => {
               Details
             </button>
             <button
+            disabled
               onClick={() => setActiveTab('reviews')}
               className={cn(
                 "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors w-full rounded rounded-5 mt-1",

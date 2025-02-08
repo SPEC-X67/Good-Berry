@@ -48,7 +48,6 @@ export default function ProductsPage() {
     (state) => state.admin
   );
 
-  console.log("test Shamnad tee",products)
   const searchInputRef = useRef(null);
   const { toast } = useToast();
 

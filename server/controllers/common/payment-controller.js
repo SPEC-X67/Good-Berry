@@ -52,7 +52,6 @@ const paymentController = {
       const digest = shasum.digest('hex');
 
       if (digest !== razorpaySignature) {
-        console.log('Transaction not legitimate:', req.body);
         return res.status(400).json({ message: 'Transaction not legitimate!' });
       }
 

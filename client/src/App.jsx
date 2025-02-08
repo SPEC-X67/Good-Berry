@@ -23,6 +23,9 @@ import OrderView from "./pages/shop/cart/view-order";
 import ResetPassword from "./pages/auth/reset-password";
 import SearchProduct from "./pages/shop/Listing/search-product";
 import Unauthorized from './pages/unauth';
+import UnderConstruction from './pages/construction';
+import ContactPage from './pages/contact';
+import AboutPage from './pages/about';
 
 // Lazy load admin components
 const AdminLayout = lazy(() => import("./components/admin/layout"));
@@ -77,6 +80,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<ShopLayout />}>
             <Route index element={<ShoppingHome />} /> {/* Home Page */}
+            <Route path='contact' element={<ContactPage />} />
+            <Route path='about' element={<AboutPage />} />
             <Route path="shop" element={<ShoppingListing />} />
             <Route path="shop/product/:id" element={<ProductPage />} />
             <Route path="search" element={<SearchProduct/>}/>
@@ -135,10 +140,13 @@ function App() {
                 <AdminLayout />
               </CheckAuth>
             }
-          >
+            >
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="reviews" element={<UnderConstruction />} />
+            <Route path="settings" element={<UnderConstruction />} />
+            <Route path="banner" element={<UnderConstruction />} />
             <Route path="products">
               <Route index element={<AdminProducts />} />
               <Route path="add" element={<ProductForm />} />

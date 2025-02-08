@@ -69,7 +69,6 @@ exports.removeFromWishlist = async (req, res) => {
         const { productId, variantId } = req.params;
         const wishlist = await Wishlist.findOne({ userId: req.user.id });
 
-        console.log(wishlist);
         if (wishlist) {
             wishlist.products = wishlist.products.filter(item => item.productId.toString() !== productId || item.variantId.toString() !== variantId);
             await wishlist.save();

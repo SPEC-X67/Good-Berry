@@ -28,7 +28,6 @@ const cartController = {
   addToCart: async (req, res) => {
     try {
       const userId = req.user.id;
-      console.log(req.body)
       const { productId, quantity, packageSize, flavor, name, image, price, salePrice } = req.body;
 
       if (!productId || !quantity || !packageSize) {
@@ -43,8 +42,7 @@ const cartController = {
       }
 
       const variant = await Variant.findOne({ productId: productId, title : flavor });
-      console.log("Varient",variant);
-      
+
       if (!variant) {
         return res.status(400).json({ 
           message: `Product variant not found for product ID: ${productId}` 
@@ -147,7 +145,6 @@ const cartController = {
       const userId = req.user.id;
       const { itemId } = req.params;
       const { quantity, packageSize, flavor } = req.body; 
-      console.log(userId, itemId, quantity, packageSize, flavor);
   
       if (!quantity || !packageSize || !flavor) {  
         return res.status(400).json({
@@ -186,8 +183,6 @@ const cartController = {
     const userId = req.user.id;
     const { itemId } = req.params;
     const { packageSize, flavor } = req.body; 
-
-    console.log(userId, itemId, packageSize, flavor);
 
     if (!packageSize || !flavor) { 
       return res.status(400).json({
@@ -232,30 +227,52 @@ const cartController = {
     }
   },
 
-  checkQuantity : async (req, res) => {
-    try {
-      const { productId, packageSize, flavor } = req.body;
-  
-      if (!productId || !packageSize || !flavor) {
-        return res.status(400).json({ error: 'Missing required fields: productId, packageSize, and flavor are required' });
-      }
-  
-      const variant = await Variant.findOne({ productId, title: flavor });
-      if (!variant) {
-        return res.status(404).json({ error: 'Variant not found' });
-      }
-  
-      const packSize = variant.packSizePricing.find(pack => pack.size === packageSize);
-      if (!packSize) {
-        return res.status(404).json({ error: 'Package size not found' });
-      }
-  
-      res.json({ quantity: packSize.quantity });
-    } catch (error) {
-      console.error('Check quantity error:', error);
-      res.status(500).json({ error: 'Error checking quantity' });
+  // Controller: checkQuantity
+ checkQuantity : async (req, res) => {
+  try {
+    const { productId, packageSize, flavor } = req.body;
+
+    if (!productId || !packageSize || !flavor) {
+      return res.status(400).json({ error: 'Missing required fields: productId, packageSize, and flavor are required' });
     }
+
+    const variant = await Variant.findOne({ productId, title: flavor });
+    if (!variant) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+
+    const packSize = variant.packSizePricing.find(pack => pack.size === packageSize);
+    if (!packSize) {
+      return res.status(404).json({ error: 'Package size not found' });
+    }
+
+    let currentCartQuantity = 0;
+    if (req.user) {
+      const cart = await Cart.findOne({ userId: req.user.id });
+      if (cart) {
+        const cartItem = cart.items.find(item => 
+          item.productId.toString() === productId &&
+          item.packageSize === packageSize &&
+          item.flavor === flavor
+        );
+        if (cartItem) {
+          currentCartQuantity = cartItem.quantity;
+        }
+      }
+    }
+
+    const availableQuantity = Math.max(0, packSize.quantity - currentCartQuantity);
+
+    res.json({ 
+      quantity: packSize.quantity,
+      availableQuantity: availableQuantity,
+      currentCartQuantity: currentCartQuantity
+    });
+  } catch (error) {
+    console.error('Check quantity error:', error);
+    res.status(500).json({ error: 'Error checking quantity' });
   }
+}
 };
 
 module.exports = cartController;

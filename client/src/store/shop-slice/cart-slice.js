@@ -183,16 +183,23 @@ export const checkQuantity = createAsyncThunk(
   'cart/checkQuantity',
   async ({ productId, packageSize, flavor }) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/check-quantity`, { productId, packageSize, flavor }, {
-        withCredentials: true
-      });
-      return response.data;
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/check-quantity`, 
+        { productId, packageSize, flavor }, 
+        { withCredentials: true }
+      );
+      return {
+        productId,
+        packageSize,
+        flavor,
+        ...response.data
+      };
     } catch (error) {
       console.error('Error checking quantity:', error);
       throw error;
     }
   }
 );
+
 
 export const getCoupons = createAsyncThunk(
   'cart/getCoupons',
@@ -214,14 +221,16 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState: {
     items: [],
-    quantity: 0,
     loading: false,
     error: null,
     coupons: [],
+    availableQuantities: {}, 
+    quantityLoading: false, 
   },
   reducers: {
     clearCart: (state) => {
       state.items = [];
+      state.availableQuantities = {};
       cartStorage.clear();
     },
   },
@@ -254,7 +263,7 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items = action.payload;
-        state.error = null;
+        state.availableQuantities = {};
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.error = action.error.message;
@@ -266,20 +275,28 @@ const cartSlice = createSlice({
             item.packageSize === packageSize &&
             item.flavor === flavor)
         );
-        state.error = null;
+        state.availableQuantities = {};
       })
       .addCase(updateCartItemQuantity.fulfilled, (state, action) => {
         state.items = action.payload;
-        state.error = null;
+        state.availableQuantities = {};
       })
       .addCase(checkQuantity.pending, (state) => {
+        state.quantityLoading = true;
         state.error = null;
       })
       .addCase(checkQuantity.fulfilled, (state, action) => {
-        state.quantity = action.payload.quantity;
+        const { productId, packageSize, flavor, quantity, availableQuantity, currentCartQuantity } = action.payload;
+        state.availableQuantities[`${productId}-${packageSize}-${flavor}`] = {
+          total: quantity,
+          available: availableQuantity,
+          inCart: currentCartQuantity
+        };
+        state.quantityLoading = false;
         state.error = null;
       })
       .addCase(checkQuantity.rejected, (state, action) => {
+        state.quantityLoading = false;
         state.error = action.error.message;
       })
       .addCase(getCoupons.pending, (state) => {

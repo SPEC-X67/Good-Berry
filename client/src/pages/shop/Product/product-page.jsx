@@ -5,7 +5,6 @@ import {
   Heart,
   Maximize,
   Share2,
-  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -54,9 +53,7 @@ export default function ProductPage() {
   const { product, pflavors, recomentedProds, wishlist, error } = useSelector(
     (state) => state.shop
   );
-  const { quantity: availableQuantity, items: cartItems } = useSelector(
-    (state) => state.cart
-  );
+  const { items: cartItems } = useSelector((state) => state.cart);
 
   const flavors = pflavors || {};
   const flavorKeys = Object.keys(flavors);
@@ -81,6 +78,7 @@ export default function ProductPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [availableQuantity, setAvailableQuantity] = useState(0);
 
   const flavor = flavorKeys.length > 0 ? flavors[selectedFlavor] : null;
 
@@ -126,16 +124,30 @@ export default function ProductPage() {
   }, [pflavors]);
 
   useEffect(() => {
-    if (flavor) {
-      dispatch(
-        checkQuantity({
-          productId: product._id,
-          packageSize,
-          flavor: flavor.title,
-        })
-      );
-    }
-  }, [flavor]);
+    const checkAvailableQuantity = async () => {
+      if (flavor) {
+        try {
+          const result = await dispatch(
+            checkQuantity({
+              productId: product._id,
+              packageSize,
+              flavor: flavor.title,
+            })
+          ).unwrap();
+          setAvailableQuantity(result.quantity);
+        } catch (error) {
+          console.error("Error checking quantity:", error);
+          toast({
+            title: "Error",
+            description: "Failed to check available quantity",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    checkAvailableQuantity();
+  }, [flavor, packageSize, dispatch]);
 
   const handleFlavorChange = (value) => {
     setSelectedFlavor(value);
@@ -168,23 +180,22 @@ export default function ProductPage() {
         item.packageSize === packageSize &&
         item.flavor === flavor?.title
     );
-    const totalQuantity = cartItem ? cartItem.quantity + quantity : quantity;
+
+    const currentCartQuantity = cartItem ? cartItem.quantity : 0;
+    const totalQuantity = currentCartQuantity + quantity;
 
     if (totalQuantity > 5) {
       toast({
         title: "Quantity Limit Reached",
-        description: "You can only add a maximum of 5 items to the cart.",
+        description: `You already have ${currentCartQuantity} items in cart. Maximum limit is 5 items.`,
       });
       return;
     }
 
-    if (
-      stockStatus.status === "OUT STOCK" ||
-      totalQuantity > availableQuantity
-    ) {
+    if (totalQuantity > availableQuantity) {
       toast({
         title: "Quantity Limit Reached",
-        description: `You already have ${availableQuantity} items of this product in your cart. No more stock is available.`,
+        description: `Only ${availableQuantity} items are available in stock.`,
       });
       return;
     }
@@ -203,46 +214,71 @@ export default function ProductPage() {
     };
 
     try {
-      await dispatch(addToCart(newCartItem));
+      await dispatch(addToCart(newCartItem)).unwrap();
+
+      const result = await dispatch(
+        checkQuantity({
+          productId: product._id,
+          packageSize,
+          flavor: flavor?.title,
+        })
+      ).unwrap();
+
+      setAvailableQuantity(result.quantity);
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
+
       toast({
         title: "Success",
         description: "Product added to cart successfully!",
       });
+
       setTimeout(() => setAddedToCart(false), 2000);
     } catch (err) {
       setIsAddingToCart(false);
       toast({
         variant: "destructive",
-        title: err,
+        title: "Error" + err,
         description: "Failed to add product to cart. Please try again.",
       });
     }
   };
 
   const handleQuantityChange = async (action) => {
-    const newQuantity = action === "increase" ? quantity + 1 : quantity - 1;
-    if (newQuantity > 5) {
+    const currentQuantity = quantity;
+    const newQuantity =
+      action === "increase" ? currentQuantity + 1 : currentQuantity - 1;
+
+    if (newQuantity <= 0) return;
+
+    const cartItem = cartItems.find(
+      (item) =>
+        item.productId === product._id &&
+        item.packageSize === packageSize &&
+        item.flavor === flavor?.title
+    );
+
+    const currentCartQuantity = cartItem ? cartItem.quantity : 0;
+    const totalQuantity = currentCartQuantity + newQuantity;
+
+    if (totalQuantity > 5) {
       toast({
         title: "Quantity Limit Reached",
         description: "You can only add a maximum of 5 items to the cart.",
       });
       return;
     }
-    await dispatch(
-      checkQuantity({
-        productId: product._id,
-        packageSize,
-        flavor: flavor?.title,
-      })
-    );
-    if (newQuantity > 0) {
-      if (newQuantity <= availableQuantity) {
-        setQuantity(newQuantity);
-      }
+
+    if (newQuantity > availableQuantity) {
+      toast({
+        title: "Quantity Limit Reached",
+        description: `Only ${availableQuantity} items are available in stock.`,
+      });
+      return;
     }
+
+    setQuantity(newQuantity);
   };
 
   const isInWishlist =
@@ -561,26 +597,7 @@ export default function ProductPage() {
               {isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
             </Button>
 
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "h-4 w-4",
-                      i < 4
-                        ? "fill-[#8CC63F] text-[#8CC63F]"
-                        : "fill-muted text-muted-foreground"
-                    )}
-                  />
-                ))}
-              </div>
-              <span className="text-sm text-muted-foreground">
-                (1K+ customer review)
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm" style={{marginTop: "0px"}}>
               <span className="font-medium">Category:</span>
               <Link
                 to="/category/ice-cream"

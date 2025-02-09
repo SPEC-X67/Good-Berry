@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import OrderSuccess from "./success-order";
 import PropTypes from "prop-types";
 import axios from "axios";
+import jsPDF from "jspdf";
 
 const OrderStatusBadge = ({ status, icon }) => (
   <Badge variant={status === "cancelled" ? "destructive" : "outline"} className="mt-2">
@@ -45,7 +46,6 @@ const OrderStatusBadge = ({ status, icon }) => (
     <span className="ml-1">{status}</span>
   </Badge>
 );
-
 
 const CancellationDialog = ({ onCancel, cancelReason, setCancelReason, item }) => (
   <AlertDialog>
@@ -308,6 +308,168 @@ export default function OrderView() {
         variant: "destructive",
       });
     }
+  };
+
+  const downloadInvoice = () => {
+    const doc = new jsPDF();
+
+    // Set initial coordinates
+    const leftMargin = 15;
+    const rightAlign = 190;
+    const topMargin = 20;
+
+    // Company name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Good Berry", leftMargin, topMargin);
+    doc.setFontSize(9);
+    doc.text("Private Limited", leftMargin, topMargin + 4);
+
+    // Invoice header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text("Invoice", rightAlign - 50, topMargin);
+
+    // Invoice details
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Invoice#: ${order.orderId}`, rightAlign - 50, topMargin + 8);
+    doc.text(
+      `Date: ${new Date(order.createdAt).toLocaleDateString()}`,
+      rightAlign - 50,
+      topMargin + 13
+    );
+
+    // Bill To section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Shipping Address:", leftMargin, topMargin + 28);
+
+    // Customer details
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(
+      [
+        order.addressId.name,
+        order.addressId.street,
+        `${order.addressId.city}, ${order.addressId.state}, ${order.addressId.zip}`,
+        order.addressId.mobile,
+      ],
+      leftMargin,
+      topMargin + 34
+    );
+
+    // Items table
+    const tableColumn = [
+      { header: "ITEM DESCRIPTION", dataKey: "item" },
+      { header: "PRICE", dataKey: "price" },
+      { header: "QTY", dataKey: "qty" },
+      { header: "TOTAL", dataKey: "total" },
+    ];
+
+    const tableRows = order.items.map((item) => ({
+      item: item.name,
+      price: `${item.price.toFixed(2)}`,
+      qty: item.quantity,
+      total: `${(item.price * item.quantity).toFixed(2)}`,
+    }));
+
+    doc.autoTable({
+      startY: 80,
+      head: [tableColumn.map((col) => col.header)],
+      body: tableRows.map((row) => [row.item, row.price, row.qty, row.total]),
+      theme: "plain",
+      styles: {
+        fontSize: 10,
+        cellPadding: 5,
+      },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 40 },
+      },
+      headStyles: {
+        fillColor: false,
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+        lineWidth: 0.0,
+      },
+      didDrawCell: (order) => {
+        // Add bottom border to last row
+        if (order.row.index === tableRows.length - 1) {
+          doc.line(
+            order.cell.x,
+            order.cell.y + order.cell.height,
+            order.cell.x + order.cell.width,
+            order.cell.y + order.cell.height
+          );
+        }
+      },
+    });
+
+    const finalY = doc.lastAutoTable.finalY || 120;
+
+    doc.setFont("helvetica", "normal");
+    doc.text("SUB TOTAL", rightAlign - 90, finalY + 15);
+    doc.text(`${order.subtotal.toFixed(2)}`, rightAlign - 20, finalY + 15, {
+      align: "right",
+    });
+
+    doc.text("Discount", rightAlign - 90, finalY + 22);
+    doc.text(`-${order.discount.toFixed(2)}`, rightAlign - 20, finalY + 22, {
+      align: "right",
+    });
+
+    doc.text("Coupon Discount", rightAlign - 90, finalY + 28);
+    doc.text(
+      `-${order.couponDiscount.toFixed(2)}`,
+      rightAlign - 20,
+      finalY + 28,
+      { align: "right" }
+    );
+
+    // Grand total with bold font
+    doc.setFont("helvetica", "bold");
+    doc.text("Grand Total", rightAlign - 90, finalY + 37);
+    doc.text(`${order.total.toFixed(2)}`, rightAlign - 20, finalY + 37, {
+      align: "right",
+    });
+
+    // Contact section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Contact", leftMargin, finalY + 65);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(
+      [
+        "Goodberry Inc. Anytown, USA, 123 Main Street",
+        "help@goodberry.com",
+        "www.goodberry.com",
+      ],
+      leftMargin,
+      finalY + 72
+    );
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Thank you for choosing us!", leftMargin, finalY + 100);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(
+      "We appreciate your trust in us and hope you enjoy your purchase.",
+      leftMargin,
+      finalY + 106
+    );
+    doc.text(
+      "If you have any questions, feel free to reach out to our support team.",
+      leftMargin,
+      finalY + 109
+    );
+
+    // Save the PDF
+    doc.save(`invoice-${order.orderId}.pdf`);
   };
 
   const handleReturn = async (itemId) => {
@@ -595,7 +757,7 @@ export default function OrderView() {
           <p className="text-sm text-gray-600 pt-4">
             Thank you for shopping with us! We appreciate your business.
           </p>
-          <Button variant="outline" className="mt-4"> Invoice <Download/></Button>
+          <Button variant="outline" className="mt-4" onClick={() => downloadInvoice()}> Invoice <Download/></Button>
         </CardFooter>
       </Card>
     </div>

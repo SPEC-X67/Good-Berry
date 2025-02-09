@@ -4,7 +4,15 @@ const { subDays, subWeeks, subMonths, subYears, startOfDay, endOfDay } = require
 const salesReportController = {
   generateSalesReport: async (req, res) => {
     try {
-      const { period, startDate, endDate, page = 1, limit = 10, search = '' } = req.query;
+      const { 
+        period, 
+        startDate, 
+        endDate, 
+        page = 1, 
+        limit = 10, 
+        search = '', 
+        downloadAll = false 
+      } = req.query;
 
       let start, end;
       const today = new Date();
@@ -39,7 +47,7 @@ const salesReportController = {
           $gte: start,
           $lte: end
         },
-        status: 'delivered' // Only include delivered orders
+        status: 'delivered'
       };
 
       if (search) {
@@ -50,32 +58,39 @@ const salesReportController = {
       }
 
       const totalOrders = await Order.countDocuments(query);
-      const orders = await Order.find(query)
-        .populate('userId', 'username')
-        .populate('addressId')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
-
-      const overallOrders = await Order.find(query)
+    
+      let ordersQuery = Order.find(query)
         .populate('userId', 'username')
         .populate('addressId')
         .sort({ createdAt: -1 });
+
+      if (!downloadAll) {
+        ordersQuery = ordersQuery
+          .skip((page - 1) * limit)
+          .limit(parseInt(limit));
+      }
+
+      // Execute the query
+      const orders = await ordersQuery;
 
       const report = {
         period,
         startDate: start,
         endDate: end,
         orders,
-        overallSalesCount: overallOrders.reduce((sum, order) => sum + order.items.length, 0),
-        overallOrderCount: overallOrders.length,
-        overallOrderAmount: overallOrders.reduce((sum, order) => sum + order.total, 0),
-        overallDiscount: overallOrders.reduce((sum, order) => sum + order.discount, 0),
-        overallCouponDiscount: overallOrders.reduce((sum, order) => sum + order.couponDiscount, 0),
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalOrders / limit),
-        totalOrders
+        overallSalesCount: orders.reduce((sum, order) => sum + order.items.length, 0),
+        overallOrderCount: orders.length,
+        overallOrderAmount: orders.reduce((sum, order) => sum + order.total, 0),
+        overallDiscount: orders.reduce((sum, order) => sum + order.discount, 0),
+        overallCouponDiscount: orders.reduce((sum, order) => sum + order.couponDiscount, 0)
       };
+
+      // Only include pagination info if not downloading all
+      if (!downloadAll) {
+        report.currentPage = parseInt(page);
+        report.totalPages = Math.ceil(totalOrders / limit);
+        report.totalOrders = totalOrders;
+      }
 
       res.json(report);
     } catch (error) {

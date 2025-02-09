@@ -101,92 +101,165 @@ export default function SalesReportPage() {
     }
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     try {
+      // Get current filter values from form and state
+      const period = form.getValues("period");
+      const dateRange = form.getValues("dateRange");
+      const search = filterText;
+  
+      // Fetch all data without pagination
+      const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
+      const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE}/api/admin/sales-report`,
+        {
+          params: {
+            period,
+            startDate,
+            endDate,
+            search,
+            downloadAll: true, // Add this flag to backend
+          },
+          withCredentials: true,
+        }
+      );
+  
+      const {
+        orders: allOrders,
+        overallSalesCount,
+        overallOrderCount,
+        overallOrderAmount,
+        overallDiscount,
+        overallCouponDiscount,
+      } = response.data;
+  
+      // Generate PDF with all orders
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-
-      // Draw border
+  
       doc.setDrawColor(0);
       doc.setLineWidth(0.3);
-      doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
-
+      doc.rect(10, 10, pageWidth - 20, doc.internal.pageSize.getHeight() - 20);
+  
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(0);
       doc.text("Sales Report", pageWidth / 2, 35, { align: "center" });
-
+  
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 40);
-    
+  
       doc.autoTable({
         startY: 50,
         headStyles: { fillColor: [0, 0, 0], textColor: 255 },
-        alternateRowStyles: { fillColor: [255, 255, 255] },
-        bodyStyles: { fontSize: 10, cellPadding: 3, textColor: 0 },
-        head: [["Order ID", "Date", "Customer Name", "Order Amount", "Discount Amount", "Coupon Discount"]],
-        body: filteredOrders.map(order => [
+        body: allOrders.map((order) => [
           order.orderId,
           formatDate(new Date(order.createdAt)),
           order.userId?.username || "N/A",
           order.total?.toFixed(2),
           order.discount?.toFixed(2),
-          order.couponDiscount?.toFixed(2)
+          order.couponDiscount?.toFixed(2),
         ]),
+        head: [
+          [
+            "Order ID",
+            "Date",
+            "Customer Name",
+            "Amount",
+            "Discount",
+            "Coupon",
+          ],
+        ],
       });
-    
+  
       doc.autoTable({
         startY: doc.lastAutoTable.finalY + 10,
         headStyles: { fillColor: [0, 0, 0], textColor: 255 },
-        bodyStyles: { fontSize: 10, cellPadding: 3, textColor: 0 },
         head: [["Metric", "Value"]],
         body: [
-          ["Overall Sales Count", report.overallSalesCount],
-          ["Overall Order Count", report.overallOrderCount],
-          ["Overall Order Amount", report.overallOrderAmount.toFixed(2)],
-          ["Overall Discount", report.overallDiscount.toFixed(2)],
-          ["Overall Coupon Discount", report.overallCouponDiscount.toFixed(2)],
+          ["Overall Sales Count", overallSalesCount],
+          ["Overall Order Count", overallOrderCount],
+          ["Overall Order Amount", overallOrderAmount.toFixed(2)],
+          ["Overall Discount", overallDiscount.toFixed(2)],
+          ["Overall Coupon Discount", overallCouponDiscount.toFixed(2)],
         ],
       });
-
+  
       doc.save("sales_report.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
     }
   };
-
-  const downloadExcel = () => {
-    const worksheetData = filteredOrders.map(order => ({
-      "Order ID": order.orderId,
-      "Date": formatDate(new Date(order.createdAt)),
-      "Customer Name": order.userId?.username,
-      "Order Amount": order.total?.toFixed(2),
-      "Discount Amount": order.discount?.toFixed(2),
-      "Coupon Discount": `${order.couponDiscount?.toFixed(2) || "0.00"}`
-    }));
-    worksheetData.push({});
-    worksheetData.push({
-      "Order ID": "Overall Sales Count",
-      "Date": report.overallSalesCount,
-      "Customer Name": "Overall Order Count",
-      "Order Amount": report.overallOrderCount,
-      "Discount Amount": "Overall Order Amount",
-      "Coupon Discount": `₹${report.overallOrderAmount.toFixed(2)}`
-    });
-    worksheetData.push({
-      "Order ID": "Overall Discount",
-      "Date": `₹${report.overallDiscount.toFixed(2)}`,
-      "Customer Name": "Overall Coupon Discount",
-      "Order Amount": `₹${report.overallCouponDiscount.toFixed(2)}`
-    });
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
-    XLSX.writeFile(workbook, "sales_report.xlsx");
+  
+  const downloadExcel = async () => {
+    try {
+      // Get current filter values
+      const period = form.getValues("period");
+      const dateRange = form.getValues("dateRange");
+      const search = filterText;
+  
+      // Fetch all data without pagination
+      const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
+      const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE}/api/admin/sales-report`,
+        {
+          params: {
+            period,
+            startDate,
+            endDate,
+            search,
+            downloadAll: true,
+          },
+          withCredentials: true,
+        }
+      );
+  
+      const {
+        orders: allOrders,
+        overallSalesCount,
+        overallOrderCount,
+        overallOrderAmount,
+        overallDiscount,
+        overallCouponDiscount,
+      } = response.data;
+  
+      // Prepare worksheet data
+      const worksheetData = allOrders.map((order) => ({
+        "Order ID": order.orderId,
+        Date: formatDate(new Date(order.createdAt)),
+        "Customer Name": order.userId?.username,
+        "Amount": order.total?.toFixed(2),
+        "Discount": order.discount?.toFixed(2),
+        "Coupon": order.couponDiscount?.toFixed(2) || "0.00",
+      }));
+  
+      // Add summary rows
+      worksheetData.push({});
+      worksheetData.push({
+        "Order ID": "Overall Sales Count",
+        Date: overallSalesCount,
+        "Customer Name": "Overall Order Count",
+        "Amount": overallOrderCount,
+        "Discount": "Overall Order Amount",
+        "Coupon": `₹${overallOrderAmount.toFixed(2)}`,
+      });
+      worksheetData.push({
+        "Order ID": "Overall Discount",
+        Date: `₹${overallDiscount.toFixed(2)}`,
+        "Customer Name": "Overall Coupon Discount",
+        "Order Amount": `₹${overallCouponDiscount.toFixed(2)}`,
+      });
+  
+      // Generate Excel file
+      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+      XLSX.writeFile(workbook, "sales_report.xlsx");
+    } catch (error) {
+      console.error("Error generating Excel:", error);
+    }
   };
-
   const formatDate = (date) => {
     return format(date, "yyyy-MM-dd");
   };
